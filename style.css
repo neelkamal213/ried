@@ -103,12 +103,50 @@ th { background: #0b3c5d; color: white; }
 
 .promise-text { font-size: 1.8rem; font-weight: 600; line-height: 1.8; margin-bottom: 20px; }
 
-.contact { background: #f4f6f8; padding: 80px 0; text-align: center; }
+.contact {
+  background: #f4f6f8;
+  padding: 80px 0;
+  text-align: center;
+}
 
-footer { background: #0b3c5d; color: white; text-align: center; padding: 40px 0; }
+.contact h2 { margin-bottom: 30px; }
+
+.contact-text {
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn {
+  display: inline-block;
+  background: #00b4d8;
+  color: white;
+  padding: 14px 40px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.btn:hover {
+  background: #0096c7;
+  transform: translateY(-3px);
+}
+
+footer {
+  background: #0b3c5d;
+  color: white;
+  text-align: center;
+  padding: 40px 0;
+}
 
 @media (max-width: 768px) {
   .hero h1 { font-size: 2.8rem; }
+  .tagline { font-size: 1.2rem; }
   .nav-links { flex-wrap: wrap; justify-content: center; gap: 15px; font-size: 0.95rem; }
   .card img { height: 140px; }
+  h2 { font-size: 2rem; }
 }
