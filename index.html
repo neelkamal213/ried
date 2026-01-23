@@ -6,15 +6,17 @@
   <title>R.I.E.D. | Research • Innovation • Entrepreneurship • Development</title>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <!-- Font Awesome Icons -->
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- AOS CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Hero Section -->
-  <header class="hero">
+  <!-- Hero -->
+  <header class="hero" data-aos="fade" data-aos-duration="1200">
     <div class="hero-content">
       <h1>R.I.E.D.</h1>
       <p class="tagline">Research • Innovation • Entrepreneurship • Development</p>
@@ -24,7 +26,7 @@
   </header>
 
   <!-- What is RIED -->
-  <section id="what" class="section">
+  <section id="what" class="section" data-aos="fade-up" data-aos-delay="100">
     <div class="container">
       <h2>What is RIED</h2>
       <p>RIED is a mission-oriented framework focused on translating academic research, patents, prototypes, and grassroots innovations into scalable enterprises and socio-economic outcomes. RIED operates at the intersection of academia, innovation ecosystems, startups, rural and semi-urban institutions, industry, and public systems, ensuring that promising ideas move meaningfully from labs and papers to markets and people.</p>
@@ -32,7 +34,7 @@
   </section>
 
   <!-- Why RIED Exists -->
-  <section id="why" class="section light">
+  <section id="why" class="section light" data-aos="fade-up" data-aos-delay="200">
     <div class="container">
       <h2>Why RIED Exists</h2>
       <p>India produces vast intellectual capital and grassroots innovation. Yet a large proportion remains unrealized—never becoming companies, solutions, or livelihoods.</p>
@@ -44,51 +46,50 @@
         <li>scale readiness,</li>
       </ul>
       <p>particularly within semi-urban and rural academic ecosystems.</p>
-      <p>RIED exists to bridge this gap by building structured, outcome-driven pathways from: Discovery → Enterprise → Development</p>
+      <p>RIED exists to bridge this gap by building structured, outcome-driven pathways from: <strong>Discovery → Enterprise → Development</strong></p>
     </div>
   </section>
 
   <!-- What RIED Does -->
-  <section id="does" class="section">
+  <section id="does" class="section" data-aos="fade-up" data-aos-delay="100">
     <div class="container">
       <h2>What RIED Does</h2>
       <p>RIED enables institutions and innovators through:</p>
       <div class="cards-grid">
-        <div class="card">
-          <img src="/assets/research.jpg" alt="Research">
+        <div class="card" data-aos="zoom-in" data-aos-delay="150">
+          <img src="/assets/research.jpg" alt="Research Translation">
           <h3>Research Translation & Patent Evaluation</h3>
           <p>Insight-driven evaluation to turn research into viable opportunities.</p>
         </div>
-        <div class="card">
+        <div class="card" data-aos="zoom-in" data-aos-delay="250">
           <img src="/assets/innovation.jpg" alt="Innovation">
           <h3>Innovation-to-Enterprise Pathways</h3>
           <p>Converting bold ideas into enterprise-ready models.</p>
         </div>
-        <div class="card">
+        <div class="card" data-aos="zoom-in" data-aos-delay="350">
           <img src="/assets/entrepreneur.jpg" alt="Entrepreneurship">
           <h3>Entrepreneurship Development within Institutions</h3>
           <p>Building entrepreneurial skills and support within academic settings.</p>
         </div>
-        <div class="card">
+        <div class="card" data-aos="zoom-in" data-aos-delay="450">
           <img src="/assets/development.jpg" alt="Development">
           <h3>Rural & Agrarian Innovation Commercialisation</h3>
           <p>Commercializing innovations for rural and agrarian impact.</p>
         </div>
-        <div class="card full-width">
+        <div class="card full-width" data-aos="zoom-in" data-aos-delay="550">
           <h3>Startup Scale-Up, Market Access & Funding Linkages</h3>
           <p>Supporting growth with market connections and funding.</p>
         </div>
       </div>
-      <p>The focus is always on outcomes—prototype to pilot, research to revenue, and ideas to impact.</p>
+      <p class="focus-note">The focus is always on outcomes—prototype to pilot, research to revenue, and ideas to impact.</p>
     </div>
   </section>
 
   <!-- How RIED Works -->
-  <section id="how" class="section light">
+  <section id="how" class="section light" data-aos="fade-up" data-aos-delay="100">
     <div class="container">
       <h2>How RIED Works</h2>
-      <h3>The Translational Framework</h3>
-      <p>(Aligned with national innovation missions)</p>
+      <h3>The Translational Framework (Aligned with national innovation missions)</h3>
       <p>Discovery → Evaluation → Translation → Integration → Scale</p>
       <table>
         <thead>
@@ -98,32 +99,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Discovery</td>
-            <td>Identify research, patents, prototypes & innovations</td>
-          </tr>
-          <tr>
-            <td>Evaluation</td>
-            <td>Assess feasibility, relevance & impact potential</td>
-          </tr>
-          <tr>
-            <td>Translation</td>
-            <td>Convert innovations into enterprise-ready models</td>
-          </tr>
-          <tr>
-            <td>Integration</td>
-            <td>Connect to mentors, industry, markets & capital</td>
-          </tr>
-          <tr>
-            <td>Scale</td>
-            <td>Support pilots, startup formation & expansion</td>
-          </tr>
+          <tr><td>Discovery</td><td>Identify research, patents, prototypes & innovations</td></tr>
+          <tr><td>Evaluation</td><td>Assess feasibility, relevance & impact potential</td></tr>
+          <tr><td>Translation</td><td>Convert innovations into enterprise-ready models</td></tr>
+          <tr><td>Integration</td><td>Connect to mentors, industry, markets & capital</td></tr>
+          <tr><td>Scale</td><td>Support pilots, startup formation & expansion</td></tr>
         </tbody>
       </table>
 
       <h3>The Campus Immersion Model</h3>
-      <p>RIED engages campuses not as a vendor, but as a discovery partner.</p>
-      <p>Much like a reviewer experiences a restaurant before judging it, RIED enters institutions to sense the ecosystem firsthand—culture, energy, aspirations, and potential.</p>
+      <p>RIED engages campuses not as a vendor, but as a discovery partner. Much like a reviewer experiences a restaurant before judging it, RIED enters institutions to sense the ecosystem firsthand—culture, energy, aspirations, and potential.</p>
       <p>Typical engagement includes:</p>
       <ul>
         <li>On-campus walk-ins and immersion visits</li>
@@ -138,9 +123,9 @@
   </section>
 
   <!-- Who We Work With -->
-  <section id="who" class="section">
+  <section id="who" class="section" data-aos="fade-up" data-aos-delay="100">
     <div class="container">
-      <h2>Who RIED Works With</h2>
+      <h2>Who We Work With</h2>
       <ul>
         <li>Universities & Academic Institutions</li>
         <li>Incubators, EDCs & Innovation Cells</li>
@@ -152,35 +137,35 @@
     </div>
   </section>
 
-  <!-- Leadership & Governance -->
-  <section id="leadership" class="section light">
+  <!-- Leadership -->
+  <section id="leadership" class="section light" data-aos="fade-up" data-aos-delay="100">
     <div class="container">
       <h2>Leadership & Governance</h2>
-      <p>RIED is guided by Dr. K.R. Murli Mohan Former Mission Director, DST (Government of India) & Scientist ‘G’, bringing national mission experience in incubation, quantum technologies, and cybersecurity.</p>
-      <p>Operational leadership is driven by Pramod Sangappa Prabhudev, with extensive on-ground experience across academic ecosystems, innovation, incubation, and entrepreneurship development.</p>
+      <p>RIED is guided by <strong>Dr. K.R. Murli Mohan</strong>, Former Mission Director, DST (Government of India) & Scientist ‘G’, bringing national mission experience in incubation, quantum technologies, and cybersecurity.</p>
+      <p>Operational leadership is driven by <strong>Pramod Sangappa Prabhudev</strong>, with extensive on-ground experience across academic ecosystems, innovation, incubation, and entrepreneurship development.</p>
       <p>RIED is supported by a broader advisory circle of senior scientists, technologists, mission leaders, and industry practitioners.</p>
     </div>
   </section>
 
-  <!-- RIED’s Promise -->
-  <section id="promise" class="section promise-section">
+  <!-- Promise -->
+  <section id="promise" class="section promise-section" data-aos="zoom-in" data-aos-duration="1500">
     <div class="container">
       <h2>RIED’s Promise</h2>
-      <p class="promise-text">Knowledge becomes Enterprise<br>Research becomes Livelihood<br>Innovation becomes Development</p>
-      <p>RIED exists to convert potential into progress one campus, one research idea, one startup at a time.</p>
+      <p class="promise-text">
+        Knowledge becomes Enterprise<br>
+        Research becomes Livelihood<br>
+        Innovation becomes Development
+      </p>
+      <p>RIED exists to convert potential into progress — one campus, one research idea, one startup at a time.</p>
     </div>
   </section>
 
-  <!-- Contact Section -->
-  <section id="contact" class="contact">
+  <!-- Contact -->
+  <section id="contact" class="contact" data-aos="fade-up" data-aos-delay="100">
     <div class="container">
       <h2>Contact Us</h2>
-      <form>
-        <input type="text" placeholder="Your Name" required>
-        <input type="email" placeholder="Your Email" required>
-        <textarea placeholder="Your Message" required></textarea>
-        <button type="submit" class="btn">Send Message</button>
-      </form>
+      <p>Reach out to discuss collaborations, opportunities, or inquiries.</p>
+      <a href="mailto:hello@ried.co.in?subject=Inquiry%20from%20RIED%20Website&body=Hello%20RIED%20team,%0A%0A[Your%20message%20here]%0A%0ABest%20regards,%0A[Your%20name]%0A[Your%20contact%20info]" class="btn large-btn">Send Email to hello@ried.co.in</a>
     </div>
   </section>
 
@@ -190,5 +175,15 @@
     <p>© 2026 R.I.E.D. All Rights Reserved.</p>
   </footer>
 
+  <!-- AOS JS -->
+  <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+  <script>
+    AOS.init({
+      duration: 1000,
+      once: true,
+      easing: 'ease-out',
+      offset: 120
+    });
+  </script>
 </body>
 </html>
