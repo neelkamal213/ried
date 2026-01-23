@@ -11,7 +11,7 @@ body { background:#f8f9fc; color:#333; line-height:1.7; font-family:"Poppins",sa
 .nav-links a:hover { color:#00d4ff; }
 
 /* Hero */
-.hero { height:100vh; background:linear-gradient(rgba(8,32,60,0.82),rgba(8,32,60,0.82)),url("assets/hero.jpg") center/cover no-repeat; display:flex; align-items:center; justify-content:center; text-align:center; color:white; }
+.hero { height:100vh; background:linear-gradient(rgba(8,32,60,0.82),rgba(8,32,60,0.82)),url("./assets/hero.jpg") center/cover no-repeat; display:flex; align-items:center; justify-content:center; text-align:center; color:white; }
 .hero h1 { font-size:5rem; font-weight:700; letter-spacing:4px; }
 .tagline { font-size:1.4rem; margin:10px 0; }
 .hero p { font-size:1.2rem; max-width:800px; margin:0 auto 40px; }
@@ -19,7 +19,7 @@ body { background:#f8f9fc; color:#333; line-height:1.7; font-family:"Poppins",sa
 .btn:hover { background:#0096c7; }
 
 /* Sections */
-.about, .core-areas, .team, .impact, .contact { padding:80px 8%; text-align:center; }
+.about, .core-areas, .team, .impact { padding:80px 8%; text-align:center; }
 h2 { font-size:2.6rem; margin-bottom:40px; color:#08203c; }
 .section-img { max-width:720px; width:90%; display:block; margin:40px auto; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.12); }
 
@@ -44,17 +44,40 @@ h2 { font-size:2.6rem; margin-bottom:40px; color:#08203c; }
 .team-member h3 { margin:20px 0 10px; font-size:1.4rem; color:#08203c; padding:0 20px; }
 .team-member p { padding:0 20px 30px; color:#555; }
 
-/* Contact */
-.contact { background:#08203c; color:white; }
+/* Impact */
+.impact { background:#f0f4f8; }
+
+/* Contact - FORCED WHITE TEXT */
+.contact {
+  background:#08203c;
+  color:#ffffff !important;
+  padding:80px 8%;
+}
+.contact h2,
+.contact p,
+.contact .email-info,
+.contact strong,
+.contact input::placeholder,
+.contact textarea::placeholder {
+  color:#ffffff !important;
+}
 .contact form { max-width:520px; margin:40px auto; }
-.contact input, .contact textarea { width:100%; padding:16px; margin:12px 0; border:none; border-radius:8px; font-size:1rem; }
-.contact button { width:100%; padding:16px; background:#00b4d8; border:none; color:white; font-weight:600; border-radius:50px; cursor:pointer; }
+.contact input, .contact textarea {
+  width:100%; padding:16px; margin:12px 0;
+  border:none; border-radius:8px; font-size:1rem;
+  color:#000;
+}
+.contact button {
+  width:100%; padding:16px; background:#00b4d8;
+  border:none; color:white; font-weight:600;
+  border-radius:50px; cursor:pointer;
+}
 .contact button:hover { background:#0096c7; }
 .email-info { margin-top:30px; font-size:1.2rem; }
 
 /* Footer */
 footer { background:#06162b; color:#aaa; text-align:center; padding:30px; font-size:0.95rem; }
 
-/* Scroll to Top */
+/* Scroll Button */
 #scrollTopBtn { display:none; position:fixed; bottom:30px; right:40px; width:50px; height:50px; background:#00b4d8; color:white; border:none; border-radius:50%; font-size:1.4rem; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.3); }
 #scrollTopBtn:hover { background:#0096c7; }
