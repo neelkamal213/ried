@@ -1,0 +1,58 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  line-height: 1.6;
+  color: #222;
+}
+
+.hero {
+  background: #0b3c5d;
+  color: #fff;
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.hero h1 {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.tagline {
+  font-weight: bold;
+}
+
+.subtitle {
+  max-width: 700px;
+  margin: auto;
+}
+
+section {
+  padding: 60px 20px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.light {
+  background: #f4f6f8;
+}
+
+h2 {
+  color: #0b3c5d;
+}
+
+ul {
+  list-style: square;
+  padding-left: 20px;
+}
+
+.promise {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+footer {
+  background: #0b3c5d;
+  color: #fff;
+  text-align: center;
+  padding: 30px;
+}
