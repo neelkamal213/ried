@@ -11,9 +11,9 @@
 </head>
 <body>
 
-  <!-- Navigation Menu -->
+  <!-- Navbar -->
   <nav class="navbar">
-    <div class="container nav-container">
+    <div class="container">
       <h1 class="logo">R.I.E.D.</h1>
       <ul class="nav-links">
         <li><a href="#what">What is RIED</a></li>
@@ -23,16 +23,16 @@
         <li><a href="#who">Who We Work With</a></li>
         <li><a href="#leadership">Leadership</a></li>
         <li><a href="#promise">Promise</a></li>
-        <li><a href="#contact" class="btn nav-btn">Contact</a></li>
+        <li><a href="#contact">Contact</a></li>
       </ul>
     </div>
   </nav>
 
   <!-- Hero -->
-  <header class="hero" data-aos="fade" data-aos-duration="1200">
+  <header class="hero" data-aos="fade">
     <div class="hero-content">
       <h1>R.I.E.D.</h1>
-      <p class="tagline">• Research • Innovation • Entrepreneurship • Development</p>
+      <p class="tagline">Research • Innovation • Entrepreneurship • Development</p>
       <p class="subtitle">Translating research, innovation, and grassroots ideas into scalable enterprises and socio-economic outcomes.</p>
       <a href="#contact" class="btn">Connect With Us</a>
     </div>
@@ -63,29 +63,33 @@
     </div>
   </section>
 
-  <!-- What RIED Does - Cards with backgrounds -->
+  <!-- What RIED Does -->
   <section id="does" class="section" data-aos="fade-up">
     <div class="container">
       <h2>What RIED Does</h2>
       <p>RIED enables institutions and innovators through:</p>
       <div class="cards-grid">
-        <div class="card" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/research.jpg');" data-aos="zoom-in">
+        <div class="card" data-aos="zoom-in" data-aos-delay="100">
+          <img src="/assets/research.jpg" alt="Research Translation">
           <h3>Research Translation & Patent Evaluation</h3>
           <p>Insight-driven evaluation to turn research into viable opportunities.</p>
         </div>
-        <div class="card" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/innovation.jpg');" data-aos="zoom-in">
+        <div class="card" data-aos="zoom-in" data-aos-delay="200">
+          <img src="/assets/innovation.jpg" alt="Innovation">
           <h3>Innovation-to-Enterprise Pathways</h3>
           <p>Converting bold ideas into enterprise-ready models.</p>
         </div>
-        <div class="card" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/entrepreneur.jpg');" data-aos="zoom-in">
+        <div class="card" data-aos="zoom-in" data-aos-delay="300">
+          <img src="/assets/entrepreneur.jpg" alt="Entrepreneurship">
           <h3>Entrepreneurship Development within Institutions</h3>
           <p>Building entrepreneurial skills and support within academic settings.</p>
         </div>
-        <div class="card" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/development.jpg');" data-aos="zoom-in">
+        <div class="card" data-aos="zoom-in" data-aos-delay="400">
+          <img src="/assets/development.jpg" alt="Rural Development">
           <h3>Rural & Agrarian Innovation Commercialisation</h3>
           <p>Commercializing innovations for rural and agrarian impact.</p>
         </div>
-        <div class="card full-width" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/assets/startup.jpg');" data-aos="zoom-in">
+        <div class="card full-width" data-aos="zoom-in" data-aos-delay="500">
           <h3>Startup Scale-Up, Market Access & Funding Linkages</h3>
           <p>Supporting growth with market connections and funding.</p>
         </div>
@@ -95,17 +99,35 @@
   </section>
 
   <!-- How RIED Works -->
-  <section id="how" class="section light" data-aos="fade-up" style="background-image: linear-gradient(rgba(244,246,248,0.85), rgba(244,246,248,0.85)), url('/assets/campus.jpg'); background-size: cover; background-position: center;">
+  <section id="how" class="section light" data-aos="fade-up">
     <div class="container">
       <h2>How RIED Works</h2>
-      <!-- Rest of content same as before -->
       <h3>The Translational Framework (Aligned with national innovation missions)</h3>
       <p>Discovery → Evaluation → Translation → Integration → Scale</p>
       <table>
-        <!-- table content same -->
+        <thead>
+          <tr><th>STAGE</th><th>FOCUS</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Discovery</td><td>Identify research, patents, prototypes & innovations</td></tr>
+          <tr><td>Evaluation</td><td>Assess feasibility, relevance & impact potential</td></tr>
+          <tr><td>Translation</td><td>Convert innovations into enterprise-ready models</td></tr>
+          <tr><td>Integration</td><td>Connect to mentors, industry, markets & capital</td></tr>
+          <tr><td>Scale</td><td>Support pilots, startup formation & expansion</td></tr>
+        </tbody>
       </table>
       <h3>The Campus Immersion Model</h3>
-      <!-- rest same -->
+      <p>RIED engages campuses not as a vendor, but as a discovery partner. Much like a reviewer experiences a restaurant before judging it, RIED enters institutions to sense the ecosystem firsthand—culture, energy, aspirations, and potential.</p>
+      <p>Typical engagement includes:</p>
+      <ul>
+        <li>On-campus walk-ins and immersion visits</li>
+        <li>Short student interactions to understand clarity, curiosity, and purpose</li>
+        <li>Scouting labs, patents, prototypes, and startup efforts</li>
+        <li>Interactions with EDC / Incubator / TPO teams</li>
+        <li>Proposing structured, time-bound engagements</li>
+        <li>Delivering measurable outcomes</li>
+      </ul>
+      <p>This approach builds trust, visibility, and a real innovation pipeline.</p>
     </div>
   </section>
 
@@ -114,16 +136,23 @@
     <div class="container">
       <h2>Who We Work With</h2>
       <ul>
-        <!-- list same -->
+        <li>Universities & Academic Institutions</li>
+        <li>Incubators, EDCs & Innovation Cells</li>
+        <li>Researchers, Faculty & Student Innovators</li>
+        <li>Rural & Agrarian Entrepreneurs</li>
+        <li>Early & Growth Stage Startups</li>
+        <li>Government, CSR, Banks & Ecosystem Partners</li>
       </ul>
     </div>
   </section>
 
   <!-- Leadership -->
-  <section id="leadership" class="section light" data-aos="fade-up" style="background-image: linear-gradient(rgba(244,246,248,0.9), rgba(244,246,248,0.9)), url('/assets/leadership.jpg'); background-size: cover;">
+  <section id="leadership" class="section light" data-aos="fade-up">
     <div class="container">
       <h2>Leadership & Governance</h2>
-      <!-- content same -->
+      <p>RIED is guided by <strong>Dr. K.R. Murli Mohan</strong>, Former Mission Director, DST (Government of India) & Scientist ‘G’, bringing national mission experience in incubation, quantum technologies, and cybersecurity.</p>
+      <p>Operational leadership is driven by <strong>Pramod Sangappa Prabhudev</strong>, with extensive on-ground experience across academic ecosystems, innovation, incubation, and entrepreneurship development.</p>
+      <p>RIED is supported by a broader advisory circle of senior scientists, technologists, mission leaders, and industry practitioners.</p>
     </div>
   </section>
 
@@ -145,7 +174,7 @@
     <div class="container">
       <h2>Contact Us</h2>
       <p>Reach out to discuss collaborations, opportunities, or inquiries.</p>
-      <a href="mailto:hello@ried.co.in?subject=Inquiry%20from%20RIED%20Website&body=Hello%20RIED%20team,%0A%0A[Your%20message%20here]%0A%0ABest%20regards,%0A[Your%20name]%0A[Your%20contact%20info]" class="btn large-btn">Send Email to hello@ried.co.in</a>
+      <a href="mailto:hello@ried.co.in?subject=Inquiry from RIED Website&body=Hello RIED team,%0A%0A[Your message here]%0A%0ABest regards,%0A[Your name]%0A[Your contact info]" class="btn">Send Email</a>
     </div>
   </section>
 
@@ -157,7 +186,7 @@
 
   <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
   <script>
-    AOS.init({ duration: 1000, once: true, easing: 'ease-out', offset: 120 });
+    AOS.init({ duration: 800, once: true, easing: 'ease-out' });
   </script>
 </body>
 </html>
