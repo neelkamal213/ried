@@ -299,10 +299,62 @@
     <p>📧 <a href="mailto:hello@ried.co.in">hello@ried.co.in</a></p>
   </div>
 </section>
+  
+<!-- IDEA VALIDATION RATING -->
+<section id="idea-validation" class="section idea-section light">
+  <div class="container center">
+    <h2>Get Your Idea Rated by RIED</h2>
+    <p class="idea-tagline">
+      Free • Confidential • Honest Feedback • Expert Callback
+    </p>
+
+    <p class="idea-positioning">
+      RIED helps ideas move from confusion → Clarity → Action.
+    </p>
+
+    <form class="idea-form" action="mailto:hello@ried.co.in" method="POST" enctype="text/plain">
+      
+      <input type="text" name="Name" placeholder="Full Name" required>
+      <input type="tel" name="Mobile" placeholder="Mobile Number" required>
+      <input type="email" name="Email" placeholder="Email Address" required>
+      <input type="text" name="City" placeholder="City" required>
+
+      <select name="Stage" required>
+        <option value="">Select Stage</option>
+        <option>Idea</option>
+        <option>Prototype</option>
+        <option>Running</option>
+        <option>Revenue</option>
+      </select>
+
+      <textarea name="Problem" placeholder="What problem are you solving?" required></textarea>
+      <textarea name="Solution" placeholder="Describe your solution" required></textarea>
+      <textarea name="Target Customer" placeholder="Who is your target customer?" required></textarea>
+      <textarea name="Revenue Model" placeholder="Revenue model (if any)"></textarea>
+      <textarea name="Why Win" placeholder="Why will you win? Team strength?"></textarea>
+
+      <button type="submit" class="btn-primary">
+        Submit for Free Idea Rating
+      </button>
+    </form>
+
+  </div>
+</section>
 
 <footer class="footer">
   <p>© 2026 RIED Pvt. Ltd. Translating potential into progress.</p>
 </footer>
+
+<!-- GOT AN IDEA FLOATING BUTTON -->
+<button id="ideaBtn">💡 Got An Idea?</button>
+
+<script>
+  document.getElementById("ideaBtn").onclick = function() {
+    document.getElementById("idea-validation").scrollIntoView({
+      behavior: "smooth"
+    });
+  };
+</script>
 
 </body>
 </html>
