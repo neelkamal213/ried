@@ -700,99 +700,112 @@ nav a {
   line-height: 1.6;
 }
 
-.ried-why {
+/* SECTION */
+.ried-gap-section {
   position: relative;
-  padding: 140px 20px;
-  background: linear-gradient(135deg, #0e5a8a, #1c2c40);
-  color: #ffffff;
-  text-align: center;
+  padding: 160px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8fc 100%);
   overflow: hidden;
+  text-align: center;
 }
 
-/* Subtle animated background glow */
-.ried-why::before {
-  content: "";
+/* LARGE BACKGROUND WORD */
+.gap-bg-word {
   position: absolute;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(245,130,32,0.3) 0%, transparent 70%);
-  top: -150px;
-  left: -150px;
-  filter: blur(60px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 260px;
+  font-weight: 800;
+  color: rgba(14, 90, 138, 0.05);
+  letter-spacing: 15px;
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 0.2s ease-out;
 }
 
-.ried-why-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.15);
-}
-
-.ried-why-content {
+/* CONTENT */
+.gap-content {
   position: relative;
-  max-width: 1000px;
+  max-width: 900px;
   margin: auto;
   z-index: 2;
 }
 
-.why-title {
-  font-size: 42px;
+.gap-title {
+  font-size: 40px;
   font-weight: 700;
-  margin-bottom: 80px;
+  color: #1c2c40;
+  margin-bottom: 25px;
 }
 
-/* Split layout */
-.why-split {
-  display: flex;
-  justify-content: space-between;
-  gap: 60px;
-  margin-bottom: 100px;
-  text-align: left;
+.gap-sub {
+  font-size: 22px;
+  color: #5f6c7b;
+  margin-bottom: 60px;
 }
 
-.why-problem,
-.why-gap {
-  flex: 1;
-  font-size: 20px;
-  line-height: 1.8;
-}
-
-.why-problem p {
-  opacity: 0.85;
-}
-
-.why-gap p {
-  opacity: 0.9;
-}
-
-.highlight {
-  font-size: 28px;
-  font-weight: 700;
+.big-number {
+  font-size: 50px;
+  font-weight: 800;
   color: #f58220;
 }
 
-/* Bridge statement */
-.why-bridge p {
-  font-size: 22px;
-  opacity: 0.8;
-  margin-bottom: 15px;
+/* Translation Gap Line */
+.gap-statement {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1c2c40;
+  position: relative;
+  display: inline-block;
 }
 
-.why-bridge h3 {
-  font-size: 36px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 1px;
+.translation-gap {
+  position: relative;
+  color: #0e5a8a;
 }
+
+/* Animated Line */
+.animated-line {
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, #8e0e3b, #0e5a8a, #3aa6d0, #59b7b7, #f58220);
+  margin: 15px auto 0;
+  transition: width 1.5s ease;
+}
+
+.gap-bridge {
+  margin-top: 70px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #0e5a8a;
+}
+
+/* FADE-IN ANIMATION */
+.fade-in {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 1s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delay-1 { transition-delay: 0.3s; }
+.delay-2 { transition-delay: 0.6s; }
+.delay-3 { transition-delay: 0.9s; }
 
 /* Responsive */
-@media (max-width: 900px) {
-  .why-split {
-    flex-direction: column;
-    text-align: center;
+@media (max-width: 768px) {
+  .gap-bg-word {
+    font-size: 140px;
   }
-
-  .why-problem,
-  .why-gap {
-    text-align: center;
+  .gap-title {
+    font-size: 30px;
+  }
+  .gap-sub {
+    font-size: 18px;
   }
 }
