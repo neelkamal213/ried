@@ -417,19 +417,6 @@ nav a {
   transform: translateY(0);
 }
 
-
-.btn-primary {
-  background: #0b3d91;
-  color: #fff;
-  padding: 12px 28px;
-  border-radius: 6px;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-primary:hover {
-  background: #082a63;
-}
 /* ============================= */
 /* IDEA VALIDATION SECTION */
 /* ============================= */
