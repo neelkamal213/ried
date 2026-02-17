@@ -435,3 +435,108 @@ nav a {
 .entrepreneurship { background: #3aa6d0; }
 .startup { background: #59b7b7; }
 .rural { background: #f58220; }
+
+.ried-process {
+  padding: 90px 20px;
+  background: #f9fafc;
+  text-align: center;
+}
+
+.section-title {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 70px;
+  color: #1c2c40;
+}
+
+.process-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Connecting Line */
+.process-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 5%;
+  width: 90%;
+  height: 3px;
+  background: #e0e6ed;
+  z-index: 0;
+}
+
+/* Individual Step */
+.process-step {
+  background: #ffffff;
+  padding: 35px 25px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  width: 200px;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+  border-top: 5px solid #0e5a8a;
+}
+
+.process-step:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+.process-step h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-top: 15px;
+  color: #2c3e50;
+}
+
+/* Step Number */
+.step-number {
+  display: inline-block;
+  width: 45px;
+  height: 45px;
+  line-height: 45px;
+  border-radius: 50%;
+  font-weight: 700;
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Color Format Matching Services */
+.discovery { border-top-color: #8e0e3b; }
+.discovery .step-number { background: #8e0e3b; }
+
+.evaluation { border-top-color: #0e5a8a; }
+.evaluation .step-number { background: #0e5a8a; }
+
+.translation { border-top-color: #3aa6d0; }
+.translation .step-number { background: #3aa6d0; }
+
+.integration { border-top-color: #59b7b7; }
+.integration .step-number { background: #59b7b7; }
+
+.scale { border-top-color: #f58220; }
+.scale .step-number { background: #f58220; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .process-wrapper {
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  .process-wrapper::before {
+    display: none;
+  }
+
+  .process-step {
+    width: 100%;
+    max-width: 400px;
+  }
+}
