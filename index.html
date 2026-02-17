@@ -449,23 +449,48 @@
 </section>
 
 <!-- LEADERSHIP -->
-<section id="leadership" class="section">
+<section id="leadership" class="ried-leadership">
   <div class="container">
-    <h2>Leadership</h2>
-    <div class="leaders">
-      <div class="leader">
-        <img src="krmurli.jpg">
-        <p><strong>Dr. K. R. Murli Mohan</strong><br>Former Mission Director, DST – Government of India</p>
-      </div>
-      <div class="leader">
-        <img src="pramod.jpg">
-        <p><strong>Pramod Prabhudev</strong><br>Founder & Venture Partner — RIED</p>
-      </div>
-      <div class="leader">
-        <img src="neel.PNG">
-        <p><strong>Neel Kamal</strong><br>Chief Technical Officer</p>
-      </div>
+
+    <div class="leadership-header">
+      <h2>Leadership</h2>
+      <p>Experienced leadership guiding innovation, policy, and execution.</p>
     </div>
+
+    <div class="leaders-grid">
+
+      <div class="leader-card">
+        <div class="leader-img">
+          <img src="krmurli.jpg" alt="Dr. K. R. Murli Mohan">
+        </div>
+        <div class="leader-info">
+          <h3>Dr. K. R. Murli Mohan</h3>
+          <p>Former Mission Director, DST – Government of India</p>
+        </div>
+      </div>
+
+      <div class="leader-card">
+        <div class="leader-img">
+          <img src="pramod.jpg" alt="Pramod Prabhudev">
+        </div>
+        <div class="leader-info">
+          <h3>Pramod Prabhudev</h3>
+          <p>Founder & Venture Partner — RIED</p>
+        </div>
+      </div>
+
+      <div class="leader-card">
+        <div class="leader-img">
+          <img src="neel.PNG" alt="Neel Kamal">
+        </div>
+        <div class="leader-info">
+          <h3>Neel Kamal</h3>
+          <p>Chief Technical Officer</p>
+        </div>
+      </div>
+
+    </div>
+
   </div>
 </section>
 
@@ -606,6 +631,26 @@
     diagObserver.observe(card);
   });
 </script>
+
+<script>
+  const leaderCards = document.querySelectorAll('.leader-card');
+
+  const leaderObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry, index) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, index * 200);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  leaderCards.forEach(card => {
+    leaderObserver.observe(card);
+  });
+</script>
+
 
 </body>
 </html>
