@@ -370,121 +370,68 @@ nav a {
   text-align: center;
   padding: 25px;
 }
-/* ============================= */
-/* WHAT RIED DOES - ECOSYSTEM */
-/* ============================= */
 
-.ried-ecosystem {
-  padding: 120px 5%;
-  background: #ffffff;
+.what {
+  padding: 80px 20px;
+  background: #f9fafc;
   text-align: center;
 }
 
-.ecosystem-title {
-  font-size: 34px;
+.section-title {
+  font-size: 36px;
   font-weight: 700;
-  color: #0b3d91;
-  margin-bottom: 80px;
+  margin-bottom: 60px;
+  color: #1c2c40;
 }
 
-.ecosystem-container {
-  position: relative;
-  width: 600px;
-  height: 600px;
-  margin: auto;
+.ried-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* CENTER CIRCLE */
-.center-circle {
-  width: 180px;
-  height: 180px;
-  background: #333;
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 18px;
-  margin: auto;
-}
-
-/* BASE ITEM STYLE */
-.ecosystem-item {
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+.ried-card {
+  background: #ffffff;
+  padding: 40px 30px;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   text-align: center;
-  font-size: 14px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-  transition: 0.3s ease;
+  position: relative;
+  border-top: 5px solid #0e5a8a;
 }
 
-.ecosystem-item:hover {
-  transform: scale(1.05);
+.ried-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
-/* BRAND COLORS (MATCH SERVICES) */
-.card-blue {
-  background: #0b3d91;
+.ried-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.5;
 }
 
-.card-yellow {
-  background: #ffb400;
-  color: #000;
+/* Icon circle */
+.icon-circle {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: #fff;
 }
 
-.card-teal {
-  background: #1a7f9c;
-}
+/* Color format matching your Services section */
 
-/* POSITIONING AROUND CIRCLE */
-.item-top {
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.item-right {
-  top: 50%;
-  right: 0;
-  transform: translateY(-50%);
-}
-
-.item-bottom-right {
-  bottom: 0;
-  right: 60px;
-}
-
-.item-bottom-left {
-  bottom: 0;
-  left: 60px;
-}
-
-.item-left {
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-
-  .ecosystem-container {
-    width: 100%;
-    height: auto;
-  }
-
-  .ecosystem-item,
-  .center-circle {
-    position: static;
-    margin: 20px auto;
-  }
-
-}
+.research { background: #8e0e3b; }
+.innovation { background: #0e5a8a; }
+.entrepreneurship { background: #3aa6d0; }
+.startup { background: #59b7b7; }
+.rural { background: #f58220; }
