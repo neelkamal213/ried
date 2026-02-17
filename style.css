@@ -226,25 +226,111 @@ nav a {
   color: #555;
 }
 /* DIAGNOSTICS */
-.diagnostic-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 25px;
-}
-
-.diag-card {
-  border: 1px solid #ddd;
-  padding: 25px;
+.ried-diagnostics {
+  padding: 120px 20px;
+  background: linear-gradient(135deg, #f4f8fc 0%, #ffffff 100%);
   text-align: center;
-  font-weight: bold;
-  background: #fff;
 }
 
-.diag-card span {
-  display: block;
-  margin-top: 8px;
-  font-weight: normal;
+.diag-header h2 {
+  font-size: 38px;
+  font-weight: 700;
+  color: #1c2c40;
+  margin-bottom: 15px;
 }
+
+.subtitle {
+  max-width: 650px;
+  margin: 0 auto 80px;
+  color: #5f6c7b;
+  font-size: 17px;
+}
+
+/* GRID */
+.diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* CARD */
+.diag-card {
+  background: #ffffff;
+  padding: 55px 35px;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
+  cursor: default;
+}
+
+/* Gradient Top Accent */
+.diag-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(90deg, #8e0e3b, #0e5a8a, #3aa6d0, #59b7b7, #f58220);
+}
+
+/* Hover Effects */
+.diag-card:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.08);
+}
+
+/* Icon */
+.diag-icon {
+  font-size: 38px;
+  margin-bottom: 20px;
+}
+
+/* Heading */
+.diag-card h3 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #1c2c40;
+}
+
+/* Subtext */
+.diag-card p {
+  font-size: 15px;
+  color: #6c7a89;
+  letter-spacing: 0.3px;
+}
+
+/* Animated Hover Line */
+.diag-hover-line {
+  height: 3px;
+  width: 0;
+  background: #0e5a8a;
+  margin: 25px auto 0;
+  transition: width 0.4s ease;
+}
+
+.diag-card:hover .diag-hover-line {
+  width: 60%;
+}
+
+/* Stagger Fade-in Animation */
+.diag-card {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s ease;
+}
+
+.diag-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* LEADERSHIP */
 .leaders {
   display: flex;
   gap: 30px;
