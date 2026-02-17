@@ -622,3 +622,80 @@ nav a {
   background: #ff9a3c;
   transform: translateY(-3px);
 }
+
+.ried-revenue {
+  padding: 110px 20px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.revenue-header h2 {
+  font-size: 38px;
+  font-weight: 700;
+  color: #1c2c40;
+  margin-bottom: 15px;
+}
+
+.revenue-sub {
+  color: #6c7a89;
+  max-width: 700px;
+  margin: 0 auto 70px;
+  font-size: 17px;
+}
+
+/* Grid */
+.revenue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Card */
+.revenue-card {
+  background: #f9fafc;
+  padding: 45px 30px;
+  border-radius: 18px;
+  transition: all 0.35s ease;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #eef2f7;
+}
+
+.revenue-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 5px;
+  width: 100%;
+  background: linear-gradient(90deg, #8e0e3b, #0e5a8a, #3aa6d0, #59b7b7, #f58220);
+}
+
+.revenue-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+}
+
+/* Icon */
+.rev-icon {
+  font-size: 34px;
+  margin-bottom: 20px;
+}
+
+/* Heading */
+.revenue-card h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1c2c40;
+}
+
+/* Description */
+.revenue-card p {
+  font-size: 15px;
+  color: #5f6c7b;
+  line-height: 1.6;
+}
