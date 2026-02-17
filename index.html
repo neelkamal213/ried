@@ -542,5 +542,39 @@
   };
 </script>
 
+<script>
+  // Fade-in on scroll
+  const faders = document.querySelectorAll('.fade-in');
+
+  const appearOptions = {
+    threshold: 0.3
+  };
+
+  const appearOnScroll = new IntersectionObserver(function(entries, observer) {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+
+      // Trigger animated line
+      const line = document.querySelector('.animated-line');
+      if(line) {
+        line.style.width = "300px";
+      }
+    });
+  }, appearOptions);
+
+  faders.forEach(fader => {
+    appearOnScroll.observe(fader);
+  });
+
+  // Parallax background word
+  window.addEventListener("scroll", function() {
+    const bgWord = document.querySelector(".gap-bg-word");
+    let offset = window.pageYOffset;
+    bgWord.style.transform = "translate(-50%, calc(-50% + " + offset * 0.15 + "px))";
+  });
+</script>
+
 </body>
 </html>
