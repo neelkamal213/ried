@@ -331,17 +331,92 @@ nav a {
 }
 
 /* LEADERSHIP */
-.leaders {
-  display: flex;
-  gap: 30px;
-  flex-wrap: wrap;
+.ried-leadership {
+  padding: 120px 20px;
+  background: #ffffff;
+  text-align: center;
 }
 
-.leader img {
-  max-width: 250px;
-  border-radius: 10px;
-  margin-bottom: 15px;
+.leadership-header h2 {
+  font-size: 38px;
+  font-weight: 700;
+  color: #1c2c40;
+  margin-bottom: 10px;
 }
+
+.leadership-header p {
+  color: #6c7a89;
+  margin-bottom: 80px;
+  font-size: 16px;
+}
+
+/* GRID */
+.leaders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 60px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* CARD */
+.leader-card {
+  background: #f9fafc;
+  border-radius: 18px;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+/* Hover Effect */
+.leader-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.08);
+}
+
+/* IMAGE WRAPPER */
+.leader-img {
+  height: 320px;
+  overflow: hidden;
+}
+
+.leader-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.leader-card:hover .leader-img img {
+  transform: scale(1.05);
+}
+
+/* INFO */
+.leader-info {
+  padding: 25px 20px 35px;
+}
+
+.leader-info h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #1c2c40;
+}
+
+.leader-info p {
+  font-size: 14px;
+  color: #6c7a89;
+  line-height: 1.6;
+}
+
+/* Fade-in Visible */
+.leader-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 
 .btn-primary {
   background: #0b3d91;
