@@ -410,29 +410,41 @@
 </section>
 
 <!-- DIAGNOSTICS -->
-<section id="diagnostics" class="section">
+<section id="diagnostics" class="ried-diagnostics">
   <div class="container">
-    <h2>Diagnostics</h2>
-    <p class="subtitle">
-      Quick readiness diagnostics to identify gaps and next steps.
-    </p>
 
-    <div class="diagnostic-cards">
-      <a href="#" class="diag-card">
-        READ Diagnostic
-        <span>For Universities & Colleges</span>
-      </a>
-
-      <a href="#" class="diag-card">
-        Pre-Incubation Diagnostic
-        <span>For Aspiring Entrepreneurs</span>
-      </a>
-
-      <a href="#" class="diag-card">
-        Scale-Up Diagnostic
-        <span>For Startups</span>
-      </a>
+    <div class="diag-header">
+      <h2>Readiness Diagnostics</h2>
+      <p class="subtitle">
+        Structured assessments to identify capability gaps and define strategic next steps.
+      </p>
     </div>
+
+    <div class="diagnostic-grid">
+
+      <div class="diag-card">
+        <div class="diag-icon">🏛️</div>
+        <h3>READ Diagnostic</h3>
+        <p>For Universities & Colleges</p>
+        <div class="diag-hover-line"></div>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-icon">🚀</div>
+        <h3>Pre-Incubation Diagnostic</h3>
+        <p>For Aspiring Entrepreneurs</p>
+        <div class="diag-hover-line"></div>
+      </div>
+
+      <div class="diag-card">
+        <div class="diag-icon">📈</div>
+        <h3>Scale-Up Diagnostic</h3>
+        <p>For Growth-Stage Startups</p>
+        <div class="diag-hover-line"></div>
+      </div>
+
+    </div>
+
   </div>
 </section>
 
@@ -573,6 +585,25 @@
     const bgWord = document.querySelector(".gap-bg-word");
     let offset = window.pageYOffset;
     bgWord.style.transform = "translate(-50%, calc(-50% + " + offset * 0.15 + "px))";
+  });
+</script>
+
+<script>
+  const diagCards = document.querySelectorAll('.diag-card');
+
+  const diagObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry, index) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, index * 200);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  diagCards.forEach(card => {
+    diagObserver.observe(card);
   });
 </script>
 
