@@ -370,3 +370,121 @@ nav a {
   text-align: center;
   padding: 25px;
 }
+/* ============================= */
+/* WHAT RIED DOES - ECOSYSTEM */
+/* ============================= */
+
+.ried-ecosystem {
+  padding: 120px 5%;
+  background: #ffffff;
+  text-align: center;
+}
+
+.ecosystem-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #0b3d91;
+  margin-bottom: 80px;
+}
+
+.ecosystem-container {
+  position: relative;
+  width: 600px;
+  height: 600px;
+  margin: auto;
+}
+
+/* CENTER CIRCLE */
+.center-circle {
+  width: 180px;
+  height: 180px;
+  background: #333;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 18px;
+  margin: auto;
+}
+
+/* BASE ITEM STYLE */
+.ecosystem-item {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  font-size: 14px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  transition: 0.3s ease;
+}
+
+.ecosystem-item:hover {
+  transform: scale(1.05);
+}
+
+/* BRAND COLORS (MATCH SERVICES) */
+.card-blue {
+  background: #0b3d91;
+}
+
+.card-yellow {
+  background: #ffb400;
+  color: #000;
+}
+
+.card-teal {
+  background: #1a7f9c;
+}
+
+/* POSITIONING AROUND CIRCLE */
+.item-top {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.item-right {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.item-bottom-right {
+  bottom: 0;
+  right: 60px;
+}
+
+.item-bottom-left {
+  bottom: 0;
+  left: 60px;
+}
+
+.item-left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+
+  .ecosystem-container {
+    width: 100%;
+    height: auto;
+  }
+
+  .ecosystem-item,
+  .center-circle {
+    position: static;
+    margin: 20px auto;
+  }
+
+}
