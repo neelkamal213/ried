@@ -94,7 +94,96 @@ nav a {
 }
 
 .service-category {
-  margin-bottom: 40px;
+  padding: 100px 0;
+  background: #f4f8fc;
+}
+
+.section-title {
+  font-size: 32px;
+  margin-bottom: 60px;
+  font-weight: 700;
+  color: #0b3d91;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+}
+
+/* SERVICE CARD BASE */
+.service-card {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 16px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.service-card:hover {
+  transform: translateY(-8px);
+}
+
+/* HEADINGS */
+.service-card h3 {
+  font-size: 22px;
+  margin-bottom: 25px;
+  font-weight: 700;
+}
+
+/* LIST */
+.service-card ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 30px;
+}
+
+.service-card ul li {
+  margin-bottom: 12px;
+  padding-left: 18px;
+  position: relative;
+}
+
+.service-card ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #ffb400;
+  font-weight: bold;
+}
+
+/* BRAND COLOR THEMES */
+.institutions {
+  border-top: 6px solid #ffb400;
+}
+
+.startups {
+  border-top: 6px solid #0b3d91;
+}
+
+.government {
+  border-top: 6px solid #1a7f9c;
+}
+
+/* GET QUOTE BUTTON */
+.quote-btn {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 50px;
+  background: #0b3d91;
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: 0.3s ease;
+}
+
+.quote-btn:hover {
+  background: #082d6b;
 }
 
 .register-form {
