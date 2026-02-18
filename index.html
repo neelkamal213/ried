@@ -13,7 +13,7 @@
 <header class="header">
   <div class="container nav">
     <img src="logo.png" class="logo" alt="RIED Logo">
-    <nav>
+    <nav class="main-nav">
       <a href="#what">What We Do</a>
       <a href="#process">Process</a>
       <a href="#diagnostics">Diagnostics</a>
@@ -21,7 +21,7 @@
       <a href="#services">Services</a>
       <a href="#leadership">Leadership</a>
       <a href="#register">Register</a>
-      <a href="#contact">Contact</a>
+      <a href="#contact" class="nav-cta">Contact</a>
     </nav>
   </div>
 </header>
@@ -651,6 +651,12 @@
   });
 </script>
 
+<script>
+  window.addEventListener("scroll", function() {
+    const header = document.querySelector(".header");
+    header.classList.toggle("scrolled", window.scrollY > 50);
+  });
+</script>
 
 </body>
 </html>
