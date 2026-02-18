@@ -587,12 +587,6 @@ body {
   background: #ffcc33;
 }
 
-/* Chatbase position adjustment */
-iframe[src*="chatbase"] {
-  bottom: 20px !important;
-  right: 30px !important;
-}
-
 .footer {
   background: #111;
   color: #fff;
