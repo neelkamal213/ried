@@ -539,7 +539,7 @@ body {
 
 .whatsapp-float {
   position: fixed;
-  bottom: 100px; /* sits above Got An Idea */
+  bottom: 95px;   /* above chatbot */
   right: 30px;
   width: 56px;
   height: 56px;
@@ -549,7 +549,7 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-  z-index: 999;
+  z-index: 998;
   transition: all 0.3s ease;
 }
 
@@ -568,7 +568,7 @@ body {
 
 #ideaBtn {
   position: fixed;
-  bottom: 30px;
+  bottom: 170px;  /* stacked above WhatsApp */
   right: 30px;
   background: #ffb400;
   color: #000;
@@ -578,13 +578,19 @@ body {
   border-radius: 50px;
   cursor: pointer;
   box-shadow: 0 5px 20px rgba(0,0,0,0.25);
-  z-index: 999;
+  z-index: 997;
   transition: all 0.3s ease;
 }
 
 #ideaBtn:hover {
   transform: scale(1.05);
   background: #ffcc33;
+}
+
+/* Chatbase position adjustment */
+iframe[src*="chatbase"] {
+  bottom: 20px !important;
+  right: 30px !important;
 }
 
 .footer {
