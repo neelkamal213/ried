@@ -1036,3 +1036,19 @@ a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var
   .shell{padding:24px}
   .result-grid{grid-template-columns:1fr}
 }
+/* ============================================================
+   IDEA QUEST — HERO HEIGHT FIX
+   Scoped to this page only, so products.html's hero is untouched.
+   ============================================================ */
+.ideaquest-page .page-hero{
+  height:auto;
+  min-height:0;
+  max-height:none;
+  overflow:visible;
+  padding:150px 0 70px;   /* clears the sticky header at top, breathes at bottom */
+}
+
+.ideaquest-page .page-hero .hero-content{
+  position:relative;
+  overflow:visible;
+}
