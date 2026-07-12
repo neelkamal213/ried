@@ -872,3 +872,167 @@ body {
   }
 
 }
+/* ============================================================
+   IDEA QUEST — GAMIFICATION STYLES
+   Append to style.css. Nothing here redefines header/hero/footer.
+   ============================================================ */
+
+/* --- small hero additions specific to this page --- */
+.hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:dotPulse 1.8s ease-in-out infinite;display:inline-block;margin-right:4px}
+@keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
+
+.hero-stats{display:flex;justify-content:center;gap:34px;margin-top:34px;flex-wrap:wrap}
+.hero-stats div{text-align:center}
+.hero-stats b{display:block;font-size:26px;color:#fff}
+.hero-stats span{font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:.05em;color:#fff}
+
+.hero-buttons{margin-top:34px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+
+.btn-secondary{padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:700;
+  border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:15px;font-family:inherit;
+  transition:all .3s ease;display:inline-block;background:rgba(255,255,255,.14);color:#fff}
+.btn-secondary:hover{background:rgba(255,255,255,.24);transform:translateY(-3px)}
+.shell .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
+.shell .btn-secondary:hover{background:#eaf1f8}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+
+/* --- quest shell (the game card) --- */
+.quest-wrap{max-width:760px}
+.shell{background:#fff;border:1px solid var(--line);border-radius:22px;padding:36px;
+  box-shadow:0 20px 55px rgba(14,90,138,.08);position:relative;overflow:hidden}
+.shell::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--brand-gradient)}
+
+.quest-eyebrow{font-size:.78rem;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.05em}
+.quest-intro-title{font-size:1.6rem;margin:.5rem 0 1rem;color:var(--navy)}
+.quest-intro-copy{color:var(--muted);margin-bottom:24px}
+
+/* level / xp bar */
+.game-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.level-chip{display:flex;align-items:center;gap:10px}
+.level-chip .badge-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--blue-light));
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.level-chip .txt strong{display:block;font-size:.92rem}
+.level-chip .txt span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.xp-block{text-align:right;position:relative}
+.xp-block .xp-num{font-weight:800;color:var(--blue);font-size:1.1rem}
+.xp-block .xp-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.streak{display:none;align-items:center;gap:5px;font-size:.78rem;font-weight:700;color:var(--orange);
+  background:rgba(245,130,32,.1);padding:5px 10px;border-radius:20px;margin-top:6px}
+.streak.show{display:inline-flex}
+
+.qprogress-top{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:6px}
+.qprogress-track{height:8px;border-radius:99px;background:var(--bg-light);overflow:hidden;border:1px solid var(--line)}
+.qprogress-fill{height:100%;width:0;border-radius:99px;background:var(--brand-gradient);transition:width .5s ease}
+
+.pathway-strip{display:flex;justify-content:space-between;gap:6px;margin:14px 0 26px;font-size:.68rem;
+  font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.pathway-strip span{flex:1;text-align:center;color:#c3cdd8;padding-bottom:6px;border-bottom:3px solid var(--line);transition:.3s}
+.pathway-strip span.active{color:var(--blue);border-color:var(--blue-light)}
+.pathway-strip span.done{color:var(--navy);border-color:var(--orange)}
+
+/* --- question cards & options --- */
+.hidden{display:none!important}
+.question-card{display:none}
+.question-card.active{display:block;animation:qin .35s cubic-bezier(.2,.8,.3,1)}
+@keyframes qin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.question-number{color:var(--blue);font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:8px}
+.question-number::before{content:"";width:16px;height:2px;background:var(--orange);display:inline-block}
+.question-card h2{margin:.5rem 0 1.3rem;font-size:1.4rem;font-weight:700;line-height:1.35;color:var(--navy)}
+
+.options{display:grid;gap:11px}
+.option{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 17px;background:#fbfdff;
+  cursor:pointer;transition:.18s;display:flex;gap:12px;align-items:flex-start}
+.option:hover{border-color:var(--blue-light);transform:translateX(2px)}
+.option .letter{flex-shrink:0;width:26px;height:26px;border-radius:8px;background:#fff;
+  border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.78rem;
+  color:var(--muted);transition:.18s}
+.option span.txt{padding-top:2px;font-size:.96rem}
+.option.selected{border-color:var(--orange);background:rgba(245,130,32,.06);animation:selpop .3s ease}
+.option.selected .letter{background:var(--orange);border-color:var(--orange);color:#fff}
+@keyframes selpop{0%{transform:scale(.98)}55%{transform:scale(1.012)}100%{transform:scale(1)}}
+
+.xp-popup{position:absolute;right:16px;top:-6px;font-weight:800;color:var(--orange);font-size:.85rem;
+  pointer-events:none;animation:xpfloat .9s ease forwards}
+@keyframes xpfloat{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
+
+.actions{display:flex;gap:12px;justify-content:space-between;margin-top:28px}
+
+/* --- level-up toast --- */
+#toastHost{position:fixed;top:90px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+.toast{background:var(--navy);color:#fff;padding:14px 20px;border-radius:14px;box-shadow:0 15px 40px rgba(0,0,0,.2);
+  font-size:.88rem;font-weight:600;display:flex;align-items:center;gap:10px;animation:toastIn .35s ease, toastOut .35s ease 2.3s forwards;
+  max-width:280px}
+.toast .ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--orange),#ffb35c);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+
+/* --- results screen --- */
+.quest-result-badge{background:rgba(14,90,138,.1);border-color:rgba(14,90,138,.25);color:var(--blue)}
+.quest-result-badge .dot{background:var(--orange)}
+.score-ring{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;margin:22px auto 8px;
+  background:conic-gradient(var(--orange) 0deg,var(--bg-light) 0deg);transition:background 1s;position:relative}
+.score-ring::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--line)}
+.score-ring-inner{width:134px;height:134px;border-radius:50%;background:#fff;display:grid;place-items:center;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.04)}
+.score-ring strong{font-size:2.6rem;font-weight:800;line-height:1;color:var(--navy)}
+.score-ring small{display:block;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;text-align:center}
+#resultName{font-size:1.9rem;color:var(--navy)}
+#resultSummary{color:var(--muted);max-width:540px;margin:8px auto 0}
+.xp-total{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:var(--bg-light);
+  padding:8px 16px;border-radius:30px;font-weight:700;color:var(--blue);font-size:.9rem}
+
+.section-h{font-size:1.15rem;margin:30px 0 12px;color:var(--navy);display:flex;align-items:center;gap:9px}
+.section-h .fa-solid,.section-h .fa-regular{color:var(--orange);font-size:1rem}
+
+/* badge shelf (results) */
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:6px}
+.badge-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 18px;text-align:center;
+  box-shadow:0 12px 30px rgba(14,90,138,.05);position:relative;opacity:0;transform:translateY(14px) scale(.96);
+  animation:badgeIn .5s ease forwards}
+@keyframes badgeIn{to{opacity:1;transform:none}}
+.badge-card .ribbon{position:absolute;top:12px;right:12px;font-size:.62rem;font-weight:800;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;letter-spacing:.03em}
+.badge-card .ribbon.gold{background:#fff4d9;color:#a86a00}
+.badge-card .ribbon.silver{background:#eef1f4;color:#5d6b79}
+.badge-card .ribbon.bronze{background:#fbe7d9;color:#a3521a}
+.badge-icon-lg{width:60px;height:60px;border-radius:18px;margin:0 auto 14px;display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:24px;background:linear-gradient(135deg,var(--blue),var(--blue-light))}
+.badge-card h4{font-size:.98rem;margin-bottom:6px;color:var(--navy)}
+.badge-card p{font-size:.78rem;color:var(--muted);line-height:1.5}
+
+/* dimension bars */
+.result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin-top:6px}
+.metric{background:var(--bg-light);border:1px solid var(--line);border-radius:16px;padding:15px;
+  opacity:0;transform:translateY(10px);animation:mrise .5s ease forwards}
+@keyframes mrise{to{opacity:1;transform:none}}
+.metric-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:9px;font-size:.86rem;color:var(--navy)}
+.metric-top span{font-weight:700;color:var(--blue)}
+.metric .mini{height:7px;background:#fff;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.metric .mini span{display:block;height:100%;width:0;background:var(--brand-gradient);border-radius:99px;
+  transition:width 1s cubic-bezier(.3,.8,.3,1)}
+
+.insight{background:var(--bg-light);border-left:4px solid var(--blue);padding:16px 18px;border-radius:14px;margin-top:6px}
+.insight.risk{border-left-color:var(--orange)}
+.insight.action{border-left-color:var(--crimson)}
+.insight strong{color:var(--navy)}
+
+.framework-note{margin-top:30px;padding:20px 22px;border-radius:18px;
+  background:linear-gradient(135deg,rgba(14,90,138,.06),rgba(245,130,32,.06));
+  border:1px solid var(--line);font-size:.9rem;color:var(--muted)}
+.framework-note b{color:var(--navy)}
+
+.result-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.copy-note{font-size:.78rem;color:var(--blue);margin-top:8px;display:none}
+.copy-note.show{display:block}
+
+/* --- confetti canvas --- */
+#confettiCanvas{position:fixed;inset:0;pointer-events:none;z-index:950}
+
+/* --- responsive tweaks specific to quest --- */
+@media(max-width:768px){
+  .shell{padding:24px}
+  .result-grid{grid-template-columns:1fr}
+}
