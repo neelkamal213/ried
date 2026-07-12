@@ -2,256 +2,19 @@
 <html lang="en">
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>RIED Idea Quest — Level Up Your Research-to-Revenue Readiness</title>
-	<meta name="description" content="Play the RIED Idea Quest: earn XP, level up through six readiness dimensions, unlock founder badges, and see your idea's path from Research to Revenue." />
-	
-	<link rel="stylesheet" href="style.css">
-	<link rel="icon" href="round_logo.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RIED Idea Quest — Level Up Your Research-to-Revenue Readiness</title>
+  <meta name="description" content="Play the RIED Idea Quest: earn XP, level up through six readiness dimensions, unlock founder badges, and see your idea's path from Research to Revenue." />
 
-	<link rel="stylesheet"
-		href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"></head>
-<style>
-  /* ===== RIED brand tokens (from ried.co.in style.css) ===== */
-  :root{
-    --navy:#1c2c40;
-    --blue:#0e5a8a;
-    --blue-light:#178bc7;
-    --cyan:#3aa6d0;
-    --crimson:#8e0e3b;
-    --orange:#f58220;
-    --bg-light:#f4f8fc;
-    --white:#ffffff;
-    --footer-dark:#111827;
-    --whatsapp:#25D366;
-    --muted:#5d6b79;
-    --line:#dce4ec;
-    --brand-gradient:linear-gradient(90deg,var(--blue-light),var(--blue),var(--crimson),var(--orange));
-  }
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="round_logo.png">
 
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  @media (prefers-reduced-motion: reduce){
-    *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
-  }
-  body{font-family:'Segoe UI',sans-serif;color:var(--navy);background:var(--white);line-height:1.7}
-  ::selection{background:var(--orange);color:#fff}
-  .container{width:90%;max-width:1000px;margin:auto}
-  .center{text-align:center}
-  .hidden{display:none!important}
-
-  /* ===== HEADER ===== */
-  .header{position:sticky;top:0;z-index:999;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);
-    border-bottom:1px solid rgba(0,0,0,.05)}
-  .nav{display:flex;justify-content:space-between;align-items:center;height:76px}
-  .logo-mark{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--navy)}
-  .logo-mark img{height:40px;display:block}
-  .logo-mark .fallback{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--blue-light));
-    color:#fff;display:none;align-items:center;justify-content:center;font-weight:800;font-size:.85rem}
-  .logo-mark .word{font-weight:700;font-size:1rem;letter-spacing:.02em}
-  .logo-mark .word span{color:var(--orange)}
-  .main-nav{display:flex;gap:24px;align-items:center}
-  .main-nav a{text-decoration:none;color:var(--navy);font-size:14px;font-weight:600;position:relative}
-  .main-nav a::after{content:"";position:absolute;left:0;bottom:-5px;width:0;height:2px;
-    background:linear-gradient(90deg,var(--crimson),var(--blue),var(--cyan));transition:width .3s ease}
-  .main-nav a:hover::after{width:100%}
-  .nav-cta{background:var(--blue);color:#fff!important;padding:9px 20px;border-radius:30px;font-size:14px}
-  .nav-cta::after{display:none}
-
-  /* ===== HERO ===== */
-  .hero{padding:90px 0 70px;text-align:center;color:#fff;position:relative;overflow:hidden;
-    background:linear-gradient(120deg,var(--navy),var(--blue) 55%,var(--blue-light))}
-  .hero::before{content:"";position:absolute;inset:0;
-    background-image:radial-gradient(circle,rgba(255,255,255,.14) 1.5px,transparent 1.5px);
-    background-size:26px 26px;opacity:.35;pointer-events:none}
-  .hero-content{max-width:760px;margin:auto;padding:0 20px;position:relative}
-  .hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.14);
-    border:1px solid rgba(255,255,255,.3);padding:9px 18px;border-radius:30px;margin-bottom:22px;
-    font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
-  .hero-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:dotPulse 1.8s ease-in-out infinite}
-  @keyframes dotPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
-  .hero h1{font-size:44px;line-height:1.2;margin-bottom:18px}
-  .hero h1 em{font-style:normal;background:linear-gradient(90deg,#ffd9a8,var(--orange));
-    -webkit-background-clip:text;background-clip:text;color:transparent}
-  .hero p{font-size:18px;opacity:.92;max-width:600px;margin:auto}
-  .hero-stats{display:flex;justify-content:center;gap:34px;margin-top:34px;flex-wrap:wrap}
-  .hero-stats div{text-align:center}
-  .hero-stats b{display:block;font-size:26px}
-  .hero-stats span{font-size:12px;opacity:.75;text-transform:uppercase;letter-spacing:.05em}
-  .hero-buttons{margin-top:34px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
-
-  /* ===== BUTTONS ===== */
-  .btn-primary,.btn-secondary{padding:14px 28px;border-radius:40px;text-decoration:none;font-weight:700;
-    border:none;cursor:pointer;font-size:15px;font-family:inherit;transition:all .3s ease;display:inline-block}
-  .btn-primary{background:var(--orange);color:#fff}
-  .btn-primary:hover{background:#d96e10;transform:translateY(-3px)}
-  .btn-secondary{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35)}
-  .btn-secondary:hover{background:rgba(255,255,255,.24);transform:translateY(-3px)}
-  .shell .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
-  .shell .btn-secondary:hover{background:#eaf1f8}
-  button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
-  a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
-
-  /* ===== QUEST SECTION ===== */
-  .section{padding:70px 0}
-  .quest-wrap{max-width:760px}
-  .shell{background:#fff;border:1px solid var(--line);border-radius:22px;padding:36px;
-    box-shadow:0 20px 55px rgba(14,90,138,.08);position:relative;overflow:hidden}
-  .shell::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--brand-gradient)}
-
-  /* level / xp bar */
-  .game-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-  .level-chip{display:flex;align-items:center;gap:10px}
-  .level-chip .badge-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--blue),var(--blue-light));
-    color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-  .level-chip .txt strong{display:block;font-size:.92rem}
-  .level-chip .txt span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .xp-block{text-align:right;position:relative}
-  .xp-block .xp-num{font-weight:800;color:var(--blue);font-size:1.1rem}
-  .xp-block .xp-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-  .streak{display:none;align-items:center;gap:5px;font-size:.78rem;font-weight:700;color:var(--orange);
-    background:rgba(245,130,32,.1);padding:5px 10px;border-radius:20px;margin-top:6px}
-  .streak.show{display:inline-flex}
-
-  .qprogress-top{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:6px}
-  .qprogress-track{height:8px;border-radius:99px;background:var(--bg-light);overflow:hidden;border:1px solid var(--line)}
-  .qprogress-fill{height:100%;width:0;border-radius:99px;background:var(--brand-gradient);transition:width .5s ease}
-
-  .pathway-strip{display:flex;justify-content:space-between;gap:6px;margin:14px 0 26px;font-size:.68rem;
-    font-weight:700;text-transform:uppercase;letter-spacing:.03em}
-  .pathway-strip span{flex:1;text-align:center;color:#c3cdd8;padding-bottom:6px;border-bottom:3px solid var(--line);transition:.3s}
-  .pathway-strip span.active{color:var(--blue);border-color:var(--blue-light)}
-  .pathway-strip span.done{color:var(--navy);border-color:var(--orange)}
-
-  /* questions */
-  .question-card{display:none}
-  .question-card.active{display:block;animation:qin .35s cubic-bezier(.2,.8,.3,1)}
-  @keyframes qin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-  .question-number{color:var(--blue);font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
-    display:flex;align-items:center;gap:8px}
-  .question-number::before{content:"";width:16px;height:2px;background:var(--orange);display:inline-block}
-  .question-card h2{margin:.5rem 0 1.3rem;font-size:1.4rem;font-weight:700;line-height:1.35;color:var(--navy)}
-
-  .options{display:grid;gap:11px}
-  .option{position:relative;border:1px solid var(--line);border-radius:16px;padding:16px 17px;background:#fbfdff;
-    cursor:pointer;transition:.18s;display:flex;gap:12px;align-items:flex-start}
-  .option:hover{border-color:var(--blue-light);transform:translateX(2px)}
-  .option .letter{flex-shrink:0;width:26px;height:26px;border-radius:8px;background:#fff;
-    border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.78rem;
-    color:var(--muted);transition:.18s}
-  .option span.txt{padding-top:2px;font-size:.96rem}
-  .option.selected{border-color:var(--orange);background:rgba(245,130,32,.06);animation:selpop .3s ease}
-  .option.selected .letter{background:var(--orange);border-color:var(--orange);color:#fff}
-  @keyframes selpop{0%{transform:scale(.98)}55%{transform:scale(1.012)}100%{transform:scale(1)}}
-
-  .xp-popup{position:absolute;right:16px;top:-6px;font-weight:800;color:var(--orange);font-size:.85rem;
-    pointer-events:none;animation:xpfloat .9s ease forwards}
-  @keyframes xpfloat{0%{opacity:0;transform:translateY(6px)}20%{opacity:1}100%{opacity:0;transform:translateY(-34px)}}
-
-  .actions{display:flex;gap:12px;justify-content:space-between;margin-top:28px}
-
-  /* level up toast */
-  #toastHost{position:fixed;top:90px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
-  .toast{background:var(--navy);color:#fff;padding:14px 20px;border-radius:14px;box-shadow:0 15px 40px rgba(0,0,0,.2);
-    font-size:.88rem;font-weight:600;display:flex;align-items:center;gap:10px;animation:toastIn .35s ease, toastOut .35s ease 2.3s forwards;
-    max-width:280px}
-  .toast .ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--orange),#ffb35c);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
-  @keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
-  @keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
-
-  /* ===== RESULTS ===== */
-  .result-title .hero-badge{background:rgba(14,90,138,.1);border-color:rgba(14,90,138,.25);color:var(--blue)}
-  .result-title .hero-badge .dot{background:var(--orange)}
-  .score-ring{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;margin:22px auto 8px;
-    background:conic-gradient(var(--orange) 0deg,var(--bg-light) 0deg);transition:background 1s;position:relative}
-  .score-ring::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--line)}
-  .score-ring-inner{width:134px;height:134px;border-radius:50%;background:#fff;display:grid;place-items:center;
-    box-shadow:inset 0 2px 8px rgba(0,0,0,.04)}
-  .score-ring strong{font-size:2.6rem;font-weight:800;line-height:1;color:var(--navy)}
-  .score-ring small{display:block;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;margin-top:3px;text-align:center}
-  #resultName{font-size:1.9rem;color:var(--navy)}
-  #resultSummary{color:var(--muted);max-width:540px;margin:8px auto 0}
-  .xp-total{display:inline-flex;align-items:center;gap:8px;margin-top:14px;background:var(--bg-light);
-    padding:8px 16px;border-radius:30px;font-weight:700;color:var(--blue);font-size:.9rem}
-
-  .section-h{font-size:1.15rem;margin:30px 0 12px;color:var(--navy);display:flex;align-items:center;gap:9px}
-  .section-h .fa-solid,.section-h .fa-regular{color:var(--orange);font-size:1rem}
-
-  /* badge shelf */
-  .badge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:6px}
-  .badge-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 18px;text-align:center;
-    box-shadow:0 12px 30px rgba(14,90,138,.05);position:relative;opacity:0;transform:translateY(14px) scale(.96);
-    animation:badgeIn .5s ease forwards}
-  @keyframes badgeIn{to{opacity:1;transform:none}}
-  .badge-card .ribbon{position:absolute;top:12px;right:12px;font-size:.62rem;font-weight:800;text-transform:uppercase;
-    padding:3px 9px;border-radius:20px;letter-spacing:.03em}
-  .badge-card .ribbon.gold{background:#fff4d9;color:#a86a00}
-  .badge-card .ribbon.silver{background:#eef1f4;color:#5d6b79}
-  .badge-card .ribbon.bronze{background:#fbe7d9;color:#a3521a}
-  .badge-icon-lg{width:60px;height:60px;border-radius:18px;margin:0 auto 14px;display:flex;align-items:center;
-    justify-content:center;color:#fff;font-size:24px;background:linear-gradient(135deg,var(--blue),var(--blue-light))}
-  .badge-card h4{font-size:.98rem;margin-bottom:6px;color:var(--navy)}
-  .badge-card p{font-size:.78rem;color:var(--muted);line-height:1.5}
-
-  /* dimension bars */
-  .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin-top:6px}
-  .metric{background:var(--bg-light);border:1px solid var(--line);border-radius:16px;padding:15px;
-    opacity:0;transform:translateY(10px);animation:mrise .5s ease forwards}
-  @keyframes mrise{to{opacity:1;transform:none}}
-  .metric-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:9px;font-size:.86rem;color:var(--navy)}
-  .metric-top span{font-weight:700;color:var(--blue)}
-  .metric .mini{height:7px;background:#fff;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
-  .metric .mini span{display:block;height:100%;width:0;background:var(--brand-gradient);border-radius:99px;
-    transition:width 1s cubic-bezier(.3,.8,.3,1)}
-
-  .insight{background:var(--bg-light);border-left:4px solid var(--blue);padding:16px 18px;border-radius:14px;margin-top:6px}
-  .insight.risk{border-left-color:var(--orange)}
-  .insight.action{border-left-color:var(--crimson)}
-  .insight strong{color:var(--navy)}
-
-  .framework-note{margin-top:30px;padding:20px 22px;border-radius:18px;
-    background:linear-gradient(135deg,rgba(14,90,138,.06),rgba(245,130,32,.06));
-    border:1px solid var(--line);font-size:.9rem;color:var(--muted)}
-  .framework-note b{color:var(--navy)}
-
-  .result-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
-  .copy-note{font-size:.78rem;color:var(--blue);margin-top:8px;display:none}
-  .copy-note.show{display:block}
-
-  /* ===== FOOTER (matches real site) ===== */
-  .footer{background:var(--footer-dark);color:#fff;padding-top:60px;margin-top:20px}
-  .footer-content{display:flex;justify-content:space-between;align-items:center;gap:30px;padding-bottom:34px;flex-wrap:wrap}
-  .footer-brand p{color:#9aa7b6;max-width:360px;font-size:.9rem}
-  .social-links{display:flex;gap:16px}
-  .social-links a{width:42px;height:42px;background:rgba(255,255,255,.08);border-radius:50%;display:flex;
-    align-items:center;justify-content:center;color:#fff;text-decoration:none;transition:.3s}
-  .social-links a:hover{background:var(--blue);transform:translateY(-3px)}
-  .copyright{text-align:center;padding:18px;border-top:1px solid rgba(255,255,255,.08);font-size:.82rem;color:#9aa7b6}
-  .copyright a{color:var(--orange);text-decoration:none;font-weight:700}
-
-  .whatsapp-float{position:fixed;right:24px;bottom:88px;width:56px;height:56px;border-radius:50%;
-    background:var(--whatsapp);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;
-    text-decoration:none;z-index:900;box-shadow:0 10px 28px rgba(0,0,0,.2)}
-  #ideaBtn{position:fixed;right:24px;bottom:160px;background:var(--orange);color:#fff;text-decoration:none;
-    padding:13px 20px;border-radius:40px;font-weight:700;z-index:900;box-shadow:0 10px 28px rgba(0,0,0,.2);
-    font-size:.88rem}
-
-  #confettiCanvas{position:fixed;inset:0;pointer-events:none;z-index:950}
-
-  @media(max-width:768px){
-    .hero h1{font-size:32px}
-    .shell{padding:24px}
-    .result-grid{grid-template-columns:1fr}
-    .nav{flex-direction:column;height:auto;padding:14px 0}
-    .main-nav{flex-wrap:wrap;justify-content:center;margin-top:12px;gap:14px}
-    .whatsapp-float{width:50px;height:50px;bottom:78px;right:16px}
-    #ideaBtn{bottom:138px;right:16px;padding:11px 16px;font-size:.8rem}
-  }
-</style>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
-<body>
+
+<body class="ideaquest-page">
 
   <header class="header">
     <div class="container nav">
@@ -267,152 +30,173 @@
         <a href="services.html">Services</a>
         <a href="startup-sanctuary.html">Startup Sanctuary</a>
         <a href="leadership.html">Leadership</a>
-		<a href="ideaquest.html">Idea Quest</a>
+        <a href="ideaquest.html">Idea Quest</a>
         <a href="contact.html" class="nav-cta">Contact</a>
       </nav>
 
     </div>
   </header>
- 
-<section class="page-hero">
-  <div class="hero-content">
-    <span class="hero-badge"><span class="dot"></span>AI-Powered Ecosystem Platform</span>
-    <h1>Level up your idea's path from Research to <em>Revenue.</em></h1>
-    <p>Answer 18 questions, earn XP across six readiness dimensions, unlock founder badges, and see exactly where your idea stands on RIED's Research → Innovation → Commercialization → Revenue pathway.</p>
-    <div class="hero-stats">
-      <div><b>18</b><span>Questions</span></div>
-      <div><b>6</b><span>Levels</span></div>
-      <div><b>900</b><span>Max XP</span></div>
+
+  <section class="page-hero"
+    style="background:
+    linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+    url('idea-quest-hero.jpg') center/cover;">
+
+    <div class="hero-content">
+
+      <span class="hero-badge"><span class="dot"></span>AI-Powered Ecosystem Platform</span>
+
+      <h1>Level up your idea's path from Research to <em>Revenue.</em></h1>
+
+      <p>
+        Answer 18 questions, earn XP across six readiness dimensions, unlock founder badges,
+        and see exactly where your idea stands on RIED's Research → Innovation →
+        Commercialization → Revenue pathway.
+      </p>
+
+      <div class="hero-stats">
+        <div><b>18</b><span>Questions</span></div>
+        <div><b>6</b><span>Levels</span></div>
+        <div><b>900</b><span>Max XP</span></div>
+      </div>
+
+      <div class="hero-buttons">
+        <button class="btn-primary" onclick="startQuest()">Begin the Quest <i class="fa-solid fa-arrow-right"></i></button>
+        <a class="btn-secondary" href="#howitworks">How it works</a>
+      </div>
+
     </div>
-    <div class="hero-buttons">
-      <button class="btn-primary" onclick="startQuest()">Begin the Quest <i class="fa-solid fa-arrow-right"></i></button>
-      <a class="btn-secondary" href="#howitworks">How it works</a>
+
+  </section>
+
+  <section class="section light" id="howitworks">
+
+    <div class="container">
+
+      <h2 class="section-title center">Three Steps To Your Founder Score</h2>
+
+      <div class="feature-grid">
+
+        <div class="feature-card">
+          <i class="fas fa-gamepad"></i>
+          <h3>Answer &amp; earn XP</h3>
+          <p>Every honest answer earns XP and moves your idea along the pathway.</p>
+        </div>
+
+        <div class="feature-card">
+          <i class="fas fa-layer-group"></i>
+          <h3>Level up 6 dimensions</h3>
+          <p>Progress through Founder Alignment, Problem Strength, Feasibility, Market, and more.</p>
+        </div>
+
+        <div class="feature-card">
+          <i class="fas fa-award"></i>
+          <h3>Unlock founder badges</h3>
+          <p>Collect Bronze, Silver or Gold badges and get your next 30-day move.</p>
+        </div>
+
+      </div>
+
     </div>
-  </div>
-</section>
- 
-<section class="section" id="howitworks">
-  <div class="container center">
-    <span class="hero-badge" style="background:rgba(14,90,138,.1);border-color:rgba(14,90,138,.25);color:var(--blue)">
-      <span class="dot" style="background:var(--orange)"></span>How It Works
-    </span>
-    <h2 style="font-size:34px;margin:16px 0 40px;color:var(--navy)">Three steps to your founder score</h2>
-    <div class="feature-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;text-align:left">
-      <div class="badge-card" style="animation:none;opacity:1;transform:none">
-        <div class="badge-icon-lg"><i class="fa-solid fa-gamepad"></i></div>
-        <h4>Answer &amp; earn XP</h4>
-        <p>Every honest answer earns XP and moves your idea along the pathway.</p>
-      </div>
-      <div class="badge-card" style="animation:none;opacity:1;transform:none">
-        <div class="badge-icon-lg" style="background:linear-gradient(135deg,var(--crimson),#b3184f)"><i class="fa-solid fa-layer-group"></i></div>
-        <h4>Level up 6 dimensions</h4>
-        <p>Progress through Founder Alignment, Problem Strength, Feasibility, Market, and more.</p>
-      </div>
-      <div class="badge-card" style="animation:none;opacity:1;transform:none">
-        <div class="badge-icon-lg" style="background:linear-gradient(135deg,var(--orange),#ffb35c)"><i class="fa-solid fa-award"></i></div>
-        <h4>Unlock founder badges</h4>
-        <p>Collect Bronze, Silver or Gold badges and get your next 30-day move.</p>
-      </div>
-    </div>
-  </div>
-</section>
- 
-<section class="section" style="padding-top:0">
-  <div class="container quest-wrap">
-    <div class="shell">
- 
-      <!-- INTRO (inside shell, shown before quest starts) -->
-      <div id="intro">
-        <span style="font-size:.78rem;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.05em">Ready when you are</span>
-        <h2 style="font-size:1.6rem;margin:.5rem 0 1rem;color:var(--navy)">Your Idea Quest starts here</h2>
-        <p style="color:var(--muted);margin-bottom:24px">Takes 7–10 minutes. There are no wrong answers — just honest ones. Your XP and badges are based on how you answer, not on speed.</p>
-        <button class="btn-primary" onclick="startQuest()" style="background:var(--blue)">Start Level 1: Founder Alignment <i class="fa-solid fa-play"></i></button>
-      </div>
- 
-      <!-- QUEST -->
-      <div id="quest" class="hidden">
-        <div class="game-bar">
-          <div class="level-chip">
-            <div class="badge-icon" id="levelIcon"><i class="fa-solid fa-seedling"></i></div>
-            <div class="txt">
-              <strong id="levelName">Level 1: Founder Alignment</strong>
-              <span>Current Dimension</span>
-              <div class="streak" id="streakChip"><i class="fa-solid fa-fire"></i> <span id="streakCount">0</span> streak</div>
+
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="container quest-wrap">
+      <div class="shell">
+
+        <!-- INTRO -->
+        <div id="intro">
+          <span class="quest-eyebrow">Ready when you are</span>
+          <h2 class="quest-intro-title">Your Idea Quest starts here</h2>
+          <p class="quest-intro-copy">Takes 7–10 minutes. There are no wrong answers — just honest ones. Your XP and badges are based on how you answer, not on speed.</p>
+          <button class="btn-primary" onclick="startQuest()">Start Level 1: Founder Alignment <i class="fa-solid fa-play"></i></button>
+        </div>
+
+        <!-- QUEST -->
+        <div id="quest" class="hidden">
+          <div class="game-bar">
+            <div class="level-chip">
+              <div class="badge-icon" id="levelIcon"><i class="fa-solid fa-seedling"></i></div>
+              <div class="txt">
+                <strong id="levelName">Level 1: Founder Alignment</strong>
+                <span>Current Dimension</span>
+                <div class="streak" id="streakChip"><i class="fa-solid fa-fire"></i> <span id="streakCount">0</span> streak</div>
+              </div>
+            </div>
+            <div class="xp-block">
+              <div class="xp-num"><span id="xpNum">0</span> XP</div>
+              <div class="xp-label">Earned so far</div>
             </div>
           </div>
-          <div class="xp-block">
-            <div class="xp-num"><span id="xpNum">0</span> XP</div>
-            <div class="xp-label">Earned so far</div>
+
+          <div class="qprogress-top">
+            <span id="progressText">Question 1 of 18</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="qprogress-track"><div id="bar" class="qprogress-fill"></div></div>
+
+          <div class="pathway-strip">
+            <span id="pnode-0">Research</span>
+            <span id="pnode-1">Innovation</span>
+            <span id="pnode-2">Commercial.</span>
+            <span id="pnode-3">Revenue</span>
+          </div>
+
+          <div id="questions"></div>
+
+          <div class="actions">
+            <button id="backBtn" class="btn-secondary" onclick="goBack()">Back</button>
+            <button id="nextBtn" class="btn-primary" onclick="goNext()">Next</button>
           </div>
         </div>
- 
-        <div class="qprogress-top">
-          <span id="progressText">Question 1 of 18</span>
-          <span id="progressPct">0%</span>
-        </div>
-        <div class="qprogress-track"><div id="bar" class="qprogress-fill"></div></div>
- 
-        <div class="pathway-strip">
-          <span id="pnode-0">Research</span>
-          <span id="pnode-1">Innovation</span>
-          <span id="pnode-2">Commercial.</span>
-          <span id="pnode-3">Revenue</span>
-        </div>
- 
-        <div id="questions"></div>
- 
-        <div class="actions">
-          <button id="backBtn" class="btn-secondary" onclick="goBack()">Back</button>
-          <button id="nextBtn" class="btn-primary" onclick="goNext()" style="background:var(--blue)">Next</button>
-        </div>
-      </div>
- 
-      <!-- RESULT -->
-      <div id="result" class="hidden">
-        <div class="result-title center">
-          <span class="hero-badge"><span class="dot"></span>Quest Complete</span>
-          <div id="scoreRing" class="score-ring">
-            <div class="score-ring-inner"><div><strong id="scoreValue">0</strong><small>Readiness</small></div></div>
+
+        <!-- RESULT -->
+        <div id="result" class="hidden">
+          <div class="result-title center">
+            <span class="hero-badge quest-result-badge"><span class="dot"></span>Quest Complete</span>
+            <div id="scoreRing" class="score-ring">
+              <div class="score-ring-inner"><div><strong id="scoreValue">0</strong><small>Readiness</small></div></div>
+            </div>
+            <h2 id="resultName">The Explorer</h2>
+            <p id="resultSummary"></p>
+            <div class="xp-total"><i class="fa-solid fa-bolt"></i> <span id="finalXp">0</span> XP earned</div>
           </div>
-          <h2 id="resultName">The Explorer</h2>
-          <p id="resultSummary"></p>
-          <div class="xp-total"><i class="fa-solid fa-bolt"></i> <span id="finalXp">0</span> XP earned</div>
+
+          <h2 class="section-h"><i class="fa-solid fa-award"></i>Your founder badges</h2>
+          <div id="badges" class="badge-grid"></div>
+
+          <h2 class="section-h"><i class="fa-solid fa-chart-simple"></i>Dimension breakdown</h2>
+          <div id="metrics" class="result-grid"></div>
+
+          <h2 class="section-h"><i class="fa-solid fa-star"></i>Your strongest signal</h2>
+          <div id="strength" class="insight"></div>
+
+          <h2 class="section-h"><i class="fa-solid fa-triangle-exclamation"></i>Your next reality check</h2>
+          <div id="risk" class="insight risk"></div>
+
+          <h2 class="section-h"><i class="fa-solid fa-shoe-prints"></i>Your next 30-day move</h2>
+          <div id="nextAction" class="insight action"></div>
+
+          <div class="framework-note">
+            This quest gives you a directional read. For a formal evaluation, RIED's <b>RIVS</b> (Idea Validation Score)
+            and <b>RRCI</b> (Research Commercialization Index) frameworks assess execution readiness, ecosystem alignment
+            and market feasibility in depth.
+          </div>
+
+          <div class="result-actions">
+            <button class="btn-secondary" onclick="restartQuest()"><i class="fa-solid fa-rotate-left"></i> Retake Quest</button>
+            <button class="btn-secondary" onclick="copyResults()"><i class="fa-solid fa-copy"></i> Copy My Results</button>
+            <a class="btn-primary" href="https://ried.co.in/contact.html#idea-form">Take My Idea to RIED <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+          <div class="copy-note" id="copyNote">Copied! Paste it into a message or share with your team.</div>
         </div>
- 
-        <h2 class="section-h"><i class="fa-solid fa-award"></i>Your founder badges</h2>
-        <div id="badges" class="badge-grid"></div>
- 
-        <h2 class="section-h"><i class="fa-solid fa-chart-simple"></i>Dimension breakdown</h2>
-        <div id="metrics" class="result-grid"></div>
- 
-        <h2 class="section-h"><i class="fa-solid fa-star"></i>Your strongest signal</h2>
-        <div id="strength" class="insight"></div>
- 
-        <h2 class="section-h"><i class="fa-solid fa-triangle-exclamation"></i>Your next reality check</h2>
-        <div id="risk" class="insight risk"></div>
- 
-        <h2 class="section-h"><i class="fa-solid fa-shoe-prints"></i>Your next 30-day move</h2>
-        <div id="nextAction" class="insight action"></div>
- 
-        <div class="framework-note">
-          This quest gives you a directional read. For a formal evaluation, RIED's <b>RIVS</b> (Idea Validation Score)
-          and <b>RRCI</b> (Research Commercialization Index) frameworks assess execution readiness, ecosystem alignment
-          and market feasibility in depth.
-        </div>
- 
-        <div class="result-actions">
-          <button class="btn-secondary" onclick="restartQuest()"><i class="fa-solid fa-rotate-left"></i> Retake Quest</button>
-          <button class="btn-secondary" onclick="copyResults()"><i class="fa-solid fa-copy"></i> Copy My Results</button>
-          <a class="btn-primary" href="https://ried.co.in/contact.html#idea-form">Take My Idea to RIED <i class="fa-solid fa-arrow-right"></i></a>
-        </div>
-        <div class="copy-note" id="copyNote">Copied! Paste it into a message or share with your team.</div>
+
       </div>
- 
     </div>
-  </div>
-</section>
- 
- <footer class="footer">
+  </section>
+
+  <footer class="footer">
 
     <div class="container footer-content">
 
@@ -452,362 +236,357 @@
 
   </footer>
 
-  <a
+  
     href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect."
     class="whatsapp-float"
     target="_blank">
-
     <i class="fab fa-whatsapp"></i>
   </a>
 
   <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
 
- 
-<script>
-/* ============ QUIZ DATA ============ */
-const questions=[
-["Founder Alignment","How strongly does this idea connect with your lived experience, interest or expertise?",[["It is only a passing thought",1],["I am curious but inexperienced",2],["I have some relevant exposure",3],["It deeply connects with my skills or lived experience",5]]],
-["Founder Alignment","How willing are you to consistently work on this idea for the next 12 months?",[["Only if results come quickly",1],["A few hours occasionally",2],["Several hours every week",4],["I am ready to organise my life around testing it",5]]],
-["Founder Alignment","When uncertainty, rejection or delays arise, how do you expect to respond?",[["I may drop the idea",1],["I will wait for others to decide",2],["I will seek feedback and adapt",4],["I will remain steady, learn and keep moving",5]]],
-["Founder Alignment","How aligned are your body, mind, emotions and energy with building this enterprise?",[["I feel scattered or exhausted",1],["I am interested but inconsistent",2],["I feel reasonably focused",4],["I feel deeply energised, disciplined and clear",5]]],
-["Problem Strength","How clearly can you define the exact problem your idea solves?",[["It is still vague",1],["I can describe it broadly",2],["I can explain who faces it and when",4],["I can state it clearly with evidence",5]]],
-["Problem Strength","How urgent or painful is this problem for the intended user?",[["Mostly a nice-to-have",1],["Occasionally inconvenient",2],["Important and recurring",4],["Critical, costly or time-sensitive",5]]],
-["Problem Strength","Have you spoken directly to people who face this problem?",[["Not yet",1],["One or two people",2],["Several potential users",4],["Many users with repeated patterns",5]]],
-["Problem Strength","How are people solving this problem today?",[["I do not know",1],["They mostly ignore it",2],["They use informal or imperfect alternatives",4],["They already spend money or significant effort on alternatives",5]]],
-["Solution & Differentiation","How clearly does your proposed solution improve on existing alternatives?",[["It is similar to what exists",1],["It has a small improvement",2],["It is meaningfully better in one key way",4],["It is dramatically better, cheaper, faster or more accessible",5]]],
-["Solution & Differentiation","How much evidence do you have that the solution can work?",[["Only an idea",1],["A rough concept or sketch",2],["A prototype or early test",4],["A working solution with user feedback",5]]],
-["Solution & Differentiation","How difficult would it be for others to copy your solution?",[["Very easy",1],["Somewhat easy",2],["Requires specialised execution or relationships",4],["Protected by strong know-how, IP, data, brand or network effects",5]]],
-["Feasibility","Can a basic version be tested within 30–90 days?",[["No clear path yet",1],["Possibly, with major support",2],["Yes, with focused effort",4],["Yes, with resources already available",5]]],
-["Feasibility","Do you or your team possess the skills needed to build the first version?",[["No",1],["Only a few",2],["Most critical skills",4],["Yes, or we already have committed partners",5]]],
-["Feasibility","How realistic are the initial capital and resource requirements?",[["Unknown or unaffordable",1],["High and not yet arranged",2],["Manageable with partners or grants",4],["Low or already accessible",5]]],
-["Market & Revenue","Can you clearly identify who will pay for this solution?",[["Not yet",1],["I have a broad audience in mind",2],["I know the customer segment",4],["I know the buyer, user and payment trigger",5]]],
-["Market & Revenue","How strong is the willingness to pay?",[["No evidence",1],["People say they like the idea",2],["Some have indicated a price range",4],["Someone has paid, pre-ordered or committed",5]]],
-["Market & Revenue","Can this enterprise eventually sustain you, your family and a team?",[["Unclear",1],["Possible but margins may be weak",2],["Likely with enough customers",4],["Yes, the unit economics and growth path appear strong",5]]],
-["Employment & Impact","What wider value could this enterprise create?",[["Mostly personal income",1],["Useful to a small group",2],["Can create jobs or improve a sector/community",4],["Can create significant jobs, national value and measurable SDG impact",5]]]
-];
- 
-const dimensionOrder=["Founder Alignment","Problem Strength","Solution & Differentiation","Feasibility","Market & Revenue","Employment & Impact"];
-const dimensionIcons={
-  "Founder Alignment":"fa-seedling",
-  "Problem Strength":"fa-magnifying-glass",
-  "Solution & Differentiation":"fa-lightbulb",
-  "Feasibility":"fa-hammer",
-  "Market & Revenue":"fa-coins",
-  "Employment & Impact":"fa-people-group"
-};
-const badgeInfo={
-  "Founder Alignment":{name:"Aligned Founder",icon:"fa-seedling",text:"Shows how ready you are to commit to this idea."},
-  "Problem Strength":{name:"Problem Sleuth",icon:"fa-magnifying-glass",text:"Shows how sharply you understand the problem."},
-  "Solution & Differentiation":{name:"Innovator's Edge",icon:"fa-lightbulb",text:"Shows how defensible your solution really is."},
-  "Feasibility":{name:"Builder's Grit",icon:"fa-hammer",text:"Shows how testable your idea is right now."},
-  "Market & Revenue":{name:"Market Mapper",icon:"fa-coins",text:"Shows how clear your path to paying customers is."},
-  "Employment & Impact":{name:"Impact Architect",icon:"fa-people-group",text:"Shows the wider value your enterprise could create."}
-};
-/* cumulative question index (1-based) marking the end of each pathway stage */
-const stageThresholds=[8,11,14,18];
- 
-let current=0, answers=Array(questions.length).fill(null);
- 
-/* ============ NAV / FLOW ============ */
-function startQuest(){
-  document.getElementById('intro').classList.add('hidden');
-  document.getElementById('quest').classList.remove('hidden');
-  renderQuestions();
-  updateUI();
-  document.getElementById('quest').scrollIntoView({behavior:'smooth',block:'start'});
-}
- 
-function renderQuestions(){
-  const el=document.getElementById('questions');
-  el.innerHTML=questions.map((q,i)=>`
-    <div class="question-card ${i===0?'active':''}" id="q${i}">
-      <div class="question-number"><i class="fa-solid ${dimensionIcons[q[0]]}"></i>&nbsp;${q[0]}</div>
-      <h2>${q[1]}</h2>
-      <div class="options" role="radiogroup" aria-label="${q[1]}">
-        ${q[2].map((o,idx)=>`
-          <div class="option" tabindex="0" role="radio" aria-checked="false"
-               onclick="selectOption(${i},${o[1]},this)"
-               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOption(${i},${o[1]},this)}">
-            <span class="letter">${String.fromCharCode(65+idx)}</span>
-            <span class="txt">${o[0]}</span>
-          </div>`).join('')}
-      </div>
-    </div>`).join('');
-}
- 
-function selectOption(q,val,el){
-  const isFirstAnswer=answers[q]===null;
-  answers[q]=val;
-  document.querySelectorAll(`#q${q} .option`).forEach(x=>{x.classList.remove('selected');x.setAttribute('aria-checked','false')});
-  el.classList.add('selected');
-  el.setAttribute('aria-checked','true');
- 
-  if(isFirstAnswer){
-    const pop=document.createElement('span');
-    pop.className='xp-popup';
-    pop.textContent='+'+(val*10)+' XP';
-    el.appendChild(pop);
-    setTimeout(()=>pop.remove(),900);
-  }
-  updateUI();
-}
- 
-function goNext(){
-  if(answers[current]===null) return;
-  const prevDim=questions[current][0];
-  if(current<questions.length-1){
-    document.getElementById(`q${current}`).classList.remove('active');
-    current++;
-    document.getElementById(`q${current}`).classList.add('active');
-    const newDim=questions[current][0];
-    if(newDim!==prevDim) levelUpToast(newDim);
+  <!-- these two were missing before — required by the JS below -->
+  <div id="toastHost"></div>
+  <canvas id="confettiCanvas"></canvas>
+
+  <script>
+  /* ============ QUIZ DATA ============ */
+  const questions=[
+  ["Founder Alignment","How strongly does this idea connect with your lived experience, interest or expertise?",[["It is only a passing thought",1],["I am curious but inexperienced",2],["I have some relevant exposure",3],["It deeply connects with my skills or lived experience",5]]],
+  ["Founder Alignment","How willing are you to consistently work on this idea for the next 12 months?",[["Only if results come quickly",1],["A few hours occasionally",2],["Several hours every week",4],["I am ready to organise my life around testing it",5]]],
+  ["Founder Alignment","When uncertainty, rejection or delays arise, how do you expect to respond?",[["I may drop the idea",1],["I will wait for others to decide",2],["I will seek feedback and adapt",4],["I will remain steady, learn and keep moving",5]]],
+  ["Founder Alignment","How aligned are your body, mind, emotions and energy with building this enterprise?",[["I feel scattered or exhausted",1],["I am interested but inconsistent",2],["I feel reasonably focused",4],["I feel deeply energised, disciplined and clear",5]]],
+  ["Problem Strength","How clearly can you define the exact problem your idea solves?",[["It is still vague",1],["I can describe it broadly",2],["I can explain who faces it and when",4],["I can state it clearly with evidence",5]]],
+  ["Problem Strength","How urgent or painful is this problem for the intended user?",[["Mostly a nice-to-have",1],["Occasionally inconvenient",2],["Important and recurring",4],["Critical, costly or time-sensitive",5]]],
+  ["Problem Strength","Have you spoken directly to people who face this problem?",[["Not yet",1],["One or two people",2],["Several potential users",4],["Many users with repeated patterns",5]]],
+  ["Problem Strength","How are people solving this problem today?",[["I do not know",1],["They mostly ignore it",2],["They use informal or imperfect alternatives",4],["They already spend money or significant effort on alternatives",5]]],
+  ["Solution & Differentiation","How clearly does your proposed solution improve on existing alternatives?",[["It is similar to what exists",1],["It has a small improvement",2],["It is meaningfully better in one key way",4],["It is dramatically better, cheaper, faster or more accessible",5]]],
+  ["Solution & Differentiation","How much evidence do you have that the solution can work?",[["Only an idea",1],["A rough concept or sketch",2],["A prototype or early test",4],["A working solution with user feedback",5]]],
+  ["Solution & Differentiation","How difficult would it be for others to copy your solution?",[["Very easy",1],["Somewhat easy",2],["Requires specialised execution or relationships",4],["Protected by strong know-how, IP, data, brand or network effects",5]]],
+  ["Feasibility","Can a basic version be tested within 30–90 days?",[["No clear path yet",1],["Possibly, with major support",2],["Yes, with focused effort",4],["Yes, with resources already available",5]]],
+  ["Feasibility","Do you or your team possess the skills needed to build the first version?",[["No",1],["Only a few",2],["Most critical skills",4],["Yes, or we already have committed partners",5]]],
+  ["Feasibility","How realistic are the initial capital and resource requirements?",[["Unknown or unaffordable",1],["High and not yet arranged",2],["Manageable with partners or grants",4],["Low or already accessible",5]]],
+  ["Market & Revenue","Can you clearly identify who will pay for this solution?",[["Not yet",1],["I have a broad audience in mind",2],["I know the customer segment",4],["I know the buyer, user and payment trigger",5]]],
+  ["Market & Revenue","How strong is the willingness to pay?",[["No evidence",1],["People say they like the idea",2],["Some have indicated a price range",4],["Someone has paid, pre-ordered or committed",5]]],
+  ["Market & Revenue","Can this enterprise eventually sustain you, your family and a team?",[["Unclear",1],["Possible but margins may be weak",2],["Likely with enough customers",4],["Yes, the unit economics and growth path appear strong",5]]],
+  ["Employment & Impact","What wider value could this enterprise create?",[["Mostly personal income",1],["Useful to a small group",2],["Can create jobs or improve a sector/community",4],["Can create significant jobs, national value and measurable SDG impact",5]]]
+  ];
+
+  const dimensionOrder=["Founder Alignment","Problem Strength","Solution & Differentiation","Feasibility","Market & Revenue","Employment & Impact"];
+  const dimensionIcons={
+    "Founder Alignment":"fa-seedling",
+    "Problem Strength":"fa-magnifying-glass",
+    "Solution & Differentiation":"fa-lightbulb",
+    "Feasibility":"fa-hammer",
+    "Market & Revenue":"fa-coins",
+    "Employment & Impact":"fa-people-group"
+  };
+  const badgeInfo={
+    "Founder Alignment":{name:"Aligned Founder",icon:"fa-seedling",text:"Shows how ready you are to commit to this idea."},
+    "Problem Strength":{name:"Problem Sleuth",icon:"fa-magnifying-glass",text:"Shows how sharply you understand the problem."},
+    "Solution & Differentiation":{name:"Innovator's Edge",icon:"fa-lightbulb",text:"Shows how defensible your solution really is."},
+    "Feasibility":{name:"Builder's Grit",icon:"fa-hammer",text:"Shows how testable your idea is right now."},
+    "Market & Revenue":{name:"Market Mapper",icon:"fa-coins",text:"Shows how clear your path to paying customers is."},
+    "Employment & Impact":{name:"Impact Architect",icon:"fa-people-group",text:"Shows the wider value your enterprise could create."}
+  };
+  const stageThresholds=[8,11,14,18];
+
+  let current=0, answers=Array(questions.length).fill(null);
+
+  function startQuest(){
+    document.getElementById('intro').classList.add('hidden');
+    document.getElementById('quest').classList.remove('hidden');
+    renderQuestions();
     updateUI();
     document.getElementById('quest').scrollIntoView({behavior:'smooth',block:'start'});
-  } else {
-    showResult();
   }
-}
- 
-function goBack(){
-  if(current===0) return;
-  document.getElementById(`q${current}`).classList.remove('active');
-  current--;
-  document.getElementById(`q${current}`).classList.add('active');
-  updateUI();
-}
- 
-function computeXp(){
-  return answers.reduce((a,b)=>a+(b?b*10:0),0);
-}
-function computeStreak(){
-  let s=0;
-  for(let i=current;i>=0;i--){
-    if(answers[i]===5) s++; else break;
+
+  function renderQuestions(){
+    const el=document.getElementById('questions');
+    el.innerHTML=questions.map((q,i)=>`
+      <div class="question-card ${i===0?'active':''}" id="q${i}">
+        <div class="question-number"><i class="fa-solid ${dimensionIcons[q[0]]}"></i>&nbsp;${q[0]}</div>
+        <h2>${q[1]}</h2>
+        <div class="options" role="radiogroup" aria-label="${q[1]}">
+          ${q[2].map((o,idx)=>`
+            <div class="option" tabindex="0" role="radio" aria-checked="false"
+                 onclick="selectOption(${i},${o[1]},this)"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOption(${i},${o[1]},this)}">
+              <span class="letter">${String.fromCharCode(65+idx)}</span>
+              <span class="txt">${o[0]}</span>
+            </div>`).join('')}
+        </div>
+      </div>`).join('');
   }
-  return s;
-}
- 
-function updateUI(){
-  const pct=Math.round((current/(questions.length-1))*100);
-  document.getElementById('bar').style.width=pct+'%';
-  document.getElementById('progressText').textContent=`Question ${current+1} of ${questions.length}`;
-  document.getElementById('progressPct').textContent=pct+'%';
-  document.getElementById('backBtn').disabled=current===0;
-  document.getElementById('nextBtn').disabled=answers[current]===null;
-  document.getElementById('nextBtn').textContent=current===questions.length-1?'Finish & Reveal Score':'Next';
- 
-  const dim=questions[current][0];
-  const levelNum=dimensionOrder.indexOf(dim)+1;
-  document.getElementById('levelName').textContent=`Level ${levelNum}: ${dim}`;
-  document.getElementById('levelIcon').innerHTML=`<i class="fa-solid ${dimensionIcons[dim]}"></i>`;
- 
-  animateNumber(document.getElementById('xpNum'), computeXp(), 400);
- 
-  const streak=computeStreak();
-  const chip=document.getElementById('streakChip');
-  if(streak>=2){
-    chip.classList.add('show');
-    document.getElementById('streakCount').textContent=streak;
-  } else {
-    chip.classList.remove('show');
+
+  function selectOption(q,val,el){
+    const isFirstAnswer=answers[q]===null;
+    answers[q]=val;
+    document.querySelectorAll(`#q${q} .option`).forEach(x=>{x.classList.remove('selected');x.setAttribute('aria-checked','false')});
+    el.classList.add('selected');
+    el.setAttribute('aria-checked','true');
+
+    if(isFirstAnswer){
+      const pop=document.createElement('span');
+      pop.className='xp-popup';
+      pop.textContent='+'+(val*10)+' XP';
+      el.appendChild(pop);
+      setTimeout(()=>pop.remove(),900);
+    }
+    updateUI();
   }
- 
-  stageThresholds.forEach((th,i)=>{
-    const node=document.getElementById(`pnode-${i}`);
-    node.classList.remove('active','done');
-    if(current+1>th) node.classList.add('done');
-    else if(current+1<=th && (i===0 || current+1>stageThresholds[i-1])) node.classList.add('active');
-  });
-}
- 
-function levelUpToast(dim){
-  const host=document.getElementById('toastHost');
-  const levelNum=dimensionOrder.indexOf(dim)+1;
-  const toast=document.createElement('div');
-  toast.className='toast';
-  toast.innerHTML=`<span class="ic"><i class="fa-solid ${dimensionIcons[dim]}"></i></span>
-    <span>Level ${levelNum} unlocked: <strong>${dim}</strong></span>`;
-  host.appendChild(toast);
-  setTimeout(()=>toast.remove(),2700);
-}
- 
-function animateNumber(el,target,dur){
-  const start=parseInt(el.textContent||'0',10);
-  const t0=performance.now();
-  function step(t){
-    const p=Math.min(1,(t-t0)/dur);
-    el.textContent=Math.round(start+(target-start)*p);
-    if(p<1) requestAnimationFrame(step);
+
+  function goNext(){
+    if(answers[current]===null) return;
+    const prevDim=questions[current][0];
+    if(current<questions.length-1){
+      document.getElementById(`q${current}`).classList.remove('active');
+      current++;
+      document.getElementById(`q${current}`).classList.add('active');
+      const newDim=questions[current][0];
+      if(newDim!==prevDim) levelUpToast(newDim);
+      updateUI();
+      document.getElementById('quest').scrollIntoView({behavior:'smooth',block:'start'});
+    } else {
+      showResult();
+    }
   }
-  requestAnimationFrame(step);
-}
- 
-/* ============ RESULT ============ */
-let lastSummaryText='';
- 
-function showResult(){
-  document.getElementById('quest').classList.add('hidden');
-  document.getElementById('result').classList.remove('hidden');
- 
-  const raw=answers.reduce((a,b)=>a+b,0);
-  const score=Math.round((raw/90)*100);
-  const totalXp=computeXp();
- 
-  animateRing(score);
-  animateCount(document.getElementById('scoreValue'),score);
-  animateNumber(document.getElementById('finalXp'),totalXp,1000);
- 
-  let name,summary;
-  if(score<40){name='The Spark';summary='The idea has energy, but it needs sharper problem definition, customer evidence and a practical first test.';}
-  else if(score<60){name='The Explorer';summary='A promising possibility exists. Your immediate task is to validate the problem, customer and willingness to pay.';}
-  else if(score<80){name='The Builder';summary='Your idea shows credible enterprise potential. It is ready for a structured pilot and a 30–60–90 day roadmap.';}
-  else{name='The Pathfinder';summary='Your idea demonstrates strong founder, market and impact alignment. It is ready for a deeper RIED evaluation.';}
- 
-  document.getElementById('resultName').textContent=name;
-  document.getElementById('resultSummary').textContent=summary;
- 
-  const dims={};
-  questions.forEach((q,i)=>{
-    if(!dims[q[0]]) dims[q[0]]={score:0,max:0};
-    dims[q[0]].score+=answers[i];
-    dims[q[0]].max+=5;
-  });
- 
-  /* badge shelf */
-  const badgesEl=document.getElementById('badges');
-  badgesEl.innerHTML=dimensionOrder.map((k,idx)=>{
-    const v=dims[k];
-    const p=Math.round(v.score/v.max*100);
-    const tier = p>=80?'gold' : p>=50?'silver' : 'bronze';
-    const info=badgeInfo[k];
-    return `<div class="badge-card" style="animation-delay:${idx*100}ms">
-      <span class="ribbon ${tier}">${tier}</span>
-      <div class="badge-icon-lg"><i class="fa-solid ${info.icon}"></i></div>
-      <h4>${info.name}</h4>
-      <p>${info.text}</p>
-    </div>`;
-  }).join('');
- 
-  /* dimension bars */
-  const metricsEl=document.getElementById('metrics');
-  metricsEl.innerHTML=dimensionOrder.map((k,idx)=>{
-    const v=dims[k];
-    const p=Math.round(v.score/v.max*100);
-    return `<div class="metric" style="animation-delay:${idx*90}ms">
-      <div class="metric-top"><strong>${k}</strong><span>${p}%</span></div>
-      <div class="mini"><span data-pct="${p}"></span></div>
-    </div>`;
-  }).join('');
- 
-  requestAnimationFrame(()=>{
-    setTimeout(()=>{
-      metricsEl.querySelectorAll('.mini span').forEach(s=>{ s.style.width=s.dataset.pct+'%'; });
-    },150);
-  });
- 
-  const sorted=dimensionOrder.map(k=>[k,Math.round(dims[k].score/dims[k].max*100)]).sort((a,b)=>b[1]-a[1]);
-  const top=sorted[0], low=sorted[sorted.length-1];
- 
-  document.getElementById('strength').innerHTML=`<strong>${top[0]} (${top[1]}%)</strong><br>Your strongest current signal lies here. Build your next proof point around this advantage.`;
-  document.getElementById('risk').innerHTML=`<strong>${low[0]} (${low[1]}%)</strong><br>This is the weakest link in the enterprise chain. Design one practical experiment to test it.`;
- 
-  const nextAction =
-    score<40 ? 'Interview at least 10 people who face the problem. Rewrite the problem statement using their exact language.' :
-    score<60 ? 'Run a 30-day validation sprint: 15 customer conversations, one simple prototype and three willingness-to-pay tests.' :
-    score<80 ? 'Build and test a minimum viable pilot with real users. Track usage, cost, feedback and payment intent.' :
-    'Register interest with RIED, map funding and mentors, and convert the idea into a 30–60–90 day commercialization roadmap.';
-  document.getElementById('nextAction').textContent=nextAction;
- 
-  lastSummaryText = `RIED Idea Quest result: ${name} — Readiness Score ${score}/100, ${totalXp} XP earned.\n`+
-    `Strongest signal: ${top[0]} (${top[1]}%). Next reality check: ${low[0]} (${low[1]}%).\n`+
-    `Next move: ${nextAction}\nTake your idea further at https://ried.co.in/contact.html#idea-form`;
- 
-  if(score>=60 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-    fireConfetti();
+
+  function goBack(){
+    if(current===0) return;
+    document.getElementById(`q${current}`).classList.remove('active');
+    current--;
+    document.getElementById(`q${current}`).classList.add('active');
+    updateUI();
   }
- 
-  window.scrollTo({top:0,behavior:'smooth'});
-}
- 
-function copyResults(){
-  const note=document.getElementById('copyNote');
-  const done=()=>{note.classList.add('show');setTimeout(()=>note.classList.remove('show'),3000);};
-  if(navigator.clipboard && lastSummaryText){
-    navigator.clipboard.writeText(lastSummaryText).then(done).catch(()=>alert(lastSummaryText));
-  } else if(lastSummaryText){
-    alert(lastSummaryText);
+
+  function computeXp(){
+    return answers.reduce((a,b)=>a+(b?b*10:0),0);
   }
-}
- 
-function restartQuest(){
-  current=0;
-  answers=Array(questions.length).fill(null);
-  document.getElementById('result').classList.add('hidden');
-  document.getElementById('intro').classList.remove('hidden');
-  document.getElementById('questions').innerHTML='';
-}
- 
-/* ============ score ring + counter animation ============ */
-function animateRing(target){
-  const ring=document.getElementById('scoreRing');
-  const start=performance.now(), dur=1100;
-  function step(t){
-    const p=Math.min(1,(t-start)/dur);
-    const eased=1-Math.pow(1-p,3);
-    const deg=eased*target*3.6;
-    ring.style.background=`conic-gradient(var(--orange) ${deg}deg, var(--bg-light) 0deg)`;
-    if(p<1) requestAnimationFrame(step);
+  function computeStreak(){
+    let s=0;
+    for(let i=current;i>=0;i--){
+      if(answers[i]===5) s++; else break;
+    }
+    return s;
   }
-  requestAnimationFrame(step);
-}
-function animateCount(el,target){
-  const start=performance.now(), dur=1100;
-  function step(t){
-    const p=Math.min(1,(t-start)/dur);
-    const eased=1-Math.pow(1-p,3);
-    el.textContent=Math.round(eased*target);
-    if(p<1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
- 
-/* ============ confetti burst on strong results ============ */
-function fireConfetti(){
-  const canvas=document.getElementById('confettiCanvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-  const colors=['#0e5a8a','#178bc7','#8e0e3b','#f58220'];
-  let pieces=Array.from({length:120},()=>({
-    x:Math.random()*canvas.width,
-    y:-20-Math.random()*canvas.height*0.3,
-    w:6+Math.random()*5, h:9+Math.random()*6,
-    vy:2+Math.random()*3, vx:(Math.random()-0.5)*2.4,
-    rot:Math.random()*360, vr:(Math.random()-0.5)*8,
-    color:colors[Math.floor(Math.random()*colors.length)]
-  }));
-  let frame=0, maxFrames=190;
-  function tick(){
-    frame++;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    pieces.forEach(p=>{
-      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
-      ctx.save();
-      ctx.translate(p.x,p.y);
-      ctx.rotate(p.rot*Math.PI/180);
-      ctx.fillStyle=p.color;
-      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
-      ctx.restore();
+
+  function updateUI(){
+    const pct=Math.round((current/(questions.length-1))*100);
+    document.getElementById('bar').style.width=pct+'%';
+    document.getElementById('progressText').textContent=`Question ${current+1} of ${questions.length}`;
+    document.getElementById('progressPct').textContent=pct+'%';
+    document.getElementById('backBtn').disabled=current===0;
+    document.getElementById('nextBtn').disabled=answers[current]===null;
+    document.getElementById('nextBtn').textContent=current===questions.length-1?'Finish & Reveal Score':'Next';
+
+    const dim=questions[current][0];
+    const levelNum=dimensionOrder.indexOf(dim)+1;
+    document.getElementById('levelName').textContent=`Level ${levelNum}: ${dim}`;
+    document.getElementById('levelIcon').innerHTML=`<i class="fa-solid ${dimensionIcons[dim]}"></i>`;
+
+    animateNumber(document.getElementById('xpNum'), computeXp(), 400);
+
+    const streak=computeStreak();
+    const chip=document.getElementById('streakChip');
+    if(streak>=2){
+      chip.classList.add('show');
+      document.getElementById('streakCount').textContent=streak;
+    } else {
+      chip.classList.remove('show');
+    }
+
+    stageThresholds.forEach((th,i)=>{
+      const node=document.getElementById(`pnode-${i}`);
+      node.classList.remove('active','done');
+      if(current+1>th) node.classList.add('done');
+      else if(current+1<=th && (i===0 || current+1>stageThresholds[i-1])) node.classList.add('active');
     });
-    if(frame<maxFrames) requestAnimationFrame(tick);
-    else ctx.clearRect(0,0,canvas.width,canvas.height);
   }
-  requestAnimationFrame(tick);
-}
-window.addEventListener('resize',()=>{
-  const c=document.getElementById('confettiCanvas');
-  c.width=window.innerWidth; c.height=window.innerHeight;
-});
-</script>
+
+  function levelUpToast(dim){
+    const host=document.getElementById('toastHost');
+    const levelNum=dimensionOrder.indexOf(dim)+1;
+    const toast=document.createElement('div');
+    toast.className='toast';
+    toast.innerHTML=`<span class="ic"><i class="fa-solid ${dimensionIcons[dim]}"></i></span>
+      <span>Level ${levelNum} unlocked: <strong>${dim}</strong></span>`;
+    host.appendChild(toast);
+    setTimeout(()=>toast.remove(),2700);
+  }
+
+  function animateNumber(el,target,dur){
+    const start=parseInt(el.textContent||'0',10);
+    const t0=performance.now();
+    function step(t){
+      const p=Math.min(1,(t-t0)/dur);
+      el.textContent=Math.round(start+(target-start)*p);
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  let lastSummaryText='';
+
+  function showResult(){
+    document.getElementById('quest').classList.add('hidden');
+    document.getElementById('result').classList.remove('hidden');
+
+    const raw=answers.reduce((a,b)=>a+b,0);
+    const score=Math.round((raw/90)*100);
+    const totalXp=computeXp();
+
+    animateRing(score);
+    animateCount(document.getElementById('scoreValue'),score);
+    animateNumber(document.getElementById('finalXp'),totalXp,1000);
+
+    let name,summary;
+    if(score<40){name='The Spark';summary='The idea has energy, but it needs sharper problem definition, customer evidence and a practical first test.';}
+    else if(score<60){name='The Explorer';summary='A promising possibility exists. Your immediate task is to validate the problem, customer and willingness to pay.';}
+    else if(score<80){name='The Builder';summary='Your idea shows credible enterprise potential. It is ready for a structured pilot and a 30–60–90 day roadmap.';}
+    else{name='The Pathfinder';summary='Your idea demonstrates strong founder, market and impact alignment. It is ready for a deeper RIED evaluation.';}
+
+    document.getElementById('resultName').textContent=name;
+    document.getElementById('resultSummary').textContent=summary;
+
+    const dims={};
+    questions.forEach((q,i)=>{
+      if(!dims[q[0]]) dims[q[0]]={score:0,max:0};
+      dims[q[0]].score+=answers[i];
+      dims[q[0]].max+=5;
+    });
+
+    const badgesEl=document.getElementById('badges');
+    badgesEl.innerHTML=dimensionOrder.map((k,idx)=>{
+      const v=dims[k];
+      const p=Math.round(v.score/v.max*100);
+      const tier = p>=80?'gold' : p>=50?'silver' : 'bronze';
+      const info=badgeInfo[k];
+      return `<div class="badge-card" style="animation-delay:${idx*100}ms">
+        <span class="ribbon ${tier}">${tier}</span>
+        <div class="badge-icon-lg"><i class="fa-solid ${info.icon}"></i></div>
+        <h4>${info.name}</h4>
+        <p>${info.text}</p>
+      </div>`;
+    }).join('');
+
+    const metricsEl=document.getElementById('metrics');
+    metricsEl.innerHTML=dimensionOrder.map((k,idx)=>{
+      const v=dims[k];
+      const p=Math.round(v.score/v.max*100);
+      return `<div class="metric" style="animation-delay:${idx*90}ms">
+        <div class="metric-top"><strong>${k}</strong><span>${p}%</span></div>
+        <div class="mini"><span data-pct="${p}"></span></div>
+      </div>`;
+    }).join('');
+
+    requestAnimationFrame(()=>{
+      setTimeout(()=>{
+        metricsEl.querySelectorAll('.mini span').forEach(s=>{ s.style.width=s.dataset.pct+'%'; });
+      },150);
+    });
+
+    const sorted=dimensionOrder.map(k=>[k,Math.round(dims[k].score/dims[k].max*100)]).sort((a,b)=>b[1]-a[1]);
+    const top=sorted[0], low=sorted[sorted.length-1];
+
+    document.getElementById('strength').innerHTML=`<strong>${top[0]} (${top[1]}%)</strong><br>Your strongest current signal lies here. Build your next proof point around this advantage.`;
+    document.getElementById('risk').innerHTML=`<strong>${low[0]} (${low[1]}%)</strong><br>This is the weakest link in the enterprise chain. Design one practical experiment to test it.`;
+
+    const nextAction =
+      score<40 ? 'Interview at least 10 people who face the problem. Rewrite the problem statement using their exact language.' :
+      score<60 ? 'Run a 30-day validation sprint: 15 customer conversations, one simple prototype and three willingness-to-pay tests.' :
+      score<80 ? 'Build and test a minimum viable pilot with real users. Track usage, cost, feedback and payment intent.' :
+      'Register interest with RIED, map funding and mentors, and convert the idea into a 30–60–90 day commercialization roadmap.';
+    document.getElementById('nextAction').textContent=nextAction;
+
+    lastSummaryText = `RIED Idea Quest result: ${name} — Readiness Score ${score}/100, ${totalXp} XP earned.\n`+
+      `Strongest signal: ${top[0]} (${top[1]}%). Next reality check: ${low[0]} (${low[1]}%).\n`+
+      `Next move: ${nextAction}\nTake your idea further at https://ried.co.in/contact.html#idea-form`;
+
+    if(score>=60 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      fireConfetti();
+    }
+
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function copyResults(){
+    const note=document.getElementById('copyNote');
+    const done=()=>{note.classList.add('show');setTimeout(()=>note.classList.remove('show'),3000);};
+    if(navigator.clipboard && lastSummaryText){
+      navigator.clipboard.writeText(lastSummaryText).then(done).catch(()=>alert(lastSummaryText));
+    } else if(lastSummaryText){
+      alert(lastSummaryText);
+    }
+  }
+
+  function restartQuest(){
+    current=0;
+    answers=Array(questions.length).fill(null);
+    document.getElementById('result').classList.add('hidden');
+    document.getElementById('intro').classList.remove('hidden');
+    document.getElementById('questions').innerHTML='';
+  }
+
+  function animateRing(target){
+    const ring=document.getElementById('scoreRing');
+    const start=performance.now(), dur=1100;
+    function step(t){
+      const p=Math.min(1,(t-start)/dur);
+      const eased=1-Math.pow(1-p,3);
+      const deg=eased*target*3.6;
+      ring.style.background=`conic-gradient(var(--orange) ${deg}deg, var(--bg-light) 0deg)`;
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  function animateCount(el,target){
+    const start=performance.now(), dur=1100;
+    function step(t){
+      const p=Math.min(1,(t-start)/dur);
+      const eased=1-Math.pow(1-p,3);
+      el.textContent=Math.round(eased*target);
+      if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function fireConfetti(){
+    const canvas=document.getElementById('confettiCanvas');
+    const ctx=canvas.getContext('2d');
+    canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+    const colors=['#0e5a8a','#178bc7','#8e0e3b','#f58220'];
+    let pieces=Array.from({length:120},()=>({
+      x:Math.random()*canvas.width,
+      y:-20-Math.random()*canvas.height*0.3,
+      w:6+Math.random()*5, h:9+Math.random()*6,
+      vy:2+Math.random()*3, vx:(Math.random()-0.5)*2.4,
+      rot:Math.random()*360, vr:(Math.random()-0.5)*8,
+      color:colors[Math.floor(Math.random()*colors.length)]
+    }));
+    let frame=0, maxFrames=190;
+    function tick(){
+      frame++;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      pieces.forEach(p=>{
+        p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        ctx.rotate(p.rot*Math.PI/180);
+        ctx.fillStyle=p.color;
+        ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+        ctx.restore();
+      });
+      if(frame<maxFrames) requestAnimationFrame(tick);
+      else ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+    requestAnimationFrame(tick);
+  }
+  window.addEventListener('resize',()=>{
+    const c=document.getElementById('confettiCanvas');
+    c.width=window.innerWidth; c.height=window.innerHeight;
+  });
+  </script>
 
 </body>
 </html>
