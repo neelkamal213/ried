@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>RIED | Research to Revenue</title>
+
+  <meta name="description"
+  content="RIED transforms Research, Innovation and Ideas into scalable revenue generating ventures through AI-powered ecosystem activation.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+<header class="header">
+  <div class="container nav">
+    <a href="index.html">
+      <img src="images/brand/logo.png" class="logo" alt="RIED Logo">
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="products.html">Products</a>
+      <a href="services.html">Services</a>
+      <a href="startup-sanctuary.html">Startup Sanctuary</a>
+      <a href="leadership.html">Leadership</a>
+      <a href="packages.html">Packages</a>
+      <a href="login.html">Sign In</a>
+      <a href="contact.html" class="nav-cta">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-media">
+    <img src="images/hero/hero.jpg" alt="Founder looking out over a mountain ridge above the clouds, representing the RIED research-to-revenue journey">
+  </div>
+
+  <div class="hero-content">
+    <span class="hero-badge"><span class="dot"></span>AI Powered Ecosystem Platform</span>
+
+    <h1>
+      Converting Research, Ideas &amp; Innovation into <span class="accent-text">Revenue Generating Outcomes.</span>
+    </h1>
+
+    <p>
+      RIED builds structured pathways connecting Research &rarr; Innovation &rarr; Commercialization &rarr; Revenue.
+    </p>
+
+    <div class="hero-buttons">
+      <a href="products.html" class="btn-primary">Explore RIED Engine <i class="fa-solid fa-arrow-right"></i></a>
+      <a href="#idea-quest" class="btn-secondary">Play the Idea Quest <i class="fa-solid fa-gamepad"></i></a>
+    </div>
+
+    <div class="hero-trust">
+      <span><i class="fas fa-building-columns"></i> Bengaluru &middot; Pune &middot; Bihar</span>
+      <span><i class="fas fa-chart-line"></i> RIVS + RRCI Evaluation Frameworks</span>
+      <span><i class="fas fa-people-group"></i> Startup Sanctuary Ecosystem</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     IDEA QUEST — now embedded directly on the homepage so a
+     visitor can engage within seconds of landing, instead of
+     needing to find and click through to a separate page.
+     ============================================================ -->
+<section class="section quest-home-section" id="idea-quest">
+  <div class="container center">
+    <span class="section-tag-line">Play In 90 Seconds</span>
+    <h2 class="section-title">The RIED Idea Quest</h2>
+    <p class="section-subtitle-light">
+      Answer 18 quick questions, earn XP across six readiness dimensions, unlock founder badges,
+      and see exactly where your idea stands on the Research &rarr; Innovation &rarr; Commercialization &rarr; Revenue pathway.
+      No sign-up needed to play.
+    </p>
+
+    <div class="quest-perks">
+      <div><i class="fa-solid fa-bolt"></i> 900 max XP</div>
+      <div><i class="fa-solid fa-layer-group"></i> 6 readiness levels</div>
+      <div><i class="fa-solid fa-award"></i> Founder badges</div>
+    </div>
+
+    <div class="quest-wrap shell">
+
+      <!-- INTRO -->
+      <div id="intro">
+        <span class="quest-eyebrow">Ready when you are</span>
+        <h2 class="quest-intro-title">Your Idea Quest starts here</h2>
+        <p class="quest-intro-copy">Takes 7&ndash;10 minutes. There are no wrong answers &mdash; just honest ones. Your XP and badges are based on how you answer, not on speed.</p>
+        <button class="btn-primary" onclick="startQuest()">Start Level 1: Founder Alignment <i class="fa-solid fa-play"></i></button>
+      </div>
+
+      <!-- QUEST -->
+      <div id="quest" class="hidden">
+        <div class="game-bar">
+          <div class="level-chip">
+            <div class="badge-icon" id="levelIcon"><i class="fa-solid fa-seedling"></i></div>
+            <div class="txt">
+              <strong id="levelName">Level 1: Founder Alignment</strong>
+              <span>Current Dimension</span>
+              <div class="streak" id="streakChip"><i class="fa-solid fa-fire"></i> <span id="streakCount">0</span> streak</div>
+            </div>
+          </div>
+          <div class="xp-block">
+            <div class="xp-num"><span id="xpNum">0</span> XP</div>
+            <div class="xp-label">Earned so far</div>
+          </div>
+        </div>
+
+        <div class="qprogress-top">
+          <span id="progressText">Question 1 of 18</span>
+          <span id="progressPct">0%</span>
+        </div>
+        <div class="qprogress-track"><div id="bar" class="qprogress-fill"></div></div>
+
+        <div class="pathway-strip">
+          <span id="pnode-0">Research</span>
+          <span id="pnode-1">Innovation</span>
+          <span id="pnode-2">Commercial.</span>
+          <span id="pnode-3">Revenue</span>
+        </div>
+
+        <div id="questions"></div>
+
+        <div class="actions">
+          <button id="backBtn" class="btn-secondary" onclick="goBack()">Back</button>
+          <button id="nextBtn" class="btn-primary" onclick="goNext()">Next</button>
+        </div>
+      </div>
+
+      <!-- RESULT -->
+      <div id="result" class="hidden">
+        <div class="result-title center">
+          <span class="hero-badge quest-result-badge"><span class="dot"></span>Quest Complete</span>
+          <div id="scoreRing" class="score-ring">
+            <div class="score-ring-inner"><div><strong id="scoreValue">0</strong><small>Readiness</small></div></div>
+          </div>
+          <h2 id="resultName">The Explorer</h2>
+          <p id="resultSummary"></p>
+          <div class="xp-total"><i class="fa-solid fa-bolt"></i> <span id="finalXp">0</span> XP earned</div>
+        </div>
+
+        <h2 class="section-h"><i class="fa-solid fa-award"></i>Your founder badges</h2>
+        <div id="badges" class="badge-grid"></div>
+
+        <h2 class="section-h"><i class="fa-solid fa-chart-simple"></i>Dimension breakdown</h2>
+        <div id="metrics" class="result-grid"></div>
+
+        <h2 class="section-h"><i class="fa-solid fa-star"></i>Your strongest signal</h2>
+        <div id="strength" class="insight"></div>
+
+        <h2 class="section-h"><i class="fa-solid fa-triangle-exclamation"></i>Your next reality check</h2>
+        <div id="risk" class="insight risk"></div>
+
+        <h2 class="section-h"><i class="fa-solid fa-shoe-prints"></i>Your next 30-day move</h2>
+        <div id="nextAction" class="insight action"></div>
+
+        <div class="framework-note">
+          This quest gives you a directional read. For a formal evaluation, RIED's <b>RIVS</b> (Idea Validation Score)
+          and <b>RRCI</b> (Research Commercialization Index) frameworks assess execution readiness, ecosystem alignment
+          and market feasibility in depth.
+        </div>
+
+        <div class="result-actions">
+          <button class="btn-secondary" onclick="restartQuest()"><i class="fa-solid fa-rotate-left"></i> Retake Quest</button>
+          <button class="btn-secondary" onclick="copyResults()"><i class="fa-solid fa-copy"></i> Copy My Results</button>
+          <a class="btn-primary" href="contact.html#idea-form">Take My Idea to RIED <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="copy-note" id="copyNote">Copied! Paste it into a message or share with your team.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container center">
+    <span class="section-tag-line">Why RIED</span>
+    <h2 class="section-title">What We Do</h2>
+
+    <div class="feature-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap"><i class="fas fa-flask"></i></div>
+        <h3>Research Commercialization</h3>
+        <p>
+          Translating academic and institutional research into real-world applications.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap"><i class="fas fa-lightbulb"></i></div>
+        <h3>Idea Validation</h3>
+        <p>
+          Structured validation using the proprietary RIVS framework.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap"><i class="fas fa-chart-line"></i></div>
+        <h3>Commercialization Intelligence</h3>
+        <p>
+          Market readiness assessment through RRCI evaluation systems.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap"><i class="fas fa-rocket"></i></div>
+        <h3>Startup Acceleration</h3>
+        <p>
+          Helping startups scale through RIED Startup Sanctuary.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="framework-section light">
+  <div class="container">
+
+    <h2 class="section-title center">RIED Evaluation Frameworks</h2>
+
+    <div class="framework-grid">
+
+      <div class="framework-card">
+        <h3>RIVS</h3>
+        <h4>RIED Idea Validation Score</h4>
+
+        <p>
+          Evaluates innovation viability, scalability, execution readiness and ecosystem alignment.
+        </p>
+      </div>
+
+      <div class="framework-card">
+        <h3>RRCI</h3>
+        <h4>RIED Research Commercialization Index</h4>
+
+        <p>
+          Assesses market potential, commercialization feasibility and industry relevance.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container center">
+    <span class="section-tag-line">Questions</span>
+    <h2 class="section-title">Frequently Asked Questions</h2>
+  </div>
+
+  <div class="container">
+    <div class="faq-list">
+
+      <div class="faq-item open">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Who is RIED for?
+          <span class="icon"><i class="fa-solid fa-plus"></i></span>
+        </button>
+        <div class="faq-answer" style="max-height:200px">
+          <p>RIED works with researchers, founders, startups, universities and incubators who want structured support turning research, ideas or innovation into a revenue-generating venture — from very early idea stage through to scale-up.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          What are RIVS and RRCI?
+          <span class="icon"><i class="fa-solid fa-plus"></i></span>
+        </button>
+        <div class="faq-answer">
+          <p>RIVS (RIED Idea Validation Score) and RRCI (RIED Research Commercialization Index) are RIED's proprietary evaluation frameworks. RIVS scores an idea's viability, scalability, execution readiness and ecosystem alignment; RRCI assesses a research project's market potential, commercialization feasibility and industry relevance.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          How do I get started with RIED?
+          <span class="icon"><i class="fa-solid fa-plus"></i></span>
+        </button>
+        <div class="faq-answer">
+          <p>Play the Idea Quest above for an instant directional read, then use the contact form or book a call directly from the Contact page — we'll follow up to scope the right next step, whether that's a RIVS/RRCI evaluation or joining the Startup Sanctuary.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Is the RIED Engine available yet?
+          <span class="icon"><i class="fa-solid fa-plus"></i></span>
+        </button>
+        <div class="faq-answer">
+          <p>The AI-powered RIED Engine is under active development. You can register interest on the Products page to be among the first institutions and founders given early access.</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question" onclick="toggleFaq(this)">
+          Does RIED work with startups outside Karnataka, Maharashtra or Bihar?
+          <span class="icon"><i class="fa-solid fa-plus"></i></span>
+        </button>
+        <div class="faq-answer">
+          <p>Our registered offices are in Bengaluru, Pune and rural Bihar, but our ecosystem programs and evaluation frameworks are built to support founders and institutions anywhere — reach out through the Contact page to discuss your location.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container center">
+
+    <h2>Building India&rsquo;s Research-to-Revenue Infrastructure</h2>
+
+    <p>
+      RIED bridges the critical translation gap between research, funding, incubation and commercialization.
+    </p>
+
+    <a href="about.html" class="btn-primary">Learn More About RIED</a>
+
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-content">
+
+    <div>
+      <h3>RIED Pvt. Ltd.</h3>
+      <p>
+        Translating Research, Innovation & Ideas into Revenue Generating Outcomes.
+      </p>
+    </div>
+
+    <div class="footer-legal">
+      <a href="terms.html">Terms &amp; Conditions</a>
+      <a href="refund-policy.html">Refund Policy</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
+
+    <div class="social-links">
+      <a href="https://www.linkedin.com/company/ried-pvt-ltd/" target="_blank">
+        <i class="fab fa-linkedin"></i>
+      </a>
+
+      <a href="https://www.facebook.com/profile.php?id=61576517859696" target="_blank">
+        <i class="fab fa-facebook"></i>
+      </a>
+
+      <a href="https://www.instagram.com/riedpvtltd/" target="_blank">
+        <i class="fab fa-instagram"></i>
+      </a>
+
+      <a href="https://www.youtube.com/@riedpvtltd" target="_blank">
+        <i class="fab fa-youtube"></i>
+      </a>
+    </div>
+
+  </div>
+
+  <div class="copyright">
+    © 2026 RIED Pvt. Ltd. All Rights Reserved.
+  </div>
+</footer>
+
+<a
+  href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect."
+  class="whatsapp-float"
+  target="_blank"
+>
+  <i class="fab fa-whatsapp"></i>
+</a>
+
+<a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
+
+<div id="toastHost"></div>
+<canvas id="confettiCanvas"></canvas>
+
+<script>
+window.addEventListener("scroll", function() {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+  document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
+});
+
+/* FAQ accordion */
+function toggleFaq(btn){
+  const item = btn.closest('.faq-item');
+  const answer = item.querySelector('.faq-answer');
+  const isOpen = item.classList.contains('open');
+
+  document.querySelectorAll('.faq-item.open').forEach(el=>{
+    if(el!==item){ el.classList.remove('open'); el.querySelector('.faq-answer').style.maxHeight=null; }
+  });
+
+  if(isOpen){
+    item.classList.remove('open');
+    answer.style.maxHeight = null;
+  } else {
+    item.classList.add('open');
+    answer.style.maxHeight = answer.scrollHeight + 'px';
+  }
+}
+</script>
+
+<script>
+/* ============ IDEA QUEST — QUIZ DATA & ENGINE (now lives on the homepage) ============ */
+const questions=[
+["Founder Alignment","How strongly does this idea connect with your lived experience, interest or expertise?",[["It is only a passing thought",1],["I am curious but inexperienced",2],["I have some relevant exposure",3],["It deeply connects with my skills or lived experience",5]]],
+["Founder Alignment","How willing are you to consistently work on this idea for the next 12 months?",[["Only if results come quickly",1],["A few hours occasionally",2],["Several hours every week",4],["I am ready to organise my life around testing it",5]]],
+["Founder Alignment","When uncertainty, rejection or delays arise, how do you expect to respond?",[["I may drop the idea",1],["I will wait for others to decide",2],["I will seek feedback and adapt",4],["I will remain steady, learn and keep moving",5]]],
+["Founder Alignment","How aligned are your body, mind, emotions and energy with building this enterprise?",[["I feel scattered or exhausted",1],["I am interested but inconsistent",2],["I feel reasonably focused",4],["I feel deeply energised, disciplined and clear",5]]],
+["Problem Strength","How clearly can you define the exact problem your idea solves?",[["It is still vague",1],["I can describe it broadly",2],["I can explain who faces it and when",4],["I can state it clearly with evidence",5]]],
+["Problem Strength","How urgent or painful is this problem for the intended user?",[["Mostly a nice-to-have",1],["Occasionally inconvenient",2],["Important and recurring",4],["Critical, costly or time-sensitive",5]]],
+["Problem Strength","Have you spoken directly to people who face this problem?",[["Not yet",1],["One or two people",2],["Several potential users",4],["Many users with repeated patterns",5]]],
+["Problem Strength","How are people solving this problem today?",[["I do not know",1],["They mostly ignore it",2],["They use informal or imperfect alternatives",4],["They already spend money or significant effort on alternatives",5]]],
+["Solution & Differentiation","How clearly does your proposed solution improve on existing alternatives?",[["It is similar to what exists",1],["It has a small improvement",2],["It is meaningfully better in one key way",4],["It is dramatically better, cheaper, faster or more accessible",5]]],
+["Solution & Differentiation","How much evidence do you have that the solution can work?",[["Only an idea",1],["A rough concept or sketch",2],["A prototype or early test",4],["A working solution with user feedback",5]]],
+["Solution & Differentiation","How difficult would it be for others to copy your solution?",[["Very easy",1],["Somewhat easy",2],["Requires specialised execution or relationships",4],["Protected by strong know-how, IP, data, brand or network effects",5]]],
+["Feasibility","Can a basic version be tested within 30–90 days?",[["No clear path yet",1],["Possibly, with major support",2],["Yes, with focused effort",4],["Yes, with resources already available",5]]],
+["Feasibility","Do you or your team possess the skills needed to build the first version?",[["No",1],["Only a few",2],["Most critical skills",4],["Yes, or we already have committed partners",5]]],
+["Feasibility","How realistic are the initial capital and resource requirements?",[["Unknown or unaffordable",1],["High and not yet arranged",2],["Manageable with partners or grants",4],["Low or already accessible",5]]],
+["Market & Revenue","Can you clearly identify who will pay for this solution?",[["Not yet",1],["I have a broad audience in mind",2],["I know the customer segment",4],["I know the buyer, user and payment trigger",5]]],
+["Market & Revenue","How strong is the willingness to pay?",[["No evidence",1],["People say they like the idea",2],["Some have indicated a price range",4],["Someone has paid, pre-ordered or committed",5]]],
+["Market & Revenue","Can this enterprise eventually sustain you, your family and a team?",[["Unclear",1],["Possible but margins may be weak",2],["Likely with enough customers",4],["Yes, the unit economics and growth path appear strong",5]]],
+["Employment & Impact","What wider value could this enterprise create?",[["Mostly personal income",1],["Useful to a small group",2],["Can create jobs or improve a sector/community",4],["Can create significant jobs, national value and measurable SDG impact",5]]]
+];
+
+const dimensionOrder=["Founder Alignment","Problem Strength","Solution & Differentiation","Feasibility","Market & Revenue","Employment & Impact"];
+const dimensionIcons={
+  "Founder Alignment":"fa-seedling",
+  "Problem Strength":"fa-magnifying-glass",
+  "Solution & Differentiation":"fa-lightbulb",
+  "Feasibility":"fa-hammer",
+  "Market & Revenue":"fa-coins",
+  "Employment & Impact":"fa-people-group"
+};
+const badgeInfo={
+  "Founder Alignment":{name:"Aligned Founder",icon:"fa-seedling",text:"Shows how ready you are to commit to this idea."},
+  "Problem Strength":{name:"Problem Sleuth",icon:"fa-magnifying-glass",text:"Shows how sharply you understand the problem."},
+  "Solution & Differentiation":{name:"Innovator's Edge",icon:"fa-lightbulb",text:"Shows how defensible your solution really is."},
+  "Feasibility":{name:"Builder's Grit",icon:"fa-hammer",text:"Shows how testable your idea is right now."},
+  "Market & Revenue":{name:"Market Mapper",icon:"fa-coins",text:"Shows how clear your path to paying customers is."},
+  "Employment & Impact":{name:"Impact Architect",icon:"fa-people-group",text:"Shows the wider value your enterprise could create."}
+};
+const stageThresholds=[8,11,14,18];
+
+let current=0, answers=Array(questions.length).fill(null);
+
+function startQuest(){
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('quest').classList.remove('hidden');
+  renderQuestions();
+  updateUI();
+  document.getElementById('quest').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderQuestions(){
+  const el=document.getElementById('questions');
+  el.innerHTML=questions.map((q,i)=>`
+    <div class="question-card ${i===0?'active':''}" id="q${i}">
+      <div class="question-number"><i class="fa-solid ${dimensionIcons[q[0]]}"></i>&nbsp;${q[0]}</div>
+      <h2>${q[1]}</h2>
+      <div class="options" role="radiogroup" aria-label="${q[1]}">
+        ${q[2].map((o,idx)=>`
+          <div class="option" tabindex="0" role="radio" aria-checked="false"
+               onclick="selectOption(${i},${o[1]},this)"
+               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOption(${i},${o[1]},this)}">
+            <span class="letter">${String.fromCharCode(65+idx)}</span>
+            <span class="txt">${o[0]}</span>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function selectOption(q,val,el){
+  const isFirstAnswer=answers[q]===null;
+  answers[q]=val;
+  document.querySelectorAll(`#q${q} .option`).forEach(x=>{x.classList.remove('selected');x.setAttribute('aria-checked','false')});
+  el.classList.add('selected');
+  el.setAttribute('aria-checked','true');
+
+  if(isFirstAnswer){
+    const pop=document.createElement('span');
+    pop.className='xp-popup';
+    pop.textContent='+'+(val*10)+' XP';
+    el.appendChild(pop);
+    setTimeout(()=>pop.remove(),900);
+  }
+  updateUI();
+}
+
+function goNext(){
+  if(answers[current]===null) return;
+  const prevDim=questions[current][0];
+  if(current<questions.length-1){
+    document.getElementById(`q${current}`).classList.remove('active');
+    current++;
+    document.getElementById(`q${current}`).classList.add('active');
+    const newDim=questions[current][0];
+    if(newDim!==prevDim) levelUpToast(newDim);
+    updateUI();
+    document.getElementById('quest').scrollIntoView({behavior:'smooth',block:'start'});
+  } else {
+    showResult();
+  }
+}
+
+function goBack(){
+  if(current===0) return;
+  document.getElementById(`q${current}`).classList.remove('active');
+  current--;
+  document.getElementById(`q${current}`).classList.add('active');
+  updateUI();
+}
+
+function computeXp(){
+  return answers.reduce((a,b)=>a+(b?b*10:0),0);
+}
+function computeStreak(){
+  let s=0;
+  for(let i=current;i>=0;i--){
+    if(answers[i]===5) s++; else break;
+  }
+  return s;
+}
+
+function updateUI(){
+  const pct=Math.round((current/(questions.length-1))*100);
+  document.getElementById('bar').style.width=pct+'%';
+  document.getElementById('progressText').textContent=`Question ${current+1} of ${questions.length}`;
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('backBtn').disabled=current===0;
+  document.getElementById('nextBtn').disabled=answers[current]===null;
+  document.getElementById('nextBtn').textContent=current===questions.length-1?'Finish & Reveal Score':'Next';
+
+  const dim=questions[current][0];
+  const levelNum=dimensionOrder.indexOf(dim)+1;
+  document.getElementById('levelName').textContent=`Level ${levelNum}: ${dim}`;
+  document.getElementById('levelIcon').innerHTML=`<i class="fa-solid ${dimensionIcons[dim]}"></i>`;
+
+  animateNumber(document.getElementById('xpNum'), computeXp(), 400);
+
+  const streak=computeStreak();
+  const chip=document.getElementById('streakChip');
+  if(streak>=2){
+    chip.classList.add('show');
+    document.getElementById('streakCount').textContent=streak;
+  } else {
+    chip.classList.remove('show');
+  }
+
+  stageThresholds.forEach((th,i)=>{
+    const node=document.getElementById(`pnode-${i}`);
+    node.classList.remove('active','done');
+    if(current+1>th) node.classList.add('done');
+    else if(current+1<=th && (i===0 || current+1>stageThresholds[i-1])) node.classList.add('active');
+  });
+}
+
+function levelUpToast(dim){
+  const host=document.getElementById('toastHost');
+  const levelNum=dimensionOrder.indexOf(dim)+1;
+  const toast=document.createElement('div');
+  toast.className='toast';
+  toast.innerHTML=`<span class="ic"><i class="fa-solid ${dimensionIcons[dim]}"></i></span>
+    <span>Level ${levelNum} unlocked: <strong>${dim}</strong></span>`;
+  host.appendChild(toast);
+  setTimeout(()=>toast.remove(),2700);
+}
+
+function animateNumber(el,target,dur){
+  const start=parseInt(el.textContent||'0',10);
+  const t0=performance.now();
+  function step(t){
+    const p=Math.min(1,(t-t0)/dur);
+    el.textContent=Math.round(start+(target-start)*p);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+let lastSummaryText='';
+
+function showResult(){
+  document.getElementById('quest').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+
+  const raw=answers.reduce((a,b)=>a+b,0);
+  const score=Math.round((raw/90)*100);
+  const totalXp=computeXp();
+
+  animateRing(score);
+  animateCount(document.getElementById('scoreValue'),score);
+  animateNumber(document.getElementById('finalXp'),totalXp,1000);
+
+  let name,summary;
+  if(score<40){name='The Spark';summary='The idea has energy, but it needs sharper problem definition, customer evidence and a practical first test.';}
+  else if(score<60){name='The Explorer';summary='A promising possibility exists. Your immediate task is to validate the problem, customer and willingness to pay.';}
+  else if(score<80){name='The Builder';summary='Your idea shows credible enterprise potential. It is ready for a structured pilot and a 30–60–90 day roadmap.';}
+  else{name='The Pathfinder';summary='Your idea demonstrates strong founder, market and impact alignment. It is ready for a deeper RIED evaluation.';}
+
+  document.getElementById('resultName').textContent=name;
+  document.getElementById('resultSummary').textContent=summary;
+
+  const dims={};
+  questions.forEach((q,i)=>{
+    if(!dims[q[0]]) dims[q[0]]={score:0,max:0};
+    dims[q[0]].score+=answers[i];
+    dims[q[0]].max+=5;
+  });
+
+  const badgesEl=document.getElementById('badges');
+  badgesEl.innerHTML=dimensionOrder.map((k,idx)=>{
+    const v=dims[k];
+    const p=Math.round(v.score/v.max*100);
+    const tier = p>=80?'gold' : p>=50?'silver' : 'bronze';
+    const info=badgeInfo[k];
+    return `<div class="badge-card" style="animation-delay:${idx*100}ms">
+      <span class="ribbon ${tier}">${tier}</span>
+      <div class="badge-icon-lg"><i class="fa-solid ${info.icon}"></i></div>
+      <h4>${info.name}</h4>
+      <p>${info.text}</p>
+    </div>`;
+  }).join('');
+
+  const metricsEl=document.getElementById('metrics');
+  metricsEl.innerHTML=dimensionOrder.map((k,idx)=>{
+    const v=dims[k];
+    const p=Math.round(v.score/v.max*100);
+    return `<div class="metric" style="animation-delay:${idx*90}ms">
+      <div class="metric-top"><strong>${k}</strong><span>${p}%</span></div>
+      <div class="mini"><span data-pct="${p}"></span></div>
+    </div>`;
+  }).join('');
+
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      metricsEl.querySelectorAll('.mini span').forEach(s=>{ s.style.width=s.dataset.pct+'%'; });
+    },150);
+  });
+
+  const sorted=dimensionOrder.map(k=>[k,Math.round(dims[k].score/dims[k].max*100)]).sort((a,b)=>b[1]-a[1]);
+  const top=sorted[0], low=sorted[sorted.length-1];
+
+  document.getElementById('strength').innerHTML=`<strong>${top[0]} (${top[1]}%)</strong><br>Your strongest current signal lies here. Build your next proof point around this advantage.`;
+  document.getElementById('risk').innerHTML=`<strong>${low[0]} (${low[1]}%)</strong><br>This is the weakest link in the enterprise chain. Design one practical experiment to test it.`;
+
+  const nextAction =
+    score<40 ? 'Interview at least 10 people who face the problem. Rewrite the problem statement using their exact language.' :
+    score<60 ? 'Run a 30-day validation sprint: 15 customer conversations, one simple prototype and three willingness-to-pay tests.' :
+    score<80 ? 'Build and test a minimum viable pilot with real users. Track usage, cost, feedback and payment intent.' :
+    'Register interest with RIED, map funding and mentors, and convert the idea into a 30–60–90 day commercialization roadmap.';
+  document.getElementById('nextAction').textContent=nextAction;
+
+  lastSummaryText = `RIED Idea Quest result: ${name} — Readiness Score ${score}/100, ${totalXp} XP earned.\n`+
+    `Strongest signal: ${top[0]} (${top[1]}%). Next reality check: ${low[0]} (${low[1]}%).\n`+
+    `Next move: ${nextAction}\nTake your idea further at https://ried.co.in/contact.html#idea-form`;
+
+  if(score>=60 && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    fireConfetti();
+  }
+
+  document.getElementById('result').scrollIntoView({top:0,behavior:'smooth'});
+}
+
+function copyResults(){
+  const note=document.getElementById('copyNote');
+  const done=()=>{note.classList.add('show');setTimeout(()=>note.classList.remove('show'),3000);};
+  if(navigator.clipboard && lastSummaryText){
+    navigator.clipboard.writeText(lastSummaryText).then(done).catch(()=>alert(lastSummaryText));
+  } else if(lastSummaryText){
+    alert(lastSummaryText);
+  }
+}
+
+function restartQuest(){
+  current=0;
+  answers=Array(questions.length).fill(null);
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('intro').classList.remove('hidden');
+  document.getElementById('questions').innerHTML='';
+  document.getElementById('idea-quest').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function animateRing(target){
+  const ring=document.getElementById('scoreRing');
+  const start=performance.now(), dur=1100;
+  function step(t){
+    const p=Math.min(1,(t-start)/dur);
+    const eased=1-Math.pow(1-p,3);
+    const deg=eased*target*3.6;
+    ring.style.background=`conic-gradient(var(--orange) ${deg}deg, var(--bg-light) 0deg)`;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function animateCount(el,target){
+  const start=performance.now(), dur=1100;
+  function step(t){
+    const p=Math.min(1,(t-start)/dur);
+    const eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(eased*target);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function fireConfetti(){
+  const canvas=document.getElementById('confettiCanvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  const colors=['#0e5a8a','#178bc7','#8e0e3b','#f58220'];
+  let pieces=Array.from({length:120},()=>({
+    x:Math.random()*canvas.width,
+    y:-20-Math.random()*canvas.height*0.3,
+    w:6+Math.random()*5, h:9+Math.random()*6,
+    vy:2+Math.random()*3, vx:(Math.random()-0.5)*2.4,
+    rot:Math.random()*360, vr:(Math.random()-0.5)*8,
+    color:colors[Math.floor(Math.random()*colors.length)]
+  }));
+  let frame=0, maxFrames=190;
+  function tick(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+      ctx.restore();
+    });
+    if(frame<maxFrames) requestAnimationFrame(tick);
+    else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  requestAnimationFrame(tick);
+}
+window.addEventListener('resize',()=>{
+  const c=document.getElementById('confettiCanvas');
+  c.width=window.innerWidth; c.height=window.innerHeight;
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>

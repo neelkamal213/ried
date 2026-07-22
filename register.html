@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Create Account | RIED</title>
+  <meta name="description" content="Create a free RIED account to track your progress and access member features.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="products.html">Products</a>
+        <a href="services.html">Services</a>
+        <a href="startup-sanctuary.html">Startup Sanctuary</a>
+        <a href="leadership.html">Leadership</a>
+        <a href="packages.html">Packages</a>
+        <a href="login.html">Sign In</a>
+        <a href="contact.html" class="nav-cta">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero" style="min-height:280px">
+    <div class="page-hero-media">
+      <img src="images/gallery/discovery.jpg" alt="Create your RIED account" style="object-position:center 40%">
+    </div>
+    <div class="hero-content">
+      <span class="hero-badge"><span class="dot"></span>Join RIED</span>
+      <h1>Create Your Account</h1>
+      <p>Free to join &mdash; track your Idea Quest results and unlock member features as they launch.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="auth-wrap">
+
+        <div id="authError" class="auth-error"></div>
+
+        <form class="contact-form" id="registerForm">
+          <input type="text" id="displayName" placeholder="Your Name" required>
+          <input type="email" id="email" placeholder="Your Email" required>
+          <input type="password" id="password" placeholder="Password (min. 6 characters)" minlength="6" required>
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" minlength="6" required>
+
+          <button type="submit" class="btn-primary" style="width:100%">
+            <span class="btn-label">Create Account</span>
+          </button>
+        </form>
+
+        <p class="auth-switch">Already have an account? <a href="login.html">Sign in</a></p>
+
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+
+      <div class="social-links">
+        <a href="https://www.linkedin.com/company/ried-pvt-ltd/" target="_blank"><i class="fab fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61576517859696" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://www.instagram.com/riedpvtltd" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.youtube.com/@riedpvtltd" target="_blank"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+  <a href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect." class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
+
+<script>
+window.addEventListener("scroll", function() {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+  document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
+});
+</script>
+
+<script type="module">
+import { auth, db, ADMIN_EMAILS, createUserWithEmailAndPassword, updateProfile, doc, setDoc, serverTimestamp }
+  from "./js/firebase-init.js";
+
+const form = document.getElementById('registerForm');
+const errorBox = document.getElementById('authError');
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.classList.add('show');
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorBox.classList.remove('show');
+
+  const displayName = document.getElementById('displayName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirmPassword = document.getElementById('confirmPassword').value;
+
+  if (password !== confirmPassword) {
+    showError("Passwords don't match — please re-enter them.");
+    return;
+  }
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  submitBtn.querySelector('.btn-label').textContent = 'Creating account...';
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(cred.user, { displayName });
+
+    const role = ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'member';
+    await setDoc(doc(db, 'users', cred.user.uid), {
+      email,
+      displayName,
+      role,
+      createdAt: serverTimestamp()
+    });
+
+    window.location.href = 'account.html';
+  } catch (err) {
+    const messages = {
+      'auth/email-already-in-use': 'An account with this email already exists — try signing in instead.',
+      'auth/invalid-email': 'That email address looks invalid.',
+      'auth/weak-password': 'Please choose a stronger password (at least 6 characters).'
+    };
+    showError(messages[err.code] || 'Something went wrong creating your account. Please try again.');
+    submitBtn.disabled = false;
+    submitBtn.querySelector('.btn-label').textContent = 'Create Account';
+  }
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>
