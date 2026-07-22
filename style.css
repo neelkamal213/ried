@@ -633,9 +633,8 @@ h1, h2, h3, h4,
 }
 
 .service-card i {
-  font-size: 42px;
-  color: #0e5a8a;
-  margin-bottom: 25px;
+  font-size: 26px;
+  color: white;
 }
 
 .service-card h3,
