@@ -1,0 +1,14 @@
+{
+  "name": "ried-functions",
+  "description": "Cloud Functions for the RIED website — secure Razorpay order creation and payment verification.",
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.0",
+    "razorpay": "^2.9.4"
+  },
+  "private": true
+}
