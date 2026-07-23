@@ -488,11 +488,15 @@ async function submitProfile() {
   nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
 
   try {
+    console.log('[submitProfile] uid:', currentUser && currentUser.uid, 'authCurrentUser:', auth.currentUser && auth.currentUser.uid);
+
     if (logoFile) {
+      console.log('[submitProfile] step: uploading logo...');
       const ext = (logoFile.name.split('.').pop() || 'png').toLowerCase();
       const storageRef = ref(storage, `profile-logos/${currentUser.uid}/logo.${ext}`);
       await uploadBytes(storageRef, logoFile);
       profile.logoURL = await getDownloadURL(storageRef);
+      console.log('[submitProfile] step: logo uploaded OK');
     }
 
     const data = {
@@ -509,8 +513,13 @@ async function submitProfile() {
     };
     delete data.flywheelStageExisting;
 
+    console.log('[submitProfile] step: writing /profiles/' + currentUser.uid, data);
     await setDoc(doc(db, 'profiles', currentUser.uid), data, { merge: true });
+    console.log('[submitProfile] step: /profiles write OK');
+
+    console.log('[submitProfile] step: writing /users/' + currentUser.uid);
     await setDoc(doc(db, 'users', currentUser.uid), { profileComplete: true }, { merge: true });
+    console.log('[submitProfile] step: /users write OK');
 
     document.getElementById('wizard').querySelectorAll(':scope > div').forEach(d => d.classList.add('hidden'));
     document.getElementById('step-success').classList.remove('hidden');
