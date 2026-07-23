@@ -15,8 +15,22 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB51HO3PQBUhHIz6EQ_2VMuXB7p_BsR7KQ",
@@ -36,6 +50,7 @@ export const ADMIN_EMAILS = ["pramod@ried.co.in", "neel@ried.co.in"];
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 export {
   createUserWithEmailAndPassword,
@@ -47,5 +62,16 @@ export {
   doc,
   setDoc,
   getDoc,
-  serverTimestamp
+  updateDoc,
+  collection,
+  addDoc,
+  deleteDoc,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
 };
