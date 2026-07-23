@@ -21,6 +21,25 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
 
+    // Founder onboarding profile (Basic Info / Company Info / Individual Founder
+    // Discovery answers) — each user can only ever read/write their own doc.
+    // A Cloud Function (onCreate trigger) reads this server-side to email a
+    // copy to hello@ried.co.in — that server-side read uses the Admin SDK and
+    // is not subject to these rules.
+    match /profiles/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Founder Flywheel dashboard file uploads (metadata only — the actual file
+    // bytes live in Cloud Storage; see storage.rules). Each user can only
+    // read/create/delete their own upload records.
+    match /uploads/{userId}/files/{fileId} {
+      allow read, create, delete: if request.auth != null && request.auth.uid == userId;
+      allow update: if false;
+    }
+
     // Everything else is closed by default.
     match /{document=**} {
       allow read, write: if false;

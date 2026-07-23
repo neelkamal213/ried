@@ -141,7 +141,8 @@ form.addEventListener('submit', async (e) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName });
 
-    const role = ADMIN_EMAILS.includes(email.toLowerCase()) ? 'admin' : 'member';
+    const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    const role = isAdmin ? 'admin' : 'member';
     await setDoc(doc(db, 'users', cred.user.uid), {
       email,
       displayName,
@@ -149,7 +150,7 @@ form.addEventListener('submit', async (e) => {
       createdAt: serverTimestamp()
     });
 
-    window.location.href = 'account.html';
+    window.location.href = isAdmin ? 'admin-dashboard.html' : 'profile-setup.html';
   } catch (err) {
     const messages = {
       'auth/email-already-in-use': 'An account with this email already exists — try signing in instead.',

@@ -108,7 +108,7 @@ window.addEventListener("scroll", function() {
 </script>
 
 <script type="module">
-import { auth, signInWithEmailAndPassword, sendPasswordResetEmail } from "./js/firebase-init.js";
+import { auth, db, ADMIN_EMAILS, signInWithEmailAndPassword, sendPasswordResetEmail, doc, getDoc } from "./js/firebase-init.js";
 
 const form = document.getElementById('loginForm');
 const errorBox = document.getElementById('authError');
@@ -130,8 +130,16 @@ form.addEventListener('submit', async (e) => {
   submitBtn.querySelector('.btn-label').textContent = 'Signing in...';
 
   try {
-    await signInWithEmailAndPassword(auth, email, password);
-    window.location.href = 'account.html';
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const user = cred.user;
+
+    if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+      window.location.href = 'admin-dashboard.html';
+      return;
+    }
+
+    const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+    window.location.href = profileSnap.exists() ? 'dashboard.html' : 'profile-setup.html';
   } catch (err) {
     const messages = {
       'auth/invalid-credential': 'Incorrect email or password.',

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Build Your Founder Profile | RIED</title>
+  <meta name="description" content="A few quick questions so RIED can tailor your Founder Flywheel journey.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="onboarding-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+      <nav class="main-nav">
+        <span style="color:var(--muted); font-size:14px; font-weight:600">
+          <i class="fa-solid fa-shield-heart"></i> Your details are private &mdash; only RIED sees them
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:60px">
+    <div class="container quest-wrap">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+      </div>
+
+      <div id="wizard" class="shell" style="display:none">
+
+        <!-- INTRO -->
+        <div id="step-intro" class="onboard-step">
+          <span class="quest-eyebrow"><i class="fa-solid fa-compass"></i> Founder Discovery — Step 1 of 4</span>
+          <h2 class="quest-intro-title">Let's build your Founder Profile</h2>
+          <p class="quest-intro-copy">
+            A few quick questions so RIED can understand your venture (or your idea, if you're just starting out) and
+            point you toward the right guidance, packages and people. Takes about 5 minutes &mdash; save anytime, nothing
+            is lost if you step away.
+          </p>
+          <button class="btn-primary" id="startBtn">Let's Go <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+        <!-- WIZARD BODY (shown once started) -->
+        <div id="wizardBody" class="hidden">
+
+          <div class="game-bar">
+            <div class="level-chip">
+              <div class="badge-icon"><i class="fa-solid fa-user-pen" id="stepIcon"></i></div>
+              <div class="txt">
+                <strong id="stepTitle">Basics</strong>
+                <span id="stepEyebrow">About You</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="qprogress-top">
+            <span id="progressText">Step 1 of 8</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="qprogress-track"><div id="bar" class="qprogress-fill"></div></div>
+
+          <div id="stepBody" class="onboard-step-body"></div>
+          <div id="stepError" class="auth-error"></div>
+
+          <div class="actions">
+            <button id="backBtn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button id="nextBtn" class="btn-primary">Continue <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- SUCCESS -->
+        <div id="step-success" class="hidden" style="text-align:center">
+          <div class="badge-icon" style="width:70px;height:70px;font-size:30px;margin:0 auto 22px">
+            <i class="fa-solid fa-champagne-glasses"></i>
+          </div>
+          <h2 class="quest-intro-title">You're in, founder! 🎉</h2>
+          <p class="quest-intro-copy">
+            Your profile is saved and a copy has been sent to the RIED team. Your Founder Flywheel journey starts now &mdash;
+            Founder Discovery is already complete.
+          </p>
+          <button class="btn-primary" id="goDashboardBtn">Go To My Dashboard <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+<script type="module">
+import {
+  auth, db, storage, ADMIN_EMAILS,
+  onAuthStateChanged, signOut,
+  doc, getDoc, setDoc, updateDoc, serverTimestamp,
+  ref, uploadBytes, getDownloadURL
+} from "./js/firebase-init.js";
+import { renderProfileSummaryHTML, IS_INDIVIDUAL_VALUE } from "./js/profile-summary.js";
+
+const ENTITY_TYPES = ['Private Limited', 'LLP', 'Partnership', 'Proprietorship', IS_INDIVIDUAL_VALUE, 'Others'];
+const PHASES = ['Just an Idea', 'Ideation / Concept Stage', 'Early Startup (Pre-Revenue)', 'Revenue Positive', 'Scaling', 'Established Enterprise'];
+const DOMAINS = ['Education', 'Healthcare', 'Agriculture', 'Environment', 'Women & Children', 'Rural Development', 'Manufacturing', 'IT', 'Something else...'];
+
+const FOUNDER_QUESTIONS = [
+  "What kind of work gives you so much joy that you completely lose track of time?",
+  "If money wasn't a constraint, what would you happily spend the next five years building?",
+  "Which problem in society genuinely bothers you every time you come across it?",
+  "Imagine your company becomes one of India's most respected companies. What would you want people to remember it for?",
+  "Beyond your idea, where do you think your creativity, background and experience could make a real difference?",
+  "If your company could manufacture just one product for the next ten years, what would you choose, and why?",
+  "Which domain excites you the most, and what draws you towards it?",
+  "Have you ever come across a product and thought “this could have been designed much better”? What was it?",
+  "Ten years from now, what would you like people to say about you and your company?",
+  "Finally, if you could solve just one meaningful problem for society through your enterprise, what would it be?"
+];
+
+let currentUser = null;
+let isEditing = false;
+let logoFile = null;
+let logoPreviewURL = '';
+
+let profile = {
+  entityType: '', entityTypeOther: '',
+  fullName: '', brandName: '',
+  companyPhase: '', domain: '', domainOther: '',
+  logoURL: '',
+  registeredAddress: '', totalShareholders: '', cin: '', gstNo: '',
+  signatoryName: '', signatoryDesignation: '', signatoryPhone: '', signatoryEmail: '',
+  pocSameAsSignatory: false,
+  pocName: '', pocDesignation: '', pocPhone: '', pocEmail: '',
+  founderAnswers: FOUNDER_QUESTIONS.map(q => ({ question: q, answer: '' })),
+  additionalInfo: ''
+};
+
+let currentIndex = 0; // index into getSequence()
+
+function isIndividual() { return profile.entityType === IS_INDIVIDUAL_VALUE; }
+
+function getSequence() {
+  const seq = ['basics', 'direction', 'logo'];
+  if (isIndividual()) {
+    FOUNDER_QUESTIONS.forEach((_, i) => seq.push('founder-' + i));
+  } else {
+    seq.push('company-details', 'signatory', 'poc');
+  }
+  seq.push('extra', 'review');
+  return seq;
+}
+
+function chipsHTML(name, options, current, otherValue, otherField) {
+  return `<div class="options onboard-chips">${options.map(opt => `
+    <div class="option onboard-chip ${current === opt ? 'selected' : ''}" data-value="${opt.replace(/"/g,'&quot;')}" data-field="${name}">
+      <span class="txt">${opt}</span>
+    </div>`).join('')}
+    </div>
+    ${options.includes('Others') || options.includes('Something else...') ? `
+    <input type="text" class="onboard-other-input ${(current === 'Others' || current === 'Something else...') ? '' : 'hidden'}"
+      id="${name}OtherInput" placeholder="Please specify" value="${(otherValue || '').replace(/"/g,'&quot;')}">` : ''}
+  `;
+}
+
+function renderStep(key) {
+  document.getElementById('stepError').classList.remove('show');
+
+  if (key === 'basics') {
+    setHeader('fa-user-pen', 'About You', 'Founder Discovery');
+    return `
+      <p class="onboard-lead">First, tell us who's building this.</p>
+      <label class="onboard-label">Company / Organisation / Institution / Individual Full Name</label>
+      <p class="onboard-hint">Write your own full name if you don't have a company registered yet.</p>
+      <input type="text" id="fullName" class="onboard-input" value="${esc(profile.fullName)}" placeholder="e.g. Acme Innovations Pvt. Ltd., or your own name">
+
+      <label class="onboard-label">Brand Name <span class="onboard-optional">(optional)</span></label>
+      <input type="text" id="brandName" class="onboard-input" value="${esc(profile.brandName)}" placeholder="Leave blank if you don't have one yet">
+
+      <label class="onboard-label">What best describes you right now?</label>
+      ${chipsHTML('entityType', ENTITY_TYPES, profile.entityType, profile.entityTypeOther)}
+    `;
+  }
+
+  if (key === 'direction') {
+    setHeader('fa-compass', 'Where You’re Headed', 'Founder Discovery');
+    return `
+      <label class="onboard-label">Which phase best describes you today?</label>
+      ${chipsHTML('companyPhase', PHASES, profile.companyPhase)}
+
+      <label class="onboard-label" style="margin-top:28px">Which domain does this belong to?</label>
+      ${chipsHTML('domain', DOMAINS, profile.domain, profile.domainOther)}
+    `;
+  }
+
+  if (key === 'logo') {
+    setHeader('fa-image', 'Add Your Logo', 'Founder Discovery');
+    const preview = logoPreviewURL || profile.logoURL;
+    return `
+      <p class="onboard-lead">Got a logo? Add it &mdash; it'll be your profile picture on RIED. No logo yet? Totally fine, skip ahead.</p>
+      <div class="logo-upload-wrap">
+        <div class="logo-upload-circle" id="logoCircle">
+          ${preview ? `<img src="${preview}" alt="Logo preview">` : '<i class="fa-solid fa-building"></i>'}
+        </div>
+        <input type="file" id="logoInput" accept="image/*" class="hidden">
+        <button type="button" class="btn-secondary" id="chooseLogoBtn"><i class="fa-solid fa-upload"></i> ${preview ? 'Change Logo' : 'Upload Logo'}</button>
+      </div>
+    `;
+  }
+
+  if (key === 'company-details') {
+    setHeader('fa-building', 'Company Details', 'Founder Discovery');
+    return `
+      <label class="onboard-label">Registered Address</label>
+      <textarea id="registeredAddress" class="onboard-input" rows="3" placeholder="Full registered address">${esc(profile.registeredAddress)}</textarea>
+
+      <label class="onboard-label">Total Number of Shareholders</label>
+      <input type="number" min="0" id="totalShareholders" class="onboard-input" value="${esc(profile.totalShareholders)}" placeholder="e.g. 2">
+
+      <label class="onboard-label">CIN <span class="onboard-optional">(leave blank if you don't have one yet)</span></label>
+      <input type="text" id="cin" class="onboard-input" value="${esc(profile.cin)}" placeholder="Corporate Identification Number">
+
+      <label class="onboard-label">GST No. <span class="onboard-optional">(leave blank if you don't have one yet)</span></label>
+      <input type="text" id="gstNo" class="onboard-input" value="${esc(profile.gstNo)}" placeholder="GST Registration Number">
+    `;
+  }
+
+  if (key === 'signatory') {
+    setHeader('fa-signature', 'Authorised Signatory', 'Founder Discovery');
+    return `
+      <p class="onboard-lead">Who is authorised to sign on behalf of the company?</p>
+      <label class="onboard-label">Name</label>
+      <input type="text" id="signatoryName" class="onboard-input" value="${esc(profile.signatoryName)}">
+      <label class="onboard-label">Designation</label>
+      <input type="text" id="signatoryDesignation" class="onboard-input" value="${esc(profile.signatoryDesignation)}">
+      <label class="onboard-label">Phone Number</label>
+      <input type="tel" id="signatoryPhone" class="onboard-input" value="${esc(profile.signatoryPhone)}">
+      <label class="onboard-label">Email Address</label>
+      <input type="email" id="signatoryEmail" class="onboard-input" value="${esc(profile.signatoryEmail)}">
+    `;
+  }
+
+  if (key === 'poc') {
+    setHeader('fa-address-card', 'Point of Contact', 'Founder Discovery');
+    return `
+      <label class="onboard-checkbox-row">
+        <input type="checkbox" id="pocSame" ${profile.pocSameAsSignatory ? 'checked' : ''}>
+        <span>Same as Authorised Signatory</span>
+      </label>
+
+      <label class="onboard-label">Name</label>
+      <input type="text" id="pocName" class="onboard-input" value="${esc(profile.pocName)}">
+      <label class="onboard-label">Designation</label>
+      <input type="text" id="pocDesignation" class="onboard-input" value="${esc(profile.pocDesignation)}">
+      <label class="onboard-label">Phone Number</label>
+      <input type="tel" id="pocPhone" class="onboard-input" value="${esc(profile.pocPhone)}">
+      <label class="onboard-label">Email Address</label>
+      <input type="email" id="pocEmail" class="onboard-input" value="${esc(profile.pocEmail)}">
+    `;
+  }
+
+  if (key.startsWith('founder-')) {
+    const i = parseInt(key.split('-')[1], 10);
+    setHeader('fa-lightbulb', `Question ${i + 1} of ${FOUNDER_QUESTIONS.length}`, 'Founder Discovery');
+    return `
+      <p class="onboard-lead onboard-question">${FOUNDER_QUESTIONS[i]}</p>
+      <textarea id="founderAnswer" class="onboard-input" rows="5" placeholder="Take your time — there are no wrong answers.">${esc(profile.founderAnswers[i].answer)}</textarea>
+    `;
+  }
+
+  if (key === 'extra') {
+    setHeader('fa-comment-dots', 'Anything Else?', 'Founder Discovery');
+    return `
+      <label class="onboard-label">Anything else you'd like RIED to know? <span class="onboard-optional">(optional)</span></label>
+      <textarea id="additionalInfo" class="onboard-input" rows="5" placeholder="Context, links, questions — whatever's useful">${esc(profile.additionalInfo)}</textarea>
+    `;
+  }
+
+  if (key === 'review') {
+    setHeader('fa-clipboard-check', 'Review & Submit', 'Founder Discovery');
+    return `
+      <p class="onboard-lead">Here's everything you've told us. Looks right? Submit and your Founder Flywheel journey begins.</p>
+      <div class="profile-summary-card">${renderProfileSummaryHTML({ ...profile, logoURL: logoPreviewURL || profile.logoURL })}</div>
+    `;
+  }
+
+  return '';
+}
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function setHeader(icon, title, eyebrow) {
+  document.getElementById('stepIcon').className = 'fa-solid ' + icon;
+  document.getElementById('stepTitle').textContent = title;
+  document.getElementById('stepEyebrow').textContent = eyebrow;
+}
+
+function attachStepEvents(key) {
+  document.querySelectorAll('.onboard-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const field = chip.dataset.field;
+      const value = chip.dataset.value;
+      profile[field] = value;
+      document.querySelectorAll(`.onboard-chip[data-field="${field}"]`).forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      const otherInput = document.getElementById(field + 'OtherInput');
+      if (otherInput) {
+        otherInput.classList.toggle('hidden', value !== 'Others' && value !== 'Something else...');
+      }
+    });
+  });
+
+  if (key === 'logo') {
+    const input = document.getElementById('logoInput');
+    document.getElementById('chooseLogoBtn').addEventListener('click', () => input.click());
+    document.getElementById('logoCircle').addEventListener('click', () => input.click());
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (!file) return;
+      logoFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        logoPreviewURL = e.target.result;
+        renderCurrent();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  if (key === 'poc') {
+    const sameBox = document.getElementById('pocSame');
+    sameBox.addEventListener('change', () => {
+      profile.pocSameAsSignatory = sameBox.checked;
+      if (sameBox.checked) {
+        profile.pocName = profile.signatoryName;
+        profile.pocDesignation = profile.signatoryDesignation;
+        profile.pocPhone = profile.signatoryPhone;
+        profile.pocEmail = profile.signatoryEmail;
+        renderCurrent();
+      }
+    });
+  }
+
+}
+
+function collectStep(key) {
+  if (key === 'basics') {
+    profile.fullName = document.getElementById('fullName').value.trim();
+    profile.brandName = document.getElementById('brandName').value.trim();
+    const otherInput = document.getElementById('entityTypeOtherInput');
+    if (otherInput) profile.entityTypeOther = otherInput.value.trim();
+  } else if (key === 'direction') {
+    const otherInput = document.getElementById('domainOtherInput');
+    if (otherInput) profile.domainOther = otherInput.value.trim();
+  } else if (key === 'company-details') {
+    profile.registeredAddress = document.getElementById('registeredAddress').value.trim();
+    profile.totalShareholders = document.getElementById('totalShareholders').value.trim();
+    profile.cin = document.getElementById('cin').value.trim();
+    profile.gstNo = document.getElementById('gstNo').value.trim();
+  } else if (key === 'signatory') {
+    profile.signatoryName = document.getElementById('signatoryName').value.trim();
+    profile.signatoryDesignation = document.getElementById('signatoryDesignation').value.trim();
+    profile.signatoryPhone = document.getElementById('signatoryPhone').value.trim();
+    profile.signatoryEmail = document.getElementById('signatoryEmail').value.trim();
+  } else if (key === 'poc') {
+    profile.pocName = document.getElementById('pocName').value.trim();
+    profile.pocDesignation = document.getElementById('pocDesignation').value.trim();
+    profile.pocPhone = document.getElementById('pocPhone').value.trim();
+    profile.pocEmail = document.getElementById('pocEmail').value.trim();
+  } else if (key.startsWith('founder-')) {
+    const i = parseInt(key.split('-')[1], 10);
+    profile.founderAnswers[i].answer = document.getElementById('founderAnswer').value.trim();
+  } else if (key === 'extra') {
+    profile.additionalInfo = document.getElementById('additionalInfo').value.trim();
+  }
+}
+
+function validateStep(key) {
+  if (key === 'basics') {
+    if (!profile.fullName) return 'Please tell us your company, organisation or your own full name.';
+    if (!profile.entityType) return 'Please choose the option that best describes you.';
+    if (profile.entityType === 'Others' && !profile.entityTypeOther) return 'Please specify your entity type.';
+  } else if (key === 'direction') {
+    if (!profile.companyPhase) return 'Please choose the phase that best fits right now.';
+    if (!profile.domain) return 'Please choose a domain.';
+    if (profile.domain === 'Something else...' && !profile.domainOther) return 'Please tell us the domain.';
+  } else if (key === 'company-details') {
+    if (!profile.registeredAddress) return 'Please share the registered address.';
+    if (!profile.totalShareholders) return 'Please share the number of shareholders.';
+  } else if (key === 'signatory') {
+    if (!profile.signatoryName || !profile.signatoryDesignation || !profile.signatoryPhone || !profile.signatoryEmail) {
+      return 'Please fill in all Authorised Signatory details.';
+    }
+  } else if (key === 'poc') {
+    if (!profile.pocName || !profile.pocDesignation || !profile.pocPhone || !profile.pocEmail) {
+      return 'Please fill in all Point of Contact details.';
+    }
+  } else if (key.startsWith('founder-')) {
+    const i = parseInt(key.split('-')[1], 10);
+    if (!profile.founderAnswers[i].answer) return 'An honest one-liner is fine — just don’t leave it blank.';
+  }
+  return null;
+}
+
+function renderCurrent() {
+  const seq = getSequence();
+  if (currentIndex >= seq.length) currentIndex = seq.length - 1;
+  const key = seq[currentIndex];
+
+  document.getElementById('stepBody').innerHTML = renderStep(key);
+  attachStepEvents(key);
+
+  const pct = Math.round((currentIndex / (seq.length - 1)) * 100);
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `Step ${currentIndex + 1} of ${seq.length}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+
+  document.getElementById('backBtn').disabled = currentIndex === 0;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.innerHTML = key === 'review'
+    ? '<i class="fa-solid fa-paper-plane"></i> Submit My Profile'
+    : 'Continue <i class="fa-solid fa-arrow-right"></i>';
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('step-intro').classList.add('hidden');
+  document.getElementById('wizardBody').classList.remove('hidden');
+  renderCurrent();
+});
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  const seq = getSequence();
+  const key = seq[currentIndex];
+  collectStep(key);
+  currentIndex = Math.max(0, currentIndex - 1);
+  renderCurrent();
+});
+
+document.getElementById('nextBtn').addEventListener('click', async () => {
+  const seq = getSequence();
+  const key = seq[currentIndex];
+  collectStep(key);
+
+  const err = validateStep(key);
+  const errBox = document.getElementById('stepError');
+  if (err) {
+    errBox.textContent = err;
+    errBox.classList.add('show');
+    return;
+  }
+  errBox.classList.remove('show');
+
+  if (key === 'review') {
+    await submitProfile();
+    return;
+  }
+
+  currentIndex++;
+  renderCurrent();
+});
+
+async function submitProfile() {
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = true;
+  nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+  try {
+    if (logoFile) {
+      const ext = (logoFile.name.split('.').pop() || 'png').toLowerCase();
+      const storageRef = ref(storage, `profile-logos/${currentUser.uid}/logo.${ext}`);
+      await uploadBytes(storageRef, logoFile);
+      profile.logoURL = await getDownloadURL(storageRef);
+    }
+
+    const data = {
+      ...profile,
+      uid: currentUser.uid,
+      email: currentUser.email,
+      displayName: currentUser.displayName || '',
+      flywheelStage: profile.flywheelStageExisting || 'founder-discovery',
+      status: 'submitted',
+      submittedAt: serverTimestamp()
+    };
+    delete data.flywheelStageExisting;
+
+    await setDoc(doc(db, 'profiles', currentUser.uid), data, { merge: true });
+    await setDoc(doc(db, 'users', currentUser.uid), { profileComplete: true }, { merge: true });
+
+    document.getElementById('wizard').querySelectorAll(':scope > div').forEach(d => d.classList.add('hidden'));
+    document.getElementById('step-success').classList.remove('hidden');
+  } catch (err) {
+    const errBox = document.getElementById('stepError');
+    errBox.textContent = 'Something went wrong saving your profile. Please try again, or email hello@ried.co.in if it keeps happening.';
+    errBox.classList.add('show');
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit My Profile';
+  }
+}
+
+document.getElementById('goDashboardBtn').addEventListener('click', () => {
+  window.location.href = 'dashboard.html';
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = user;
+
+  if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    window.location.href = 'admin-dashboard.html';
+    return;
+  }
+
+  try {
+    const snap = await getDoc(doc(db, 'profiles', user.uid));
+    if (snap.exists()) {
+      isEditing = true;
+      const existing = snap.data();
+      profile = {
+        ...profile,
+        ...existing,
+        founderAnswers: (existing.founderAnswers && existing.founderAnswers.length === FOUNDER_QUESTIONS.length)
+          ? existing.founderAnswers
+          : profile.founderAnswers
+      };
+      profile.flywheelStageExisting = existing.flywheelStage;
+    }
+  } catch (e) { /* fine to start fresh if this read fails */ }
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('wizard').style.display = 'block';
+});
+
+window.addEventListener("scroll", function () {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+});
+</script>
+
+</body>
+</html>

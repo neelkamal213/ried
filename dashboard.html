@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>My Dashboard | RIED</title>
+  <meta name="description" content="Your RIED Founder Flywheel dashboard.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="dashboard-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="products.html">Products</a>
+        <a href="services.html">Services</a>
+        <a href="startup-sanctuary.html">Startup Sanctuary</a>
+        <a href="leadership.html">Leadership</a>
+        <a href="packages.html">Packages</a>
+        <a href="contact.html" class="nav-cta">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:150px">
+    <div class="container">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading your dashboard...
+      </div>
+
+      <div id="dashboard" class="hidden">
+
+        <!-- WELCOME + FLYWHEEL PROGRESS -->
+        <div class="dash-welcome">
+          <div>
+            <span class="quest-eyebrow"><i class="fa-solid fa-arrows-spin"></i> RIED Founder Flywheel</span>
+            <h1 class="dash-title" id="welcomeName">Welcome back</h1>
+            <p id="stageDesc" class="dash-stage-desc"></p>
+          </div>
+        </div>
+
+        <div class="flywheel-strip" id="flywheelStrip"></div>
+
+        <!-- MAIN GRID -->
+        <div class="dash-grid">
+
+          <!-- LEFT: profile summary -->
+          <div class="dash-col">
+            <div class="dash-card">
+              <div class="dash-card-head">
+                <h3><i class="fa-solid fa-id-card"></i> Your Founder Profile</h3>
+                <a href="profile-setup.html" class="btn-secondary dash-edit-btn"><i class="fa-solid fa-pen"></i> Edit</a>
+              </div>
+              <div id="profileSummary" class="profile-summary-card"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT: uploads + guidance + sign out -->
+          <div class="dash-col">
+
+            <div class="dash-card">
+              <h3><i class="fa-solid fa-cloud-arrow-up"></i> Documents &amp; Uploads</h3>
+              <p class="dash-card-hint">Share decks, research notes, incorporation documents &mdash; anything RIED should see as you move through the Flywheel.</p>
+
+              <input type="file" id="uploadInput" class="hidden">
+              <button class="btn-primary" id="uploadBtn" style="margin:14px 0"><i class="fa-solid fa-upload"></i> Upload a File</button>
+              <div id="uploadStatus" class="auth-error" style="margin-bottom:14px"></div>
+
+              <div id="uploadsList" class="uploads-list">
+                <p class="dash-empty" id="uploadsEmpty">No files uploaded yet.</p>
+              </div>
+            </div>
+
+            <div class="dash-card dash-guidance-card">
+              <h3><i class="fa-solid fa-compass"></i> Seek Guidance</h3>
+              <p class="dash-card-hint">Talk it through with the RIED team &mdash; book a free 30-minute call whenever you need a nudge.</p>
+              <a href="https://cal.com/riedpvtltd/30min" target="_blank" class="btn-primary" style="display:inline-block;margin-top:8px">
+                <i class="fa-solid fa-calendar-check"></i> Book a Call
+              </a>
+            </div>
+
+            <button class="btn-secondary" id="logoutBtn" style="width:100%">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            </button>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+
+      <div class="social-links">
+        <a href="https://www.linkedin.com/company/ried-pvt-ltd/" target="_blank"><i class="fab fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61576517859696" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://www.instagram.com/riedpvtltd" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.youtube.com/@riedpvtltd" target="_blank"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+  <a href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect." class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
+
+<script>
+window.addEventListener("scroll", function() {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+  document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
+});
+</script>
+
+<script type="module">
+import {
+  auth, db, storage, ADMIN_EMAILS,
+  onAuthStateChanged, signOut,
+  doc, getDoc, collection, addDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp,
+  ref, uploadBytes, getDownloadURL, deleteObject
+} from "./js/firebase-init.js";
+import { renderProfileSummaryHTML } from "./js/profile-summary.js";
+
+const STAGES = [
+  { key: 'founder-discovery', label: 'Founder Discovery', icon: 'fa-compass',
+    desc: "Your Founder Profile is in — Founder Discovery is complete. Next up: Problem Discovery." },
+  { key: 'problem-discovery', label: 'Problem Discovery', icon: 'fa-magnifying-glass',
+    desc: "Time to pressure-test the real problem you're solving. Book a call with RIED to kick this stage off." },
+  { key: 'research-translation', label: 'Research Translation', icon: 'fa-flask',
+    desc: "Translating research and insight into something concrete and buildable." },
+  { key: 'enterprise-build', label: 'Enterprise Build', icon: 'fa-rocket',
+    desc: "Building, launching and scaling — this is where the enterprise takes shape." }
+];
+
+let currentUser = null;
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderFlywheel(stageKey) {
+  const idx = Math.max(0, STAGES.findIndex(s => s.key === stageKey));
+  const strip = document.getElementById('flywheelStrip');
+  strip.innerHTML = STAGES.map((s, i) => `
+    <div class="flywheel-stage ${i < idx ? 'done' : ''} ${i === idx ? 'active' : ''}">
+      <div class="flywheel-icon"><i class="fa-solid ${i < idx ? 'fa-check' : s.icon}"></i></div>
+      <span>${s.label}</span>
+    </div>
+  `).join('');
+  document.getElementById('stageDesc').textContent = STAGES[idx].desc;
+}
+
+function formatBytes(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+async function loadUploads() {
+  const list = document.getElementById('uploadsList');
+  const empty = document.getElementById('uploadsEmpty');
+  const q = query(collection(db, 'uploads', currentUser.uid, 'files'), orderBy('uploadedAt', 'desc'));
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    list.innerHTML = '';
+    list.appendChild(empty);
+    return;
+  }
+
+  list.innerHTML = snap.docs.map(d => {
+    const f = d.data();
+    return `
+      <div class="upload-row" data-id="${d.id}" data-path="${esc(f.storagePath)}">
+        <div class="upload-info">
+          <i class="fa-solid fa-file-lines"></i>
+          <a href="${esc(f.url)}" target="_blank">${esc(f.name)}</a>
+          <span class="upload-meta">${formatBytes(f.size)}</span>
+        </div>
+        <button class="upload-delete" title="Delete"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.upload-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.upload-row');
+      const id = row.dataset.id;
+      const path = row.dataset.path;
+      btn.disabled = true;
+      try {
+        if (path) await deleteObject(ref(storage, path)).catch(() => {});
+        await deleteDoc(doc(db, 'uploads', currentUser.uid, 'files', id));
+        row.remove();
+        if (!list.querySelector('.upload-row')) {
+          list.innerHTML = '';
+          list.appendChild(empty);
+        }
+      } catch (e) {
+        btn.disabled = false;
+      }
+    });
+  });
+}
+
+document.getElementById('uploadBtn').addEventListener('click', () => {
+  document.getElementById('uploadInput').click();
+});
+
+document.getElementById('uploadInput').addEventListener('change', async () => {
+  const input = document.getElementById('uploadInput');
+  const file = input.files[0];
+  if (!file) return;
+
+  const statusBox = document.getElementById('uploadStatus');
+  statusBox.classList.remove('show');
+
+  if (file.size > 20 * 1024 * 1024) {
+    statusBox.textContent = 'That file is larger than 20 MB — please upload something smaller.';
+    statusBox.classList.add('show');
+    input.value = '';
+    return;
+  }
+
+  const uploadBtn = document.getElementById('uploadBtn');
+  uploadBtn.disabled = true;
+  uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+
+  try {
+    const path = `user-uploads/${currentUser.uid}/${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+
+    await addDoc(collection(db, 'uploads', currentUser.uid, 'files'), {
+      name: file.name,
+      size: file.size,
+      url,
+      storagePath: path,
+      uploadedAt: serverTimestamp()
+    });
+
+    await loadUploads();
+  } catch (e) {
+    statusBox.textContent = 'Upload failed — please try again.';
+    statusBox.classList.add('show');
+  } finally {
+    input.value = '';
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = '<i class="fa-solid fa-upload"></i> Upload a File';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await signOut(auth);
+  window.location.href = 'index.html';
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    window.location.href = 'admin-dashboard.html';
+    return;
+  }
+
+  currentUser = user;
+
+  const snap = await getDoc(doc(db, 'profiles', user.uid));
+  if (!snap.exists()) {
+    window.location.href = 'profile-setup.html';
+    return;
+  }
+
+  const profile = snap.data();
+  const name = profile.fullName || user.displayName || user.email.split('@')[0];
+  document.getElementById('welcomeName').textContent = `Welcome back, ${name}`;
+  document.getElementById('profileSummary').innerHTML = renderProfileSummaryHTML(profile);
+  renderFlywheel(profile.flywheelStage || 'founder-discovery');
+
+  await loadUploads();
+
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>

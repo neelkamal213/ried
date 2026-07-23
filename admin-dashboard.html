@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Admin Dashboard | RIED</title>
+  <meta name="description" content="RIED team dashboard.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="products.html">Products</a>
+        <a href="services.html">Services</a>
+        <a href="startup-sanctuary.html">Startup Sanctuary</a>
+        <a href="leadership.html">Leadership</a>
+        <a href="packages.html">Packages</a>
+        <a href="contact.html" class="nav-cta">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:160px">
+    <div class="container">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+      </div>
+
+      <div id="adminCard" class="account-card" style="display:none">
+        <div class="account-avatar" id="avatarInitial">R</div>
+        <span class="account-role-badge">Admin</span>
+        <h2 class="section-title" id="welcomeName">Welcome</h2>
+        <p style="color:var(--muted)" id="welcomeEmail"></p>
+
+        <p style="color:var(--muted); margin-top:24px">
+          The RIED team dashboard &mdash; Idea Quest submissions, Founder profiles, the Blog/video admin area and
+          more &mdash; is coming soon. For now this is just a landing spot so Pramod and Neel's logins route
+          somewhere sensible.
+        </p>
+
+        <button class="btn-secondary" id="logoutBtn" style="margin-top:24px">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+
+      <div class="social-links">
+        <a href="https://www.linkedin.com/company/ried-pvt-ltd/" target="_blank"><i class="fab fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61576517859696" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://www.instagram.com/riedpvtltd" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.youtube.com/@riedpvtltd" target="_blank"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+  <a href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect." class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
+
+<script>
+window.addEventListener("scroll", function() {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+  document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
+});
+</script>
+
+<script type="module">
+import { auth, ADMIN_EMAILS, onAuthStateChanged, signOut } from "./js/firebase-init.js";
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (!ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
+  const name = user.displayName || user.email.split('@')[0];
+  document.getElementById('welcomeName').textContent = `Welcome, ${name}`;
+  document.getElementById('welcomeEmail').textContent = user.email;
+  document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('adminCard').style.display = 'block';
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await signOut(auth);
+  window.location.href = 'index.html';
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>

@@ -1683,3 +1683,249 @@ a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var
   padding: 60px 20px;
   color: var(--muted);
 }
+
+/* ============================================================
+   FOUNDER ONBOARDING WIZARD (profile-setup.html)
+   Reuses .shell/.quest-wrap/.game-bar/.qprogress-*/.option/.hidden
+   from the Idea Quest styles above — these are the page-specific bits.
+   ============================================================ */
+.onboarding-page .header .main-nav { gap: 0; }
+
+.onboard-step { text-align: center; }
+.onboard-step-body { min-height: 220px; }
+
+.onboard-lead { color: var(--muted); margin-bottom: 20px; font-size: .96rem; }
+.onboard-question { font-size: 1.15rem; color: var(--navy); font-weight: 600; line-height: 1.4; margin-bottom: 18px; }
+
+.onboard-label { display: block; font-weight: 700; font-size: .9rem; color: var(--navy); margin: 20px 0 8px; }
+.onboard-label:first-child { margin-top: 0; }
+.onboard-optional { font-weight: 500; color: var(--muted); text-transform: none; font-size: .82rem; }
+.onboard-hint { font-size: .82rem; color: var(--muted); margin: -4px 0 10px; }
+
+.onboard-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--navy);
+  background: #fbfdff;
+  transition: border-color .18s ease;
+}
+.onboard-input:focus { outline: none; border-color: var(--blue-light); background: #fff; }
+textarea.onboard-input { resize: vertical; line-height: 1.5; }
+
+.onboard-other-input {
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-family: inherit;
+}
+
+.onboard-chips { margin-top: 4px; }
+.onboard-chips.options { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.onboard-chip { padding: 13px 16px; }
+.onboard-chip .txt { padding-top: 0; }
+
+.onboard-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .92rem;
+  color: var(--navy);
+  font-weight: 600;
+  margin-bottom: 22px;
+  cursor: pointer;
+}
+.onboard-checkbox-row input { width: 18px; height: 18px; accent-color: var(--blue); cursor: pointer; }
+
+.logo-upload-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-top: 10px; }
+.logo-upload-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px dashed var(--line);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 30px;
+  transition: border-color .18s ease;
+}
+.logo-upload-circle:hover { border-color: var(--blue-light); }
+.logo-upload-circle img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ============================================================
+   PROFILE SUMMARY CARD (review step + dashboard)
+   ============================================================ */
+.profile-summary-card { text-align: left; }
+.profile-logo-preview {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 22px;
+  border: 1px solid var(--line);
+}
+.profile-logo-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.profile-summary-section { margin-bottom: 22px; }
+.profile-summary-section:last-child { margin-bottom: 0; }
+.profile-summary-section h4 {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--blue);
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: .92rem;
+}
+.profile-row:last-child { border-bottom: none; }
+.profile-row-label { color: var(--muted); flex-shrink: 0; }
+.profile-row-value { color: var(--navy); font-weight: 600; text-align: right; }
+
+.profile-qa { margin-bottom: 16px; padding: 14px 16px; background: var(--bg-light); border-radius: 14px; }
+.profile-qa:last-child { margin-bottom: 0; }
+.profile-qa-q { font-size: .82rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+.profile-qa-a { font-size: .9rem; color: var(--muted); line-height: 1.5; }
+
+.profile-extra { color: var(--muted); font-size: .92rem; line-height: 1.55; }
+
+/* ============================================================
+   FOUNDER FLYWHEEL DASHBOARD (dashboard.html)
+   ============================================================ */
+.dash-welcome { margin-bottom: 22px; }
+.dash-title { font-size: 1.9rem; color: var(--navy); margin: .4rem 0 .3rem; }
+.dash-stage-desc { color: var(--muted); max-width: 640px; }
+
+.flywheel-strip {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+.flywheel-stage {
+  flex: 1;
+  min-width: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 16px 10px;
+  border-radius: 16px;
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.flywheel-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 15px;
+}
+.flywheel-stage.done { color: var(--blue); }
+.flywheel-stage.done .flywheel-icon { background: var(--blue); border-color: var(--blue); color: #fff; }
+.flywheel-stage.active {
+  background: rgba(14,90,138,.07);
+  border-color: rgba(14,90,138,.3);
+  color: var(--navy);
+}
+.flywheel-stage.active .flywheel-icon {
+  background: linear-gradient(135deg, var(--blue), var(--blue-light));
+  border-color: transparent;
+  color: #fff;
+}
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 26px;
+  align-items: start;
+}
+.dash-col { display: flex; flex-direction: column; gap: 22px; }
+
+.dash-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: 0 15px 40px rgba(14,90,138,.05);
+}
+.dash-card h3 {
+  font-size: 1.05rem;
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.dash-card h3 i { color: var(--orange); }
+.dash-card-hint { color: var(--muted); font-size: .88rem; line-height: 1.5; }
+
+.dash-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.dash-card-head h3 { margin-bottom: 0; }
+.dash-edit-btn { padding: 9px 18px; font-size: .82rem; }
+
+.dash-empty { color: var(--muted); font-size: .88rem; padding: 10px 0; }
+
+.uploads-list { display: flex; flex-direction: column; gap: 10px; }
+.upload-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.upload-info { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: .88rem; }
+.upload-info i { color: var(--blue); flex-shrink: 0; }
+.upload-info a { color: var(--navy); font-weight: 600; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upload-info a:hover { color: var(--blue); }
+.upload-meta { color: var(--muted); font-size: .76rem; flex-shrink: 0; }
+.upload-delete {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.upload-delete:hover { color: #b02a37; background: rgba(220,53,69,.08); }
+
+.dash-guidance-card { background: linear-gradient(135deg, rgba(14,90,138,.05), rgba(245,130,32,.05)); }
+
+@media (max-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
