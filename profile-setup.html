@@ -515,8 +515,10 @@ async function submitProfile() {
     document.getElementById('wizard').querySelectorAll(':scope > div').forEach(d => d.classList.add('hidden'));
     document.getElementById('step-success').classList.remove('hidden');
   } catch (err) {
+    console.error('submitProfile failed:', err);
     const errBox = document.getElementById('stepError');
-    errBox.textContent = 'Something went wrong saving your profile. Please try again, or email hello@ried.co.in if it keeps happening.';
+    const detail = err && err.code ? ` (${err.code})` : '';
+    errBox.textContent = `Something went wrong saving your profile${detail}. Please try again, or email hello@ried.co.in if it keeps happening.`;
     errBox.classList.add('show');
     nextBtn.disabled = false;
     nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit My Profile';
