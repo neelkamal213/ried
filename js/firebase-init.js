@@ -21,6 +21,7 @@ import {
   deleteDoc,
   getDocs,
   query,
+  where,
   orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -68,6 +69,7 @@ export {
   deleteDoc,
   getDocs,
   query,
+  where,
   orderBy,
   serverTimestamp,
   ref,
