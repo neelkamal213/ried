@@ -447,18 +447,25 @@ h1, h2, h3, h4,
   align-items: stretch;
 }
 
+.about-img-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  min-height: 320px;
+}
+
 .about-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 320px;
   object-fit: cover;
-  border-radius: 20px;
   display: block;
 }
 
 @media (max-width: 768px) {
-  .about-img {
-    height: auto;
+  .about-img-frame {
+    min-height: 260px;
     max-height: 340px;
   }
 }
