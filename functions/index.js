@@ -150,8 +150,9 @@ exports.verifyRazorpayPayment = onCall(
  * created OR resubmitted after an edit — /profiles/{uid} in Firestore.
  * Builds a plain-text summary of everything the founder entered and emails
  * it to hello@ried.co.in via Web3Forms (the same service the Idea form on
- * contact.html already uses), attaching the founder's logo if one was
- * uploaded.
+ * contact.html already uses). The logo (if one was uploaded) is included as
+ * a link rather than an attachment — Web3Forms attachments require a paid
+ * Pro subscription, so linking avoids depending on that.
  *
  * We only actually send when `submittedAt` changes between before/after —
  * that's the field the wizard's submitProfile() always refreshes with a
@@ -220,43 +221,46 @@ exports.notifyOnProfileSubmit = onDocumentWritten("profiles/{uid}", async (event
     lines.push("");
   }
 
+  // Link the logo rather than attaching it. Web3Forms gates file attachments
+  // behind a paid Pro subscription — sending the "attachment" field on a
+  // free-plan access key gets silently rejected with an HTML error page
+  // instead of JSON (that's the bug that caused emails to never arrive).
+  // A plain link works on every plan and needs no subscription.
+  if (after.logoURL) {
+    lines.push(`Logo: ${after.logoURL}`);
+  }
+
   lines.push(`Flywheel Stage: ${after.flywheelStage || "founder-discovery"}`);
   lines.push(`Profile UID: ${uid}`);
 
   const message = lines.join("\n");
 
-  const formData = new FormData();
-  formData.append("access_key", WEB3FORMS_ACCESS_KEY);
-  formData.append("subject", `${isEdit ? "Updated" : "New"} Founder Profile — ${after.fullName || after.email || uid}`);
-  formData.append("from_name", "RIED Website — Founder Profile");
-  formData.append("name", after.fullName || after.email || "RIED Founder");
-  formData.append("email", after.email || "hello@ried.co.in");
-  formData.append("message", message);
-
-  // Attach the logo, if one was uploaded. logoURL is a Firebase Storage
-  // download URL — it carries its own access token, so a plain fetch works
-  // here without needing the Admin SDK to read Storage directly.
-  if (after.logoURL) {
-    try {
-      const res = await fetch(after.logoURL);
-      if (res.ok) {
-        const arrayBuffer = await res.arrayBuffer();
-        const contentType = res.headers.get("content-type") || "image/png";
-        const ext = contentType.split("/")[1] || "png";
-        formData.append("attachment", new Blob([arrayBuffer], { type: contentType }), `logo.${ext}`);
-      }
-    } catch (e) {
-      logger.warn("notifyOnProfileSubmit: could not fetch logo for email attachment", e);
-    }
-  }
+  // Plain JSON POST — the same format contact.html's Idea form already uses
+  // successfully with this same access key, so no multipart/attachment
+  // complexity that could hit a plan restriction.
+  const payload = {
+    access_key: WEB3FORMS_ACCESS_KEY,
+    subject: `${isEdit ? "Updated" : "New"} Founder Profile — ${after.fullName || after.email || uid}`,
+    from_name: "RIED Website — Founder Profile",
+    name: after.fullName || after.email || "RIED Founder",
+    email: after.email || "hello@ried.co.in",
+    message
+  };
 
   try {
     const res = await fetch("https://api.web3forms.com/submit", {
       method: "POST",
-      headers: { Accept: "application/json" },
-      body: formData
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload)
     });
-    const result = await res.json();
+    const rawText = await res.text();
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (parseErr) {
+      logger.error(`notifyOnProfileSubmit: non-JSON response from Web3Forms (status ${res.status})`, rawText.slice(0, 500));
+      return;
+    }
     if (!result.success) {
       logger.error("notifyOnProfileSubmit: Web3Forms reported failure", result);
     }
