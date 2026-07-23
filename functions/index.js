@@ -23,16 +23,11 @@ const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// Same Web3Forms access key already used client-side on contact.html's Idea
-// form. Web3Forms access keys are designed to be public (they work exactly
-// like this in a browser, visible to anyone who views source) — the key
-// itself doesn't grant access to anything, it just tells Web3Forms which
-// inbox to deliver to, so there's nothing to protect by hiding it in a secret.
-const WEB3FORMS_ACCESS_KEY = "ba854359-f604-44a8-8556-96657c5f5c4d";
 const IS_INDIVIDUAL_VALUE = "Individual / No Company Yet";
 
 // Stored as Firebase Functions secrets (never in this source file, never in git).
@@ -41,6 +36,16 @@ const IS_INDIVIDUAL_VALUE = "Individual / No Company Yet";
 //   firebase functions:secrets:set RAZORPAY_KEY_SECRET
 const RAZORPAY_KEY_ID = defineSecret("RAZORPAY_KEY_ID");
 const RAZORPAY_KEY_SECRET = defineSecret("RAZORPAY_KEY_SECRET");
+
+// Gmail App Password for riedprivatelimited@gmail.com, used only to send the
+// founder-profile notification email (see notifyOnProfileSubmit below). Set
+// once via:
+//   firebase functions:secrets:set GMAIL_APP_PASSWORD
+// This is a 16-character App Password generated from that Google account's
+// Security settings (2-Step Verification must be on first) — NOT the actual
+// Gmail account password, and revocable independently at any time.
+const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");
+const GMAIL_SENDER = "riedprivatelimited@gmail.com";
 
 // ---------------------------------------------------------------------------
 // PLACEHOLDER CATALOG — mirrors packages.html's placeholder pricing exactly.
@@ -149,122 +154,183 @@ exports.verifyRazorpayPayment = onCall(
  * Fires whenever a founder's onboarding profile (profile-setup.html) is
  * created OR resubmitted after an edit — /profiles/{uid} in Firestore.
  * Builds a plain-text summary of everything the founder entered and emails
- * it to hello@ried.co.in via Web3Forms (the same service the Idea form on
- * contact.html already uses). The logo (if one was uploaded) is included as
- * a link rather than an attachment — Web3Forms attachments require a paid
- * Pro subscription, so linking avoids depending on that.
+ * it to hello@ried.co.in via Gmail SMTP (riedprivatelimited@gmail.com,
+ * authenticated with an App Password stored as a secret — see
+ * GMAIL_APP_PASSWORD above), using nodemailer. The logo (if one was
+ * uploaded) is included as a link in the email body.
+ *
+ * NOTE: this originally tried Web3Forms (same service contact.html's Idea
+ * form uses) since that was already wired up elsewhere on the site. That
+ * doesn't work here: Web3Forms's API is explicitly designed to be called
+ * from a browser only — server-to-server calls (like this Cloud Function)
+ * get blocked by a Cloudflare bot-challenge in front of their endpoint,
+ * confirmed in their own docs ("you must add your server IP to our
+ * Safelist AND have an active Paid subscription" for server-side use).
+ * Gmail SMTP has no such restriction for a real Google account.
  *
  * We only actually send when `submittedAt` changes between before/after —
  * that's the field the wizard's submitProfile() always refreshes with a
  * fresh server timestamp, so it uniquely marks "the founder just hit
  * Submit," as opposed to some other future write to this same document
  * (e.g. a Flywheel stage update) that shouldn't re-trigger an email.
+ *
+ * This same trigger ALSO watches for `advancementRequestedAt` changing —
+ * that's the field dashboard.html's "Request to Advance" button always
+ * refreshes with a fresh server timestamp when a founder asks to move to
+ * the next Flywheel stage (Problem Discovery → Research Translation →
+ * Enterprise Build → Complete). When that happens we send RIED a separate,
+ * shorter email so Pramod/Neel know to review it in the admin dashboard —
+ * reusing the same Eventarc trigger/transporter rather than standing up a
+ * second 2nd-gen Firestore trigger (each first-ever trigger of a given kind
+ * needs its own Eventarc warm-up, so it's simplest to keep this to one).
  */
-exports.notifyOnProfileSubmit = onDocumentWritten("profiles/{uid}", async (event) => {
-  const afterSnap = event.data.after;
-  if (!afterSnap.exists) return; // profile deleted — nothing to notify
+function sendMail(transporter, { to, subject, text, replyTo }) {
+  return transporter.sendMail({
+    from: `"RIED Website — Founder Profile" <${GMAIL_SENDER}>`,
+    to,
+    replyTo: replyTo || undefined,
+    subject,
+    text
+  });
+}
 
-  const after = afterSnap.data();
-  const beforeSnap = event.data.before;
-  const before = beforeSnap.exists ? beforeSnap.data() : null;
+exports.notifyOnProfileSubmit = onDocumentWritten(
+  { document: "profiles/{uid}", secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return; // profile deleted — nothing to notify
 
-  const afterTs = after.submittedAt ? after.submittedAt.toMillis() : null;
-  const beforeTs = before && before.submittedAt ? before.submittedAt.toMillis() : null;
-  if (!afterTs || afterTs === beforeTs) return;
+    const after = afterSnap.data();
+    const beforeSnap = event.data.before;
+    const before = beforeSnap.exists ? beforeSnap.data() : null;
 
-  const uid = event.params.uid;
-  const isEdit = !!before;
-  const isIndividual = after.entityType === IS_INDIVIDUAL_VALUE;
+    const afterTs = after.submittedAt ? after.submittedAt.toMillis() : null;
+    const beforeTs = before && before.submittedAt ? before.submittedAt.toMillis() : null;
+    const isNewSubmission = !!afterTs && afterTs !== beforeTs;
 
-  const lines = [];
-  lines.push(`Founder Profile ${isEdit ? "Updated" : "Submitted"} — RIED Website`);
-  lines.push("");
-  lines.push(`Name: ${after.fullName || ""}`);
-  lines.push(`Brand Name: ${after.brandName || ""}`);
-  lines.push(`Email: ${after.email || ""}`);
-  lines.push(`Entity Type: ${after.entityType === "Others" ? after.entityTypeOther : after.entityType || ""}`);
-  lines.push(`Phase: ${after.companyPhase || ""}`);
-  lines.push(`Domain: ${after.domain === "Something else..." ? after.domainOther : after.domain || ""}`);
+    const afterAdvTs = after.advancementRequestedAt ? after.advancementRequestedAt.toMillis() : null;
+    const beforeAdvTs = before && before.advancementRequestedAt ? before.advancementRequestedAt.toMillis() : null;
+    const isNewAdvancementRequest = !!afterAdvTs && afterAdvTs !== beforeAdvTs && after.pendingAdvancement === true;
 
-  if (!isIndividual) {
+    if (!isNewSubmission && !isNewAdvancementRequest) return;
+
+    const uid = event.params.uid;
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: GMAIL_SENDER,
+        pass: GMAIL_APP_PASSWORD.value()
+      }
+    });
+
+    if (isNewAdvancementRequest) {
+      const stageKey = after.advancementRequestedStage || "";
+      const stageProgress = (after.stageProgress && after.stageProgress[stageKey]) || {};
+      const answers = Array.isArray(stageProgress.answers) ? stageProgress.answers : [];
+      const advLines = [];
+      advLines.push(`A founder has requested to advance past the "${stageKey}" Flywheel stage.`);
+      advLines.push("");
+      advLines.push(`Name: ${after.fullName || ""}`);
+      advLines.push(`Brand Name: ${after.brandName || ""}`);
+      advLines.push(`Email: ${after.email || ""}`);
+      advLines.push(`Stage: ${stageKey}`);
+      advLines.push("");
+      if (answers.length) {
+        advLines.push(`--- ${stageKey} Answers ---`);
+        answers.forEach((qa, i) => {
+          advLines.push(`${i + 1}. ${qa.question}`);
+          advLines.push(`   ${qa.answer || "(no answer)"}`);
+          advLines.push("");
+        });
+      }
+      advLines.push("Review and approve in the RIED admin dashboard (admin-dashboard.html).");
+      advLines.push(`Profile UID: ${uid}`);
+
+      try {
+        await sendMail(transporter, {
+          to: "hello@ried.co.in",
+          replyTo: after.email,
+          subject: `Advancement Requested (${stageKey}) — ${after.fullName || after.email || uid}`,
+          text: advLines.join("\n")
+        });
+      } catch (e) {
+        logger.error("notifyOnProfileSubmit: failed to send advancement-request email", e);
+      }
+    }
+
+    if (!isNewSubmission) return;
+    const isEdit = !!before;
+    const isIndividual = after.entityType === IS_INDIVIDUAL_VALUE;
+
+    const lines = [];
+    lines.push(`Founder Profile ${isEdit ? "Updated" : "Submitted"} — RIED Website`);
     lines.push("");
-    lines.push("--- Company Details ---");
-    lines.push(`Registered Address: ${after.registeredAddress || ""}`);
-    lines.push(`Total Shareholders: ${after.totalShareholders || ""}`);
-    lines.push(`CIN: ${after.cin || ""}`);
-    lines.push(`GST No.: ${after.gstNo || ""}`);
-    lines.push("");
-    lines.push("--- Authorised Signatory ---");
-    lines.push(`Name: ${after.signatoryName || ""}`);
-    lines.push(`Designation: ${after.signatoryDesignation || ""}`);
-    lines.push(`Phone: ${after.signatoryPhone || ""}`);
-    lines.push(`Email: ${after.signatoryEmail || ""}`);
-    lines.push("");
-    lines.push("--- Point of Contact ---");
-    lines.push(`Name: ${after.pocName || ""}`);
-    lines.push(`Designation: ${after.pocDesignation || ""}`);
-    lines.push(`Phone: ${after.pocPhone || ""}`);
-    lines.push(`Email: ${after.pocEmail || ""}`);
-  } else if (Array.isArray(after.founderAnswers)) {
-    lines.push("");
-    lines.push("--- Founder Discovery Answers ---");
-    after.founderAnswers.forEach((qa, i) => {
-      lines.push(`${i + 1}. ${qa.question}`);
-      lines.push(`   ${qa.answer || "(no answer)"}`);
+    lines.push(`Name: ${after.fullName || ""}`);
+    lines.push(`Brand Name: ${after.brandName || ""}`);
+    lines.push(`Email: ${after.email || ""}`);
+    lines.push(`Entity Type: ${after.entityType === "Others" ? after.entityTypeOther : after.entityType || ""}`);
+    lines.push(`Phase: ${after.companyPhase || ""}`);
+    lines.push(`Domain: ${after.domain === "Something else..." ? after.domainOther : after.domain || ""}`);
+
+    if (!isIndividual) {
       lines.push("");
-    });
-  }
+      lines.push("--- Company Details ---");
+      lines.push(`Registered Address: ${after.registeredAddress || ""}`);
+      lines.push(`Total Shareholders: ${after.totalShareholders || ""}`);
+      lines.push(`CIN: ${after.cin || ""}`);
+      lines.push(`GST No.: ${after.gstNo || ""}`);
+      lines.push("");
+      lines.push("--- Authorised Signatory ---");
+      lines.push(`Name: ${after.signatoryName || ""}`);
+      lines.push(`Designation: ${after.signatoryDesignation || ""}`);
+      lines.push(`Phone: ${after.signatoryPhone || ""}`);
+      lines.push(`Email: ${after.signatoryEmail || ""}`);
+      lines.push("");
+      lines.push("--- Point of Contact ---");
+      lines.push(`Name: ${after.pocName || ""}`);
+      lines.push(`Designation: ${after.pocDesignation || ""}`);
+      lines.push(`Phone: ${after.pocPhone || ""}`);
+      lines.push(`Email: ${after.pocEmail || ""}`);
+    } else if (Array.isArray(after.founderAnswers)) {
+      lines.push("");
+      lines.push("--- Founder Discovery Answers ---");
+      after.founderAnswers.forEach((qa, i) => {
+        lines.push(`${i + 1}. ${qa.question}`);
+        lines.push(`   ${qa.answer || "(no answer)"}`);
+        lines.push("");
+      });
+    }
 
-  if (after.additionalInfo) {
-    lines.push("--- Anything Else ---");
-    lines.push(after.additionalInfo);
-    lines.push("");
-  }
+    if (after.additionalInfo) {
+      lines.push("--- Anything Else ---");
+      lines.push(after.additionalInfo);
+      lines.push("");
+    }
 
-  // Link the logo rather than attaching it. Web3Forms gates file attachments
-  // behind a paid Pro subscription — sending the "attachment" field on a
-  // free-plan access key gets silently rejected with an HTML error page
-  // instead of JSON (that's the bug that caused emails to never arrive).
-  // A plain link works on every plan and needs no subscription.
-  if (after.logoURL) {
-    lines.push(`Logo: ${after.logoURL}`);
-  }
+    // Link the logo rather than attaching it as a file — keeps the email
+    // simple and avoids any attachment-size/type edge cases.
+    if (after.logoURL) {
+      lines.push(`Logo: ${after.logoURL}`);
+    }
 
-  lines.push(`Flywheel Stage: ${after.flywheelStage || "founder-discovery"}`);
-  lines.push(`Profile UID: ${uid}`);
+    lines.push(`Flywheel Stage: ${after.flywheelStage || "founder-discovery"}`);
+    lines.push(`Profile UID: ${uid}`);
 
-  const message = lines.join("\n");
+    const message = lines.join("\n");
+    const subject = `${isEdit ? "Updated" : "New"} Founder Profile — ${after.fullName || after.email || uid}`;
 
-  // Plain JSON POST — the same format contact.html's Idea form already uses
-  // successfully with this same access key, so no multipart/attachment
-  // complexity that could hit a plan restriction.
-  const payload = {
-    access_key: WEB3FORMS_ACCESS_KEY,
-    subject: `${isEdit ? "Updated" : "New"} Founder Profile — ${after.fullName || after.email || uid}`,
-    from_name: "RIED Website — Founder Profile",
-    name: after.fullName || after.email || "RIED Founder",
-    email: after.email || "hello@ried.co.in",
-    message
-  };
-
-  try {
-    const res = await fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const rawText = await res.text();
-    let result;
     try {
-      result = JSON.parse(rawText);
-    } catch (parseErr) {
-      logger.error(`notifyOnProfileSubmit: non-JSON response from Web3Forms (status ${res.status})`, rawText.slice(0, 500));
-      return;
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: after.email,
+        subject,
+        text: message
+      });
+    } catch (e) {
+      logger.error("notifyOnProfileSubmit: failed to send email", e);
     }
-    if (!result.success) {
-      logger.error("notifyOnProfileSubmit: Web3Forms reported failure", result);
-    }
-  } catch (e) {
-    logger.error("notifyOnProfileSubmit: failed to send email", e);
   }
-});
+);
