@@ -17,13 +17,23 @@
  */
 
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
+const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
 
 admin.initializeApp();
 const db = admin.firestore();
+
+// Same Web3Forms access key already used client-side on contact.html's Idea
+// form. Web3Forms access keys are designed to be public (they work exactly
+// like this in a browser, visible to anyone who views source) — the key
+// itself doesn't grant access to anything, it just tells Web3Forms which
+// inbox to deliver to, so there's nothing to protect by hiding it in a secret.
+const WEB3FORMS_ACCESS_KEY = "ba854359-f604-44a8-8556-96657c5f5c4d";
+const IS_INDIVIDUAL_VALUE = "Individual / No Company Yet";
 
 // Stored as Firebase Functions secrets (never in this source file, never in git).
 // Set once via:
@@ -132,3 +142,125 @@ exports.verifyRazorpayPayment = onCall(
     return { verified: true };
   }
 );
+
+/**
+ * notifyOnProfileSubmit
+ *
+ * Fires whenever a founder's onboarding profile (profile-setup.html) is
+ * created OR resubmitted after an edit — /profiles/{uid} in Firestore.
+ * Builds a plain-text summary of everything the founder entered and emails
+ * it to hello@ried.co.in via Web3Forms (the same service the Idea form on
+ * contact.html already uses), attaching the founder's logo if one was
+ * uploaded.
+ *
+ * We only actually send when `submittedAt` changes between before/after —
+ * that's the field the wizard's submitProfile() always refreshes with a
+ * fresh server timestamp, so it uniquely marks "the founder just hit
+ * Submit," as opposed to some other future write to this same document
+ * (e.g. a Flywheel stage update) that shouldn't re-trigger an email.
+ */
+exports.notifyOnProfileSubmit = onDocumentWritten("profiles/{uid}", async (event) => {
+  const afterSnap = event.data.after;
+  if (!afterSnap.exists) return; // profile deleted — nothing to notify
+
+  const after = afterSnap.data();
+  const beforeSnap = event.data.before;
+  const before = beforeSnap.exists ? beforeSnap.data() : null;
+
+  const afterTs = after.submittedAt ? after.submittedAt.toMillis() : null;
+  const beforeTs = before && before.submittedAt ? before.submittedAt.toMillis() : null;
+  if (!afterTs || afterTs === beforeTs) return;
+
+  const uid = event.params.uid;
+  const isEdit = !!before;
+  const isIndividual = after.entityType === IS_INDIVIDUAL_VALUE;
+
+  const lines = [];
+  lines.push(`Founder Profile ${isEdit ? "Updated" : "Submitted"} — RIED Website`);
+  lines.push("");
+  lines.push(`Name: ${after.fullName || ""}`);
+  lines.push(`Brand Name: ${after.brandName || ""}`);
+  lines.push(`Email: ${after.email || ""}`);
+  lines.push(`Entity Type: ${after.entityType === "Others" ? after.entityTypeOther : after.entityType || ""}`);
+  lines.push(`Phase: ${after.companyPhase || ""}`);
+  lines.push(`Domain: ${after.domain === "Something else..." ? after.domainOther : after.domain || ""}`);
+
+  if (!isIndividual) {
+    lines.push("");
+    lines.push("--- Company Details ---");
+    lines.push(`Registered Address: ${after.registeredAddress || ""}`);
+    lines.push(`Total Shareholders: ${after.totalShareholders || ""}`);
+    lines.push(`CIN: ${after.cin || ""}`);
+    lines.push(`GST No.: ${after.gstNo || ""}`);
+    lines.push("");
+    lines.push("--- Authorised Signatory ---");
+    lines.push(`Name: ${after.signatoryName || ""}`);
+    lines.push(`Designation: ${after.signatoryDesignation || ""}`);
+    lines.push(`Phone: ${after.signatoryPhone || ""}`);
+    lines.push(`Email: ${after.signatoryEmail || ""}`);
+    lines.push("");
+    lines.push("--- Point of Contact ---");
+    lines.push(`Name: ${after.pocName || ""}`);
+    lines.push(`Designation: ${after.pocDesignation || ""}`);
+    lines.push(`Phone: ${after.pocPhone || ""}`);
+    lines.push(`Email: ${after.pocEmail || ""}`);
+  } else if (Array.isArray(after.founderAnswers)) {
+    lines.push("");
+    lines.push("--- Founder Discovery Answers ---");
+    after.founderAnswers.forEach((qa, i) => {
+      lines.push(`${i + 1}. ${qa.question}`);
+      lines.push(`   ${qa.answer || "(no answer)"}`);
+      lines.push("");
+    });
+  }
+
+  if (after.additionalInfo) {
+    lines.push("--- Anything Else ---");
+    lines.push(after.additionalInfo);
+    lines.push("");
+  }
+
+  lines.push(`Flywheel Stage: ${after.flywheelStage || "founder-discovery"}`);
+  lines.push(`Profile UID: ${uid}`);
+
+  const message = lines.join("\n");
+
+  const formData = new FormData();
+  formData.append("access_key", WEB3FORMS_ACCESS_KEY);
+  formData.append("subject", `${isEdit ? "Updated" : "New"} Founder Profile — ${after.fullName || after.email || uid}`);
+  formData.append("from_name", "RIED Website — Founder Profile");
+  formData.append("name", after.fullName || after.email || "RIED Founder");
+  formData.append("email", after.email || "hello@ried.co.in");
+  formData.append("message", message);
+
+  // Attach the logo, if one was uploaded. logoURL is a Firebase Storage
+  // download URL — it carries its own access token, so a plain fetch works
+  // here without needing the Admin SDK to read Storage directly.
+  if (after.logoURL) {
+    try {
+      const res = await fetch(after.logoURL);
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        const contentType = res.headers.get("content-type") || "image/png";
+        const ext = contentType.split("/")[1] || "png";
+        formData.append("attachment", new Blob([arrayBuffer], { type: contentType }), `logo.${ext}`);
+      }
+    } catch (e) {
+      logger.warn("notifyOnProfileSubmit: could not fetch logo for email attachment", e);
+    }
+  }
+
+  try {
+    const res = await fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: formData
+    });
+    const result = await res.json();
+    if (!result.success) {
+      logger.error("notifyOnProfileSubmit: Web3Forms reported failure", result);
+    }
+  } catch (e) {
+    logger.error("notifyOnProfileSubmit: failed to send email", e);
+  }
+});
