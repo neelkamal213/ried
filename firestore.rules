@@ -22,14 +22,24 @@ service cloud.firestore {
     }
 
     // Founder onboarding profile (Basic Info / Company Info / Individual Founder
-    // Discovery answers) — each user can only ever read/write their own doc.
-    // A Cloud Function (onCreate trigger) reads this server-side to email a
-    // copy to hello@ried.co.in — that server-side read uses the Admin SDK and
+    // Discovery answers, plus Flywheel stage progress) — each user can read/write
+    // their own doc. An admin (role == "admin" on their own /users doc) can also
+    // read across all profiles (to list pending stage-advancement requests) and
+    // update any profile (to approve an advancement, per the "RIED approves
+    // advancement" flow) — but can never self-serve a stage advancement for
+    // themselves via a non-admin path, since createUpdate below is still the
+    // only other write path and it's uid-scoped.
+    // A Cloud Function (onCreate/onWrite trigger) reads this server-side to email
+    // a copy to hello@ried.co.in — that server-side read uses the Admin SDK and
     // is not subject to these rules.
     match /profiles/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && (request.auth.uid == userId ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
     }
 
     // Founder Flywheel dashboard file uploads (metadata only — the actual file

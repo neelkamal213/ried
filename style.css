@@ -1101,8 +1101,12 @@ h1, h2, h3, h4,
   border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:15px;font-family:inherit;
   transition:all .3s ease;display:inline-block;background:rgba(255,255,255,.14);color:#fff}
 .btn-secondary:hover{background:rgba(255,255,255,.24);transform:translateY(-3px)}
-.shell .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
-.shell .btn-secondary:hover{background:#eaf1f8}
+.shell .btn-secondary,
+.dashboard-page .btn-secondary,
+.account-card .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
+.shell .btn-secondary:hover,
+.dashboard-page .btn-secondary:hover,
+.account-card .btn-secondary:hover{background:#eaf1f8}
 button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
 a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
 
@@ -1926,6 +1930,73 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
 
 .dash-guidance-card { background: linear-gradient(135deg, rgba(14,90,138,.05), rgba(245,130,32,.05)); }
 
+/* --- stage work card (Problem Discovery / Research Translation / Enterprise Build) --- */
+.stage-work-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+#stageWorkCard .onboard-label { margin-top: 18px; }
+#stageWorkCard .onboard-label:first-child { margin-top: 0; }
+
+/* --- completed stages read-only summary (a native <details>) --- */
+.completed-stages-summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--navy);
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.completed-stages-summary::-webkit-details-marker { display: none; }
+.completed-stages-summary i { color: var(--orange); }
+
+/* --- admin: pending stage-advancement approvals --- */
+.admin-pending-wrap { max-width: 900px; margin: 40px auto 0; }
+.admin-pending-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--navy);
+  font-size: 1.15rem;
+  margin-bottom: 18px;
+}
+.admin-pending-title i { color: var(--orange); }
+.admin-pending-list-inner { display: flex; flex-direction: column; gap: 18px; }
+.admin-pending-item {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: 0 15px 40px rgba(14,90,138,.05);
+}
+.admin-pending-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.admin-pending-head strong { color: var(--navy); font-size: 1.05rem; }
+.admin-pending-meta { color: var(--muted); font-size: .82rem; margin-bottom: 16px; }
+.admin-empty {
+  color: var(--muted);
+  font-size: .92rem;
+  padding: 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
 @media (max-width: 900px) {
   .dash-grid { grid-template-columns: 1fr; }
+  .admin-pending-head { flex-direction: column; align-items: flex-start; }
 }

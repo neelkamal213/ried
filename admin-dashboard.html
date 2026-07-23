@@ -50,14 +50,18 @@
         <p style="color:var(--muted)" id="welcomeEmail"></p>
 
         <p style="color:var(--muted); margin-top:24px">
-          The RIED team dashboard &mdash; Idea Quest submissions, Founder profiles, the Blog/video admin area and
-          more &mdash; is coming soon. For now this is just a landing spot so Pramod and Neel's logins route
-          somewhere sensible.
+          The full RIED team dashboard &mdash; Idea Quest submissions, the Blog/video admin area and
+          more &mdash; is coming soon. Below are founders currently waiting on a Flywheel stage review.
         </p>
 
         <button class="btn-secondary" id="logoutBtn" style="margin-top:24px">
           <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
         </button>
+      </div>
+
+      <div id="pendingApprovalsWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-hourglass-half"></i> Pending Stage Advancement Requests</h3>
+        <div id="pendingApprovalsList" class="admin-pending-list-inner"></div>
       </div>
 
     </div>
@@ -100,7 +104,106 @@ window.addEventListener("scroll", function() {
 </script>
 
 <script type="module">
-import { auth, ADMIN_EMAILS, onAuthStateChanged, signOut } from "./js/firebase-init.js";
+import {
+  auth, db, ADMIN_EMAILS, onAuthStateChanged, signOut,
+  doc, setDoc, collection, getDocs, query, where, serverTimestamp
+} from "./js/firebase-init.js";
+import { STAGE_LABELS, getNextStage } from "./js/flywheel-stages.js";
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function formatWhen(ts) {
+  if (!ts || typeof ts.toDate !== 'function') return '';
+  return ts.toDate().toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadPendingApprovals() {
+  const listEl = document.getElementById('pendingApprovalsList');
+  const wrapEl = document.getElementById('pendingApprovalsWrap');
+  wrapEl.classList.remove('hidden');
+  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading requests&hellip;</p>';
+
+  let snap;
+  try {
+    snap = await getDocs(query(collection(db, 'profiles'), where('pendingAdvancement', '==', true)));
+  } catch (e) {
+    listEl.innerHTML = `<p class="admin-empty">Couldn't load pending requests: ${esc(e.message || e)}</p>`;
+    return;
+  }
+
+  if (snap.empty) {
+    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending advancement requests right now.</p>';
+    return;
+  }
+
+  const items = [];
+  snap.forEach((docSnap) => {
+    const p = docSnap.data();
+    const stageKey = p.advancementRequestedStage;
+    if (!stageKey) return;
+    const stageProgress = (p.stageProgress && p.stageProgress[stageKey]) || {};
+    const answers = Array.isArray(stageProgress.answers) ? stageProgress.answers : [];
+    items.push({ uid: docSnap.id, p, stageKey, answers });
+  });
+
+  if (!items.length) {
+    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending advancement requests right now.</p>';
+    return;
+  }
+
+  listEl.innerHTML = items.map(({ uid, p, stageKey, answers }) => {
+    const name = esc(p.fullName || p.brandName || 'Unnamed Founder');
+    const stageLabel = esc(STAGE_LABELS[stageKey] || stageKey);
+    const when = esc(formatWhen(p.advancementRequestedAt));
+    const qa = answers.map(a => `<div class="profile-qa"><div class="profile-qa-q">${esc(a.question)}</div><div class="profile-qa-a">${esc(a.answer)}</div></div>`).join('');
+    return `
+      <div class="admin-pending-item" data-uid="${esc(uid)}" data-stage="${esc(stageKey)}">
+        <div class="admin-pending-head">
+          <div>
+            <strong>${name}</strong>
+            <span class="account-role-badge" style="margin:0 0 0 10px">${stageLabel}</span>
+          </div>
+          <button class="btn-primary admin-approve-btn"><i class="fa-solid fa-check"></i> Approve Advancement</button>
+        </div>
+        <div class="admin-pending-meta">${p.email ? esc(p.email) + ' &middot; ' : ''}Requested ${when || 'recently'}</div>
+        ${qa}
+        <div class="admin-approve-error auth-error"></div>
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.admin-approve-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.admin-pending-item');
+      const uid = item.dataset.uid;
+      const stageKey = item.dataset.stage;
+      const errBox = item.querySelector('.admin-approve-error');
+      errBox.classList.remove('show');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Approving...';
+      try {
+        const nextStage = getNextStage(stageKey);
+        await setDoc(doc(db, 'profiles', uid), {
+          flywheelStage: nextStage,
+          stageProgress: { [stageKey]: { status: 'approved', approvedAt: serverTimestamp() } },
+          pendingAdvancement: false
+        }, { merge: true });
+        item.remove();
+        if (!listEl.querySelector('.admin-pending-item')) {
+          listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending advancement requests right now.</p>';
+        }
+      } catch (e) {
+        errBox.textContent = `Approval failed: ${e.message || e}`;
+        errBox.classList.add('show');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Approve Advancement';
+      }
+    });
+  });
+}
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -120,6 +223,8 @@ onAuthStateChanged(auth, async (user) => {
 
   document.getElementById('loadingState').style.display = 'none';
   document.getElementById('adminCard').style.display = 'block';
+
+  loadPendingApprovals();
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {

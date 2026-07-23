@@ -500,7 +500,10 @@ async function submitProfile() {
       uid: currentUser.uid,
       email: currentUser.email,
       displayName: currentUser.displayName || '',
-      flywheelStage: profile.flywheelStageExisting || 'founder-discovery',
+      // Founder Discovery IS this onboarding profile — it's satisfied the
+      // moment this document exists, so a brand-new submission starts the
+      // founder straight on Problem Discovery rather than sitting idle.
+      flywheelStage: profile.flywheelStageExisting || 'problem-discovery',
       status: 'submitted',
       submittedAt: serverTimestamp()
     };

@@ -56,6 +56,27 @@
 
         <div class="flywheel-strip" id="flywheelStrip"></div>
 
+        <!-- CURRENT STAGE WORK -->
+        <div id="stageWorkCard" class="dash-card hidden" style="margin-bottom:22px">
+          <div class="dash-card-head">
+            <h3><i class="fa-solid" id="stageWorkIcon"></i> <span id="stageWorkTitle"></span></h3>
+            <span class="account-role-badge hidden" id="stageStatusBadge">Pending RIED Review</span>
+          </div>
+          <p class="dash-card-hint" id="stageWorkDesc"></p>
+          <div id="stageQuestions"></div>
+          <div id="stageWorkError" class="auth-error"></div>
+          <div class="stage-work-actions hidden" id="stageWorkActions">
+            <button class="btn-secondary" id="saveDraftBtn"><i class="fa-solid fa-floppy-disk"></i> Save Draft</button>
+            <button class="btn-primary" id="requestAdvanceBtn"><i class="fa-solid fa-paper-plane"></i> Request to Advance</button>
+          </div>
+        </div>
+
+        <!-- COMPLETED STAGES -->
+        <details id="completedStagesWrap" class="hidden" style="margin-bottom:22px">
+          <summary class="completed-stages-summary"><i class="fa-solid fa-clock-rotate-left"></i> Completed Stage Answers</summary>
+          <div id="completedStagesBody" class="dash-card" style="margin-top:12px"></div>
+        </details>
+
         <!-- MAIN GRID -->
         <div class="dash-grid">
 
@@ -146,40 +167,237 @@ window.addEventListener("scroll", function() {
 import {
   auth, db, storage, ADMIN_EMAILS,
   onAuthStateChanged, signOut,
-  doc, getDoc, collection, addDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp,
+  doc, getDoc, setDoc, collection, addDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp,
   ref, uploadBytes, getDownloadURL, deleteObject
 } from "./js/firebase-init.js";
 import { renderProfileSummaryHTML } from "./js/profile-summary.js";
+import { WORK_STAGE_ORDER } from "./js/flywheel-stages.js";
 
-const STAGES = [
-  { key: 'founder-discovery', label: 'Founder Discovery', icon: 'fa-compass',
-    desc: "Your Founder Profile is in — Founder Discovery is complete. Next up: Problem Discovery." },
-  { key: 'problem-discovery', label: 'Problem Discovery', icon: 'fa-magnifying-glass',
-    desc: "Time to pressure-test the real problem you're solving. Book a call with RIED to kick this stage off." },
-  { key: 'research-translation', label: 'Research Translation', icon: 'fa-flask',
-    desc: "Translating research and insight into something concrete and buildable." },
-  { key: 'enterprise-build', label: 'Enterprise Build', icon: 'fa-rocket',
-    desc: "Building, launching and scaling — this is where the enterprise takes shape." }
+// The 4 stages as shown in the progress strip. "Founder Discovery" has no
+// questionnaire of its own — submitting the onboarding profile already
+// satisfies it, so it's always shown done the moment a founder reaches this
+// dashboard at all.
+const DISPLAY_STAGES = [
+  { key: 'founder-discovery', label: 'Founder Discovery', icon: 'fa-compass' },
+  { key: 'problem-discovery', label: 'Problem Discovery', icon: 'fa-magnifying-glass' },
+  { key: 'research-translation', label: 'Research Translation', icon: 'fa-flask' },
+  { key: 'enterprise-build', label: 'Enterprise Build', icon: 'fa-rocket' }
 ];
 
+const STAGE_INFO = {
+  'problem-discovery': {
+    label: 'Problem Discovery',
+    icon: 'fa-magnifying-glass',
+    desc: "Pressure-test the real problem you're solving before building anything. Answer these, then request to advance when you're ready — RIED will review and move you forward.",
+    questions: [
+      "Who exactly is affected by this problem? Describe your target customer as specifically as you can.",
+      "How do you know this is a real, painful problem — what evidence do you have (conversations, data, research)?",
+      "How many potential customers have you actually spoken to about this, and what did you learn?",
+      "What are people doing today to solve this problem (workarounds, competitors, alternatives)?",
+      "What would it take for someone to switch from their current solution to yours?"
+    ]
+  },
+  'research-translation': {
+    label: 'Research Translation',
+    icon: 'fa-flask',
+    desc: "Translate the research and insight behind your idea into something concrete and buildable.",
+    questions: [
+      "What research, data, or technical insight is your solution built on?",
+      "In plain terms, what is your proposed solution and how does it solve the problem?",
+      "What's the current stage of your solution — idea, prototype, or working product?",
+      "Are there any IP, patent, or licensing considerations for your technology?",
+      "What technical or resource gaps stand between you and a working version?"
+    ]
+  },
+  'enterprise-build': {
+    label: 'Enterprise Build',
+    icon: 'fa-rocket',
+    desc: "Build, launch and scale — this is where the enterprise takes shape.",
+    questions: [
+      "What's the current status of your team — who's involved, and what roles are still open?",
+      "What's your go-to-market plan — how will your first paying customers find you?",
+      "What's your funding/runway situation, and what do you need next?",
+      "What regulatory, legal, or compliance steps are complete or outstanding?",
+      "What does success look like for this venture 12 months from now?"
+    ]
+  }
+};
+
 let currentUser = null;
+let currentProfile = null;
 
 function esc(v) {
   if (v === undefined || v === null) return '';
   return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function renderFlywheel(stageKey) {
-  const idx = Math.max(0, STAGES.findIndex(s => s.key === stageKey));
+// "founder-discovery" (or a missing flywheelStage, for profiles created
+// before this feature existed) always normalizes to "problem-discovery" —
+// there's no separate work item for a stage the profile itself completes.
+function getActiveWorkStage(profile) {
+  const raw = profile.flywheelStage || 'founder-discovery';
+  return raw === 'founder-discovery' ? 'problem-discovery' : raw;
+}
+
+function renderFlywheel(profile) {
+  const activeWorkStage = getActiveWorkStage(profile);
+  const idx = activeWorkStage === 'complete'
+    ? DISPLAY_STAGES.length
+    : Math.max(0, DISPLAY_STAGES.findIndex(s => s.key === activeWorkStage));
+
   const strip = document.getElementById('flywheelStrip');
-  strip.innerHTML = STAGES.map((s, i) => `
+  strip.innerHTML = DISPLAY_STAGES.map((s, i) => `
     <div class="flywheel-stage ${i < idx ? 'done' : ''} ${i === idx ? 'active' : ''}">
       <div class="flywheel-icon"><i class="fa-solid ${i < idx ? 'fa-check' : s.icon}"></i></div>
       <span>${s.label}</span>
     </div>
   `).join('');
-  document.getElementById('stageDesc').textContent = STAGES[idx].desc;
+
+  const descEl = document.getElementById('stageDesc');
+  if (activeWorkStage === 'complete') {
+    descEl.textContent = "You've completed every stage of the RIED Founder Flywheel — huge congratulations. RIED will be in touch about what's next.";
+  } else {
+    const pending = profile.stageProgress && profile.stageProgress[activeWorkStage] && profile.stageProgress[activeWorkStage].status === 'pending-approval';
+    descEl.textContent = pending
+      ? `${STAGE_INFO[activeWorkStage].label} answers are in — waiting on RIED's review before you move to the next stage.`
+      : `You're on ${STAGE_INFO[activeWorkStage].label}. Fill in the questions below, then request to advance when you're ready.`;
+  }
 }
+
+function renderStageWork(profile) {
+  const card = document.getElementById('stageWorkCard');
+  const activeWorkStage = getActiveWorkStage(profile);
+
+  if (activeWorkStage === 'complete') {
+    card.classList.remove('hidden');
+    document.getElementById('stageWorkIcon').className = 'fa-solid fa-champagne-glasses';
+    document.getElementById('stageWorkTitle').textContent = "Flywheel Complete";
+    document.getElementById('stageStatusBadge').classList.add('hidden');
+    document.getElementById('stageWorkDesc').textContent = "You've been through every stage of the RIED Founder Flywheel. RIED will reach out about ongoing support.";
+    document.getElementById('stageQuestions').innerHTML = '';
+    document.getElementById('stageWorkActions').classList.add('hidden');
+    return;
+  }
+
+  const info = STAGE_INFO[activeWorkStage];
+  if (!info) { card.classList.add('hidden'); return; }
+
+  const progress = (profile.stageProgress && profile.stageProgress[activeWorkStage]) || {};
+  const isPending = progress.status === 'pending-approval';
+  const savedAnswers = Array.isArray(progress.answers) ? progress.answers : [];
+
+  card.classList.remove('hidden');
+  document.getElementById('stageWorkIcon').className = 'fa-solid ' + info.icon;
+  document.getElementById('stageWorkTitle').textContent = info.label;
+  document.getElementById('stageWorkDesc').textContent = info.desc;
+
+  const badge = document.getElementById('stageStatusBadge');
+  badge.classList.toggle('hidden', !isPending);
+  badge.textContent = 'Pending RIED Review';
+
+  const questionsEl = document.getElementById('stageQuestions');
+  questionsEl.innerHTML = info.questions.map((q, i) => {
+    const existing = savedAnswers.find(a => a.question === q);
+    const value = esc(existing ? existing.answer : '');
+    return isPending
+      ? `<div class="profile-qa"><div class="profile-qa-q">${esc(q)}</div><div class="profile-qa-a">${value || '(no answer)'}</div></div>`
+      : `<label class="onboard-label">${esc(q)}</label>
+         <textarea class="onboard-input stage-answer-input" data-q="${i}" rows="3">${value}</textarea>`;
+  }).join('');
+
+  document.getElementById('stageWorkActions').classList.toggle('hidden', isPending);
+  document.getElementById('stageWorkError').classList.remove('show');
+}
+
+function collectStageAnswers(stageKey) {
+  const info = STAGE_INFO[stageKey];
+  const inputs = document.querySelectorAll('.stage-answer-input');
+  return info.questions.map((q, i) => {
+    const input = Array.from(inputs).find(el => Number(el.dataset.q) === i);
+    return { question: q, answer: input ? input.value.trim() : '' };
+  });
+}
+
+async function saveStageProgress(stageKey, answers, submit) {
+  const stageProgress = { ...(currentProfile.stageProgress || {}) };
+  stageProgress[stageKey] = submit
+    ? { answers, status: 'pending-approval', requestedAt: serverTimestamp() }
+    : { answers, status: 'draft' };
+
+  const data = { stageProgress };
+  if (submit) {
+    data.pendingAdvancement = true;
+    data.advancementRequestedStage = stageKey;
+    data.advancementRequestedAt = serverTimestamp();
+  }
+
+  await setDoc(doc(db, 'profiles', currentUser.uid), data, { merge: true });
+
+  const snap = await getDoc(doc(db, 'profiles', currentUser.uid));
+  currentProfile = snap.data();
+  renderFlywheel(currentProfile);
+  renderStageWork(currentProfile);
+  renderCompletedStages(currentProfile);
+}
+
+function renderCompletedStages(profile) {
+  const wrap = document.getElementById('completedStagesWrap');
+  const body = document.getElementById('completedStagesBody');
+  const progress = profile.stageProgress || {};
+
+  const approvedStages = WORK_STAGE_ORDER
+    .filter(key => STAGE_INFO[key] && progress[key] && progress[key].status === 'approved');
+
+  if (!approvedStages.length) {
+    wrap.classList.add('hidden');
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  body.innerHTML = approvedStages.map(key => {
+    const info = STAGE_INFO[key];
+    const answers = Array.isArray(progress[key].answers) ? progress[key].answers : [];
+    const qa = answers.map(a => `<div class="profile-qa"><div class="profile-qa-q">${esc(a.question)}</div><div class="profile-qa-a">${esc(a.answer)}</div></div>`).join('');
+    return `<div class="profile-summary-section"><h4><i class="fa-solid ${info.icon}"></i> ${esc(info.label)}</h4>${qa}</div>`;
+  }).join('');
+}
+
+document.getElementById('saveDraftBtn').addEventListener('click', async () => {
+  const activeWorkStage = getActiveWorkStage(currentProfile);
+  const btn = document.getElementById('saveDraftBtn');
+  btn.disabled = true;
+  try {
+    await saveStageProgress(activeWorkStage, collectStageAnswers(activeWorkStage), false);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById('requestAdvanceBtn').addEventListener('click', async () => {
+  const activeWorkStage = getActiveWorkStage(currentProfile);
+  const answers = collectStageAnswers(activeWorkStage);
+  const errBox = document.getElementById('stageWorkError');
+
+  if (answers.some(a => !a.answer)) {
+    errBox.textContent = 'Please answer every question before requesting to advance.';
+    errBox.classList.add('show');
+    return;
+  }
+  errBox.classList.remove('show');
+
+  const btn = document.getElementById('requestAdvanceBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+  try {
+    await saveStageProgress(activeWorkStage, answers, true);
+  } catch (e) {
+    errBox.textContent = 'Something went wrong sending your request. Please try again.';
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Request to Advance';
+  }
+});
 
 function formatBytes(bytes) {
   if (!bytes && bytes !== 0) return '';
@@ -307,11 +525,13 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  const profile = snap.data();
-  const name = profile.fullName || user.displayName || user.email.split('@')[0];
+  currentProfile = snap.data();
+  const name = currentProfile.fullName || user.displayName || user.email.split('@')[0];
   document.getElementById('welcomeName').textContent = `Welcome back, ${name}`;
-  document.getElementById('profileSummary').innerHTML = renderProfileSummaryHTML(profile);
-  renderFlywheel(profile.flywheelStage || 'founder-discovery');
+  document.getElementById('profileSummary').innerHTML = renderProfileSummaryHTML(currentProfile);
+  renderFlywheel(currentProfile);
+  renderStageWork(currentProfile);
+  renderCompletedStages(currentProfile);
 
   await loadUploads();
 
