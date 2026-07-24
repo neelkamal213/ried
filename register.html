@@ -60,6 +60,11 @@
           <input type="password" id="password" placeholder="Password (min. 6 characters)" minlength="6" required>
           <input type="password" id="confirmPassword" placeholder="Confirm Password" minlength="6" required>
 
+          <label class="auth-agree-row">
+            <input type="checkbox" id="agreeTerms" required>
+            <span>I agree to RIED's <a href="terms.html" target="_blank">Terms &amp; Conditions</a>, <a href="privacy-policy.html" target="_blank">Privacy Policy</a> and <a href="refund-policy.html" target="_blank">Refund Policy</a>.</span>
+          </label>
+
           <button type="submit" class="btn-primary" style="width:100%">
             <span class="btn-label">Create Account</span>
           </button>
@@ -130,6 +135,11 @@ form.addEventListener('submit', async (e) => {
 
   if (password !== confirmPassword) {
     showError("Passwords don't match — please re-enter them.");
+    return;
+  }
+
+  if (!document.getElementById('agreeTerms').checked) {
+    showError('Please agree to the Terms & Conditions, Privacy Policy and Refund Policy to continue.');
     return;
   }
 

@@ -1631,6 +1631,25 @@ a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var
   color: var(--muted);
 }
 .auth-switch a { color: var(--blue); font-weight: 700; }
+.auth-agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 4px 0 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  cursor: pointer;
+}
+.auth-agree-row input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+.auth-agree-row a { color: var(--blue); font-weight: 600; }
 .auth-error {
   background: rgba(220,53,69,.08);
   color: #b02a37;
