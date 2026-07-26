@@ -31,7 +31,7 @@
         <a href="startup-sanctuary.html">Startup Sanctuary</a>
         <a href="leadership.html">Leadership</a>
         <a href="packages.html">Packages</a>
-        <a href="login.html">Sign In</a>
+        <a href="login.html" id="navAuthLink">Sign In</a>
         <a href="contact.html" class="nav-cta">Contact</a>
       </nav>
     </div>
@@ -111,6 +111,8 @@ window.addEventListener("scroll", function() {
   document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
 });
 </script>
+
+<script type="module" src="js/auth-nav.js"></script>
 
 <script type="module">
 import { auth, db, ADMIN_EMAILS, createUserWithEmailAndPassword, updateProfile, doc, setDoc, serverTimestamp }

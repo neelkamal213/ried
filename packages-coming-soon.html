@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>My Account | RIED</title>
-  <meta name="description" content="Your RIED account.">
+  <title>Packages | RIED</title>
+  <meta name="description" content="RIED service packages are being rebuilt to better fit every organisation's needs. Stay tuned.">
 
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="images/brand/round_logo.png">
@@ -19,6 +19,7 @@
 
   <header class="header">
     <div class="container nav">
+
       <a href="index.html">
         <img src="images/brand/logo.png" class="logo">
       </a>
@@ -34,35 +35,83 @@
         <a href="login.html" id="navAuthLink">Sign In</a>
         <a href="contact.html" class="nav-cta">Contact</a>
       </nav>
+
     </div>
   </header>
 
-  <section class="section" style="padding-top:160px">
-    <div class="container">
+  <section class="page-hero">
+    <div class="page-hero-media">
+      <img src="images/gallery/scale.jpg" alt="Startup scaling and growth" style="object-position:center 40%">
+    </div>
 
-      <div id="loadingState" class="account-loading">
-        <i class="fa-solid fa-spinner fa-spin"></i> Loading your account...
-      </div>
+    <div class="hero-content">
+      <span class="hero-badge"><span class="dot"></span>Rebuilding</span>
+      <h1>Packages</h1>
+      <p>We're rebuilding this page to bring you something better. Stay tuned.</p>
+    </div>
+  </section>
 
-      <div id="signedOutState" class="account-signed-out" style="display:none">
-        <p>You need to sign in to view this page.</p>
-        <a href="login.html" class="btn-primary">Sign In</a>
-      </div>
+  <section class="section">
+    <div class="container center">
 
-      <div id="accountCard" class="account-card" style="display:none">
-        <div class="account-avatar" id="avatarInitial">R</div>
-        <span class="account-role-badge" id="roleBadge">Member</span>
-        <h2 class="section-title" id="welcomeName">Welcome</h2>
-        <p style="color:var(--muted)" id="welcomeEmail"></p>
+      <div class="under-dev-card">
 
-        <p style="color:var(--muted); margin-top:24px">
-          This is the seed of your RIED member area &mdash; the Founder Flywheel dashboard, Idea Quest history and
-          the Blog/video admin area (for Pramod &amp; Neel) will live here as they're built.
+        <span class="launch-badge"><i class="fa-solid fa-hourglass-half"></i>&nbsp; Updating Soon</span>
+
+        <h2>Our Packages Are Being Rebuilt</h2>
+
+        <p>
+          We're re-working our Incorporation, Grant Readiness, Scale-Up and Legal Services packages so that every
+          offering is genuinely customised to your organisation's stage, sector and scale &mdash; rather than a
+          one-size-fits-all price list. This page will be back shortly with an updated lineup and clearer
+          inclusions for each tier.
         </p>
 
-        <button class="btn-secondary" id="logoutBtn" style="margin-top:24px">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-        </button>
+        <p style="margin-top:16px">
+          In the meantime, if you'd like to get started or simply want to know what a package built around your
+          specific needs would look like, reach out directly &mdash; our team will work with you personally to put
+          together the right fit.
+        </p>
+
+        <a href="contact.html" class="btn-primary" style="margin-top:20px">Talk to Our Team <i class="fa-solid fa-arrow-right"></i></a>
+
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section light">
+    <div class="container">
+
+      <span class="section-tag-line center" style="display:block">What to Expect</span>
+      <h2 class="section-title center">Customised for Every Organisation</h2>
+
+      <div class="feature-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><i class="fas fa-building"></i></div>
+          <h3>Incorporation</h3>
+          <p>Structured, compliant company formation &mdash; scoped to how you're set up and where you're registering.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><i class="fas fa-hand-holding-dollar"></i></div>
+          <h3>Grant Readiness</h3>
+          <p>Positioning and documentation tailored to the specific grants and schemes you're pursuing.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><i class="fas fa-chart-line"></i></div>
+          <h3>Scale-Up</h3>
+          <p>Growth support shaped around your stage &mdash; from early traction to scaling operations.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-wrap"><i class="fas fa-scale-balanced"></i></div>
+          <h3>Legal Services</h3>
+          <p>Legal support scoped to your entity type, sector, and the compliance load you actually carry.</p>
+        </div>
+
       </div>
 
     </div>
@@ -105,42 +154,6 @@ window.addEventListener("scroll", function() {
 </script>
 
 <script type="module" src="js/auth-nav.js"></script>
-
-<script type="module">
-import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./js/firebase-init.js";
-
-const loadingState = document.getElementById('loadingState');
-const signedOutState = document.getElementById('signedOutState');
-const accountCard = document.getElementById('accountCard');
-
-onAuthStateChanged(auth, async (user) => {
-  loadingState.style.display = 'none';
-
-  if (!user) {
-    signedOutState.style.display = 'block';
-    return;
-  }
-
-  const name = user.displayName || user.email.split('@')[0];
-  document.getElementById('welcomeName').textContent = `Welcome, ${name}`;
-  document.getElementById('welcomeEmail').textContent = user.email;
-  document.getElementById('avatarInitial').textContent = name.charAt(0).toUpperCase();
-
-  try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    if (snap.exists() && snap.data().role === 'admin') {
-      document.getElementById('roleBadge').textContent = 'Admin';
-    }
-  } catch (e) { /* role badge is cosmetic only, safe to ignore failures here */ }
-
-  accountCard.style.display = 'block';
-});
-
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await signOut(auth);
-  window.location.href = 'index.html';
-});
-</script>
 
 <script>
 (function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){

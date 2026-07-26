@@ -78,14 +78,16 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Marketplace orders — created ONLY server-side by the checkout Cloud
-    // Function (Admin SDK bypasses these rules entirely), never directly by a
-    // client, so a buyer can never fake a "paid" order. The buyer who placed an
-    // order can read it back; an admin can read all orders (needed to track and
-    // reconcile manual seller payouts, since RIED collects marketplace payments
-    // centrally rather than splitting them automatically).
+    // Orders — both the Packages checkout (createRazorpayOrder /
+    // verifyRazorpayPayment in functions/index.js) and any future Marketplace
+    // checkout write here, ONLY server-side via the Admin SDK (which bypasses
+    // these rules entirely), never directly by a client, so a buyer can never
+    // fake a "paid" order. The buyer who placed an order (the doc's "uid"
+    // field, set by createRazorpayOrder) can read it back; an admin can read
+    // all orders (needed to track and reconcile manual seller payouts, since
+    // RIED collects payments centrally rather than splitting them automatically).
     match /orders/{orderId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.buyerId ||
+      allow read: if request.auth != null && (request.auth.uid == resource.data.uid ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create, update, delete: if false;

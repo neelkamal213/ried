@@ -31,7 +31,7 @@
         <a href="startup-sanctuary.html">Startup Sanctuary</a>
         <a href="leadership.html">Leadership</a>
         <a href="packages.html">Packages</a>
-        <a href="login.html">Sign In</a>
+        <a href="login.html" id="navAuthLink">Sign In</a>
         <a href="contact.html" class="nav-cta">Contact</a>
       </nav>
     </div>
@@ -107,6 +107,8 @@ window.addEventListener("scroll", function() {
 });
 </script>
 
+<script type="module" src="js/auth-nav.js"></script>
+
 <script type="module">
 import { auth, db, ADMIN_EMAILS, signInWithEmailAndPassword, sendPasswordResetEmail, doc, getDoc } from "./js/firebase-init.js";
 
@@ -115,6 +117,13 @@ const errorBox = document.getElementById('authError');
 
 function showError(msg) {
   errorBox.textContent = msg;
+  errorBox.classList.add('show');
+}
+
+// If auth-nav.js's 30-minute inactivity timer signed the user out and sent
+// them here, let them know why (rather than it looking like a random logout).
+if (new URLSearchParams(window.location.search).get('timeout') === '1') {
+  errorBox.textContent = "You were signed out after 30 minutes of inactivity. Please sign in again.";
   errorBox.classList.add('show');
 }
 
