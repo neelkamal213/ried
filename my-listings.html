@@ -325,7 +325,12 @@ document.getElementById('saveListingBtn').addEventListener('click', async () => 
 
   const btn = document.getElementById('saveListingBtn');
   btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+  // Update the icon/label in place rather than overwriting btn.innerHTML —
+  // replacing the whole button markup destroys the #saveListingLabel span,
+  // which resetForm() (called below on success) then can't find, throwing
+  // and making an already-successful save look like it failed.
+  btn.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
+  document.getElementById('saveListingLabel').textContent = 'Saving...';
 
   try {
     let imageURL = editingId ? photoPreviewURL : '';
@@ -361,7 +366,10 @@ document.getElementById('saveListingBtn').addEventListener('click', async () => 
     errBox.classList.add('show');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span id="saveListingLabel">' + (editingId ? 'Save Changes' : 'Publish Listing') + '</span>';
+    const icon = btn.querySelector('i');
+    const label = document.getElementById('saveListingLabel');
+    if (icon) icon.className = 'fa-solid fa-floppy-disk';
+    if (label) label.textContent = editingId ? 'Save Changes' : 'Publish Listing';
   }
 });
 
