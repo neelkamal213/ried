@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>My Listings | RIED Marketplace</title>
+  <meta name="description" content="Manage the products and services you sell on the RIED Marketplace.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="dashboard-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="products.html">Products</a>
+        <a href="services.html">Services</a>
+        <a href="startup-sanctuary.html">Startup Sanctuary</a>
+        <a href="leadership.html">Leadership</a>
+        <a href="packages.html">Packages</a>
+        <a href="contact.html" class="nav-cta">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:150px">
+    <div class="container">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading your listings...
+      </div>
+
+      <div id="listingsPage" class="hidden">
+
+        <div class="dash-welcome">
+          <div>
+            <span class="quest-eyebrow"><i class="fa-solid fa-store"></i> RIED Marketplace</span>
+            <h1 class="dash-title">My Listings</h1>
+            <p class="dash-stage-desc">List the products and services you offer &mdash; shoppers will be able to browse and buy them once the Marketplace goes live.</p>
+          </div>
+          <a href="dashboard.html" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+
+        <!-- ADD / EDIT LISTING FORM -->
+        <div class="dash-card" style="margin-bottom:22px">
+          <div class="dash-card-head">
+            <h3><i class="fa-solid" id="formIcon"></i> <span id="formTitle">Add a New Listing</span></h3>
+            <button class="btn-secondary hidden" id="cancelEditBtn"><i class="fa-solid fa-xmark"></i> Cancel Edit</button>
+          </div>
+
+          <div id="listingError" class="auth-error"></div>
+
+          <label class="onboard-label">What are you listing?</label>
+          <div class="listing-type-row">
+            <label class="listing-type-option">
+              <input type="radio" name="listingType" value="product" checked>
+              <span><i class="fa-solid fa-box"></i> Product</span>
+            </label>
+            <label class="listing-type-option">
+              <input type="radio" name="listingType" value="service">
+              <span><i class="fa-solid fa-handshake"></i> Service</span>
+            </label>
+          </div>
+
+          <label class="onboard-label">Title</label>
+          <input type="text" id="listingTitle" class="onboard-input" placeholder="e.g. Custom PCB Design Consultation" maxlength="120">
+
+          <label class="onboard-label">Price (₹ INR)</label>
+          <input type="number" id="listingPrice" class="onboard-input" placeholder="e.g. 2500" min="1" step="1">
+
+          <label class="onboard-label">Category <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+          <input type="text" id="listingCategory" class="onboard-input" placeholder="e.g. Hardware, Design, Consulting">
+
+          <label class="onboard-label">Description</label>
+          <textarea id="listingDescription" class="onboard-input" rows="4" placeholder="Describe what a buyer gets — be specific." maxlength="1000"></textarea>
+
+          <label class="onboard-label">Photo <span style="font-weight:400;color:var(--muted)">(optional, up to 8MB)</span></label>
+          <div class="logo-upload-wrap" style="align-items:flex-start">
+            <div class="listing-photo-frame" id="listingPhotoFrame">
+              <img id="listingPhotoPreview" class="hidden">
+              <i class="fa-solid fa-image" id="listingPhotoPlaceholder"></i>
+            </div>
+            <input type="file" id="listingPhotoInput" accept="image/*" class="hidden">
+            <button type="button" class="btn-secondary" id="choosePhotoBtn"><i class="fa-solid fa-upload"></i> Choose Photo</button>
+          </div>
+
+          <div class="stage-work-actions" style="margin-top:22px">
+            <button class="btn-primary" id="saveListingBtn"><i class="fa-solid fa-floppy-disk"></i> <span id="saveListingLabel">Publish Listing</span></button>
+          </div>
+        </div>
+
+        <!-- EXISTING LISTINGS -->
+        <div class="dash-card">
+          <h3><i class="fa-solid fa-list"></i> Your Listings</h3>
+          <p class="dash-card-hint">Toggle a listing to Paused to hide it from buyers without deleting it.</p>
+          <div id="myListingsGrid" class="my-listings-grid"></div>
+          <p class="dash-empty hidden" id="myListingsEmpty">You haven't listed anything yet — use the form above to add your first product or service.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+
+      <div class="social-links">
+        <a href="https://www.linkedin.com/company/ried-pvt-ltd/" target="_blank"><i class="fab fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61576517859696" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://www.instagram.com/riedpvtltd" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.youtube.com/@riedpvtltd" target="_blank"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+  <a href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect." class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
+
+<script>
+window.addEventListener("scroll", function() {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+  document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
+});
+</script>
+
+<script type="module">
+import {
+  auth, db, storage, ADMIN_EMAILS,
+  onAuthStateChanged,
+  doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, getDocs, query, where, orderBy, serverTimestamp,
+  ref, uploadBytes, getDownloadURL, deleteObject
+} from "./js/firebase-init.js";
+
+let currentUser = null;
+let currentProfile = null;
+let editingId = null;
+let photoFile = null;
+let photoPreviewURL = '';
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function resetForm() {
+  editingId = null;
+  photoFile = null;
+  photoPreviewURL = '';
+  document.getElementById('formTitle').textContent = 'Add a New Listing';
+  document.getElementById('saveListingLabel').textContent = 'Publish Listing';
+  document.getElementById('cancelEditBtn').classList.add('hidden');
+  document.getElementById('listingTitle').value = '';
+  document.getElementById('listingPrice').value = '';
+  document.getElementById('listingCategory').value = '';
+  document.getElementById('listingDescription').value = '';
+  document.querySelector('input[name="listingType"][value="product"]').checked = true;
+  document.getElementById('listingPhotoInput').value = '';
+  document.getElementById('listingPhotoPreview').classList.add('hidden');
+  document.getElementById('listingPhotoPlaceholder').classList.remove('hidden');
+  document.getElementById('listingError').classList.remove('show');
+}
+
+document.getElementById('choosePhotoBtn').addEventListener('click', () => {
+  document.getElementById('listingPhotoInput').click();
+});
+
+document.getElementById('listingPhotoInput').addEventListener('change', () => {
+  const file = document.getElementById('listingPhotoInput').files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) {
+    const errBox = document.getElementById('listingError');
+    errBox.textContent = 'That photo is larger than 8MB — please choose a smaller one.';
+    errBox.classList.add('show');
+    return;
+  }
+  photoFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    photoPreviewURL = e.target.result;
+    const img = document.getElementById('listingPhotoPreview');
+    img.src = photoPreviewURL;
+    img.classList.remove('hidden');
+    document.getElementById('listingPhotoPlaceholder').classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+async function loadMyListings() {
+  const grid = document.getElementById('myListingsGrid');
+  const empty = document.getElementById('myListingsEmpty');
+  const q = query(collection(db, 'listings'), where('sellerId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  grid.innerHTML = snap.docs.map(d => {
+    const l = d.data();
+    const img = (l.images && l.images[0]) || '';
+    const photoHTML = img
+      ? `<div class="my-listing-photo"><img src="${esc(img)}" alt=""></div>`
+      : `<div class="my-listing-photo my-listing-photo-empty"><i class="fa-solid ${l.type === 'service' ? 'fa-handshake' : 'fa-box'}"></i></div>`;
+    return `
+      <div class="my-listing-card" data-id="${d.id}">
+        ${photoHTML}
+        <div class="my-listing-body">
+          <div class="my-listing-top">
+            <span class="my-listing-badge ${l.active ? 'active' : 'paused'}">${l.active ? 'Active' : 'Paused'}</span>
+            <span class="my-listing-type"><i class="fa-solid ${l.type === 'service' ? 'fa-handshake' : 'fa-box'}"></i> ${l.type === 'service' ? 'Service' : 'Product'}</span>
+          </div>
+          <h4>${esc(l.title)}</h4>
+          <div class="my-listing-price">₹${Number(l.price || 0).toLocaleString('en-IN')}</div>
+          <div class="my-listing-actions">
+            <button class="btn-secondary my-listing-toggle" style="padding:8px 14px;font-size:.8rem"><i class="fa-solid fa-power-off"></i> ${l.active ? 'Pause' : 'Activate'}</button>
+            <button class="btn-secondary my-listing-edit" style="padding:8px 14px;font-size:.8rem"><i class="fa-solid fa-pen"></i> Edit</button>
+            <button class="btn-secondary my-listing-delete" style="padding:8px 14px;font-size:.8rem"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.my-listing-toggle').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.my-listing-card');
+      const id = card.dataset.id;
+      btn.disabled = true;
+      const snap = await getDoc(doc(db, 'listings', id));
+      const current = snap.data();
+      await updateDoc(doc(db, 'listings', id), { active: !current.active });
+      await loadMyListings();
+    });
+  });
+
+  grid.querySelectorAll('.my-listing-edit').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.my-listing-card');
+      const id = card.dataset.id;
+      const snap = await getDoc(doc(db, 'listings', id));
+      const l = snap.data();
+      editingId = id;
+      document.getElementById('formTitle').textContent = 'Edit Listing';
+      document.getElementById('saveListingLabel').textContent = 'Save Changes';
+      document.getElementById('cancelEditBtn').classList.remove('hidden');
+      document.getElementById('listingTitle').value = l.title || '';
+      document.getElementById('listingPrice').value = l.price || '';
+      document.getElementById('listingCategory').value = l.category || '';
+      document.getElementById('listingDescription').value = l.description || '';
+      document.querySelector(`input[name="listingType"][value="${l.type === 'service' ? 'service' : 'product'}"]`).checked = true;
+      photoFile = null;
+      photoPreviewURL = l.images && l.images[0] ? l.images[0] : '';
+      const imgEl = document.getElementById('listingPhotoPreview');
+      if (photoPreviewURL) {
+        imgEl.src = photoPreviewURL;
+        imgEl.classList.remove('hidden');
+        document.getElementById('listingPhotoPlaceholder').classList.add('hidden');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  grid.querySelectorAll('.my-listing-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.my-listing-card');
+      const id = card.dataset.id;
+      btn.disabled = true;
+      await deleteDoc(doc(db, 'listings', id));
+      if (editingId === id) resetForm();
+      await loadMyListings();
+    });
+  });
+}
+
+document.getElementById('saveListingBtn').addEventListener('click', async () => {
+  const errBox = document.getElementById('listingError');
+  errBox.classList.remove('show');
+
+  const title = document.getElementById('listingTitle').value.trim();
+  const price = Number(document.getElementById('listingPrice').value);
+  const category = document.getElementById('listingCategory').value.trim();
+  const description = document.getElementById('listingDescription').value.trim();
+  const type = document.querySelector('input[name="listingType"]:checked').value;
+
+  if (!title) { errBox.textContent = 'Please give your listing a title.'; errBox.classList.add('show'); return; }
+  if (!price || price <= 0) { errBox.textContent = 'Please enter a valid price greater than ₹0.'; errBox.classList.add('show'); return; }
+  if (!description) { errBox.textContent = 'Please add a short description.'; errBox.classList.add('show'); return; }
+
+  const btn = document.getElementById('saveListingBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+  try {
+    let imageURL = editingId ? photoPreviewURL : '';
+    if (photoFile) {
+      const ext = (photoFile.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `marketplace-listings/${currentUser.uid}/${Date.now()}.${ext}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, photoFile);
+      imageURL = await getDownloadURL(storageRef);
+    }
+
+    const data = {
+      title, price, category, description, type,
+      images: imageURL ? [imageURL] : [],
+      sellerId: currentUser.uid,
+      sellerName: (currentProfile && (currentProfile.brandName || currentProfile.fullName)) || currentUser.displayName || 'RIED Founder',
+      updatedAt: serverTimestamp()
+    };
+
+    if (editingId) {
+      await updateDoc(doc(db, 'listings', editingId), data);
+    } else {
+      data.active = true;
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db, 'listings'), data);
+    }
+
+    resetForm();
+    await loadMyListings();
+  } catch (err) {
+    console.error('saveListing failed:', err);
+    errBox.textContent = `Something went wrong saving your listing${err && err.code ? ' (' + err.code + ')' : ''}. Please try again.`;
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span id="saveListingLabel">' + (editingId ? 'Save Changes' : 'Publish Listing') + '</span>';
+  }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+    window.location.href = 'admin-dashboard.html';
+    return;
+  }
+
+  currentUser = user;
+
+  const snap = await getDoc(doc(db, 'profiles', user.uid));
+  if (!snap.exists()) {
+    window.location.href = 'profile-setup.html';
+    return;
+  }
+  currentProfile = snap.data();
+
+  await loadMyListings();
+
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('listingsPage').classList.remove('hidden');
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>
