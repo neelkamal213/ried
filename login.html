@@ -130,24 +130,31 @@ form.addEventListener('submit', async (e) => {
   submitBtn.querySelector('.btn-label').textContent = 'Signing in...';
 
   try {
+    console.log('[login] step: signing in...');
     const cred = await signInWithEmailAndPassword(auth, email, password);
     const user = cred.user;
+    console.log('[login] step: signed in OK, uid:', user.uid);
 
     if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+      console.log('[login] step: admin email, redirecting to admin-dashboard.html');
       window.location.href = 'admin-dashboard.html';
       return;
     }
 
+    console.log('[login] step: reading /profiles/' + user.uid);
     const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+    console.log('[login] step: profile read OK, exists:', profileSnap.exists());
     window.location.href = profileSnap.exists() ? 'dashboard.html' : 'profile-setup.html';
   } catch (err) {
+    console.error('login failed:', err);
     const messages = {
       'auth/invalid-credential': 'Incorrect email or password.',
       'auth/user-not-found': 'No account found with that email.',
       'auth/wrong-password': 'Incorrect password.',
       'auth/too-many-requests': 'Too many attempts — please wait a moment and try again.'
     };
-    showError(messages[err.code] || 'Something went wrong signing you in. Please try again.');
+    const detail = err && err.code && !messages[err.code] ? ` (${err.code})` : '';
+    showError(messages[err.code] || `Something went wrong signing you in${detail}. Please try again.`);
     submitBtn.disabled = false;
     submitBtn.querySelector('.btn-label').textContent = 'Sign In';
   }
