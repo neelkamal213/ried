@@ -207,6 +207,199 @@ exports.verifyRazorpayPayment = onCall(
 );
 
 /**
+ * createMarketplaceOrder / verifyMarketplacePayment
+ *
+ * The Marketplace equivalent of createRazorpayOrder/verifyRazorpayPayment
+ * above, for cart checkout on marketplace.html instead of a single package.
+ * Same security pattern: the server always reads the CALLER's own cart
+ * (/carts/{uid}) and each listing's REAL price from Firestore — it never
+ * trusts a client-sent price or item list. Per the payout model on file
+ * (RIED collects all Marketplace payments centrally, then pays sellers out
+ * manually — no Razorpay Route/linked-account splitting), this is a single
+ * combined payment for the whole cart regardless of how many sellers are
+ * involved; each line item still records its own sellerId/sellerName/price
+ * so RIED can reconcile who's owed what.
+ */
+exports.createMarketplaceOrder = onCall(
+  { secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in to checkout.");
+    }
+    const uid = request.auth.uid;
+
+    const cartSnap = await db.collection("carts").doc(uid).get();
+    const cartItems = (cartSnap.exists && Array.isArray(cartSnap.data().items)) ? cartSnap.data().items : [];
+    if (!cartItems.length) {
+      throw new HttpsError("failed-precondition", "Your cart is empty.");
+    }
+
+    const lineItems = [];
+    let total = 0;
+    for (const ci of cartItems) {
+      const qty = Math.max(1, Math.floor(Number(ci.qty) || 1));
+      const listingSnap = await db.collection("listings").doc(String(ci.listingId)).get();
+      // Skip anything deleted or paused since it was added to the cart —
+      // never trust the cart's own snapshot of price/availability.
+      if (!listingSnap.exists || listingSnap.data().active !== true) continue;
+
+      const listing = listingSnap.data();
+      const price = Number(listing.price) || 0;
+      const lineTotal = price * qty;
+      total += lineTotal;
+      lineItems.push({
+        listingId: ci.listingId,
+        sellerId: listing.sellerId || null,
+        sellerName: listing.sellerName || "",
+        title: listing.title || "",
+        price,
+        qty,
+        lineTotal
+      });
+    }
+
+    if (!lineItems.length) {
+      throw new HttpsError("failed-precondition", "None of the items in your cart are available anymore. Please refresh the Marketplace page.");
+    }
+
+    const razorpay = new Razorpay({
+      key_id: RAZORPAY_KEY_ID.value(),
+      key_secret: RAZORPAY_KEY_SECRET.value()
+    });
+
+    const order = await razorpay.orders.create({
+      amount: total * 100, // paise
+      currency: "INR",
+      notes: { uid, kind: "marketplace" }
+    });
+
+    await db.collection("orders").doc(order.id).set({
+      type: "marketplace",
+      uid,
+      items: lineItems,
+      amount: total,
+      status: "created",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return {
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: RAZORPAY_KEY_ID.value(),
+      items: lineItems,
+      total
+    };
+  }
+);
+
+exports.verifyMarketplacePayment = onCall(
+  { secrets: [RAZORPAY_KEY_SECRET, GMAIL_APP_PASSWORD] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in.");
+    }
+
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = request.data || {};
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      throw new HttpsError("invalid-argument", "Missing payment verification fields.");
+    }
+
+    const expectedSignature = crypto
+      .createHmac("sha256", RAZORPAY_KEY_SECRET.value())
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+    const verified = expectedSignature === razorpay_signature;
+
+    const orderRef = db.collection("orders").doc(razorpay_order_id);
+    const orderSnap = await orderRef.get();
+    const order = orderSnap.exists ? orderSnap.data() : {};
+
+    // Extra check specific to Marketplace orders (multiple sellers/buyers
+    // involved, so worth being stricter here): only the buyer who actually
+    // created this order may verify/finalize it.
+    if (order.uid && order.uid !== request.auth.uid) {
+      throw new HttpsError("permission-denied", "This order does not belong to your account.");
+    }
+
+    await orderRef.set(
+      {
+        status: verified ? "paid" : "verification_failed",
+        paymentId: razorpay_payment_id,
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    if (!verified) {
+      throw new HttpsError("permission-denied", "Payment signature could not be verified.");
+    }
+
+    // Checkout succeeded — clear the buyer's cart so they don't see a stale
+    // one next visit or accidentally re-buy the same items.
+    await db.collection("carts").doc(request.auth.uid).set(
+      { items: [], updatedAt: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+
+    // Notify hello@ried.co.in — best-effort, same Gmail-SMTP pattern as
+    // verifyRazorpayPayment above. A failure here must never make an
+    // already-confirmed payment look like it failed to the buyer.
+    try {
+      let buyerEmail = "unknown";
+      let buyerName = "";
+      try {
+        const userRecord = await admin.auth().getUser(request.auth.uid);
+        buyerEmail = userRecord.email || buyerEmail;
+        buyerName = userRecord.displayName || "";
+      } catch (e) {
+        logger.error("verifyMarketplacePayment: could not look up buyer for notification email", e);
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: GMAIL_SENDER,
+          pass: GMAIL_APP_PASSWORD.value()
+        }
+      });
+
+      const items = Array.isArray(order.items) ? order.items : [];
+      const lines = [
+        "A Marketplace payment has been confirmed on the RIED website.",
+        "",
+        `Purchased By: ${buyerName ? buyerName + " " : ""}(${buyerEmail})`,
+        `User Account UID: ${request.auth.uid}`,
+        `Total Paid: Rs. ${order.amount != null ? order.amount : "?"}`,
+        "",
+        "--- Items ---"
+      ];
+      items.forEach((it) => {
+        lines.push(`${it.title} — Qty ${it.qty} x Rs.${it.price} = Rs.${it.lineTotal} (Seller: ${it.sellerName || it.sellerId || "unknown"})`);
+      });
+      lines.push("");
+      lines.push(`Razorpay Order ID: ${razorpay_order_id}`);
+      lines.push(`Razorpay Payment ID: ${razorpay_payment_id}`);
+      lines.push("");
+      lines.push("Reminder: RIED collects Marketplace payments centrally — sellers still need to be paid out manually per the payout model on file.");
+
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: buyerEmail !== "unknown" ? buyerEmail : undefined,
+        subject: `Marketplace Purchase Confirmed — ${buyerName || buyerEmail}`,
+        text: lines.join("\n")
+      });
+    } catch (e) {
+      logger.error("verifyMarketplacePayment: failed to send purchase notification email", e);
+    }
+
+    return { verified: true };
+  }
+);
+
+/**
  * notifyOnProfileSubmit
  *
  * Fires whenever a founder's onboarding profile (profile-setup.html) is
