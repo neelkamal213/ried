@@ -72,6 +72,13 @@ const PACKAGE_CATALOG = {
 exports.createRazorpayOrder = onCall(
   { secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET] },
   async (request) => {
+    // Purchases require a signed-in RIED account. packages.html also checks
+    // this client-side first (for a fast, friendly message), but that check
+    // alone could be bypassed — this is the authoritative enforcement.
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in to purchase a package.");
+    }
+
     const packageId = request.data && request.data.packageId;
     const pkg = PACKAGE_CATALOG[packageId];
 
@@ -116,7 +123,7 @@ exports.createRazorpayOrder = onCall(
 );
 
 exports.verifyRazorpayPayment = onCall(
-  { secrets: [RAZORPAY_KEY_SECRET] },
+  { secrets: [RAZORPAY_KEY_SECRET, GMAIL_APP_PASSWORD] },
   async (request) => {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = request.data || {};
 
@@ -142,6 +149,57 @@ exports.verifyRazorpayPayment = onCall(
 
     if (!verified) {
       throw new HttpsError("permission-denied", "Payment signature could not be verified.");
+    }
+
+    // Notify hello@ried.co.in of the confirmed purchase — item, buyer, amount.
+    // Best-effort: a failure here must never make an already-confirmed
+    // payment look like it failed to the person who just paid.
+    try {
+      const orderSnap = await db.collection("orders").doc(razorpay_order_id).get();
+      const order = orderSnap.exists ? orderSnap.data() : {};
+
+      let buyerEmail = "unknown";
+      let buyerName = "";
+      if (order.uid) {
+        try {
+          const userRecord = await admin.auth().getUser(order.uid);
+          buyerEmail = userRecord.email || buyerEmail;
+          buyerName = userRecord.displayName || "";
+        } catch (e) {
+          logger.error("verifyRazorpayPayment: could not look up buyer for notification email", e);
+        }
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: GMAIL_SENDER,
+          pass: GMAIL_APP_PASSWORD.value()
+        }
+      });
+
+      const lines = [
+        "A payment has been confirmed on the RIED website.",
+        "",
+        `Item Purchased: ${order.packageName || order.packageId || "Unknown package"}`,
+        `Amount Paid: Rs. ${order.amount != null ? order.amount : "?"}`,
+        `Purchased By: ${buyerName ? buyerName + " " : ""}(${buyerEmail})`,
+        `User Account UID: ${order.uid || "unknown"}`,
+        "",
+        `Razorpay Order ID: ${razorpay_order_id}`,
+        `Razorpay Payment ID: ${razorpay_payment_id}`
+      ];
+
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: buyerEmail !== "unknown" ? buyerEmail : undefined,
+        subject: `Purchase Confirmed — ${order.packageName || order.packageId || ""}`,
+        text: lines.join("\n")
+      });
+    } catch (e) {
+      logger.error("verifyRazorpayPayment: failed to send purchase notification email", e);
     }
 
     return { verified: true };
