@@ -1,118 +1,94 @@
-# v9 — Auth Nav Toggle + Session Timeout + Purchase Gating (2026-07-26)
+# v10 — Marketplace: Browse Page, Cart, Checkout (2026-07-26)
 
-This round touches almost every page, so here's a map before you copy things over.
-**Every file in this folder replaces the same-named file in the real repo** —
-this is still a PARTIAL snapshot (no images), just a large one this time.
+This is Phase 2/3 of the Marketplace feature — the part that makes listings
+(built in v8) actually sellable. Seller listing management (`my-listings.html`)
+is unchanged; this round adds the buyer-facing side.
 
-## What changed and why
+## What's new
 
-### 1. "Sign In" ↔ "Dashboard" nav link, site-wide
-New shared file: **`js/auth-nav.js`**. Every page now loads it with:
-```html
-<script type="module" src="js/auth-nav.js"></script>
-```
-It watches Firebase's sign-in state. The moment someone is signed in, the nav
-link that used to always say "Sign In" flips to "Dashboard" (pointing at
-`admin-dashboard.html` for your two admin accounts, `dashboard.html` for
-everyone else). The moment they sign out, it flips back to "Sign In". This
-required adding `id="navAuthLink"` to that link on every page, and — on the
-four pages that never had a Sign In link at all (`dashboard.html`,
-`admin-dashboard.html`, `my-listings.html`, `account.html`) — adding one.
+### `marketplace.html` (new page)
+The public browse page — reachable from the nav (added to every page) and
+from a new "Browse Marketplace" button on the founder dashboard. Anyone,
+signed in or not, can browse: search box, a Product/Service filter, a
+category filter (built automatically from whatever categories sellers have
+used), and a responsive grid of listing cards. Clicking a card opens a
+detail view with the full description and a bigger photo. Only listings
+marked **Active** on `my-listings.html` ever show up here — paused ones stay
+hidden, same as before.
 
-This is also the fix for "the Dashboard page never showed the menu items at
-top" — `dashboard.html`'s nav was simply missing that link entirely before,
-which is why it looked incomplete next to every other page.
+**Sign-in is required to actually buy**, not to browse — clicking "Add to
+Cart" or "Proceed to Checkout" while signed out shows a message and sends
+the visitor to `login.html`, same pattern as the Packages checkout gate from
+v9. Once signed in, adding items to the cart is instant.
 
-### 2. 30-minute inactivity sign-out
-Also inside `js/auth-nav.js`. Once someone is signed in, any mouse move,
-click, keypress, scroll or tap resets a 30-minute timer. If the timer ever
-runs out with zero activity, they're automatically signed out and sent to
-`login.html?timeout=1`, which now shows "You were signed out after 30
-minutes of inactivity. Please sign in again." — so it doesn't look like a
-random error.
+### Cart
+Stored in Firestore at `/carts/{uid}` (the rules for this were already in
+place since v8, unused until now). A cart icon in the toolbar shows a live
+item count; clicking it opens a panel listing everything in the cart with
+quantity +/- controls, a remove button per item, and a running total. If a
+listing was paused or deleted after being added to a cart, it shows as "no
+longer available" with just a remove option — it's automatically excluded
+from the total and from checkout, so nothing broken can accidentally get
+charged.
 
-**Note on scope**: this is an *inactivity* timeout (resets on activity), not
-a flat "log out 30 minutes after login no matter what." If you actually want
-the latter, let me know and it's a small change.
+### Checkout — `createMarketplaceOrder` / `verifyMarketplacePayment` (new Cloud Functions)
+Added to `functions/index.js`, right after the existing Packages checkout
+functions, following the exact same security pattern:
+- The server always reads the **signed-in caller's own cart** from
+  Firestore — the client never sends item IDs or prices for the server to
+  trust. Same principle as the Packages checkout: never trust a price (or
+  a cart) coming from the browser.
+- One combined Razorpay payment covers the whole cart, however many
+  different sellers are in it — matching your decision that RIED collects
+  all Marketplace payments centrally rather than splitting them per seller
+  (no Razorpay Route). Each line item still records its own seller, so
+  there's a clear paper trail for manual payouts later.
+- On successful payment: the order is marked `paid` in `/orders`, the
+  buyer's cart is automatically cleared, and an email goes to
+  **hello@ried.co.in** with the buyer's name/email, every item purchased
+  (with per-seller breakdown), the total paid, and the Razorpay IDs — same
+  Gmail-SMTP setup already in place, no new secret needed.
+- `createRazorpayOrder`/`verifyRazorpayPayment` (the Packages functions from
+  before) are untouched.
 
-### 3. Packages page nav order fixed
-`packages.html` and `packages-coming-soon.html` both had "Packages" sitting
-right after "Services" instead of after "Leadership" — out of step with
-every other page. That's the "Menu items in Headers wrongly set" bug on the
-purchases page you flagged. Both files now match the same Home / About /
-Products / Services / Startup Sanctuary / Leadership / Packages / Sign
-In-or-Dashboard / Contact order as everywhere else.
+### `firestore.indexes.json` — two composite indexes
+- `listings` by `sellerId` + `createdAt` (added last round for My Listings).
+- `listings` by `active` + `createdAt` (**new** — this is what
+  `marketplace.html`'s browse query needs). Without this, the browse page
+  will show the same "query requires an index" error My Listings hit —
+  except this time it's expected and pre-empted rather than a surprise.
 
-### 4. Purchases now require sign-in
-This applies to `packages.html` — the real Razorpay-connected packages page
-(currently not the live one; `packages-coming-soon.html` still is, per your
-call to hold off until after Monday's Legal/Compliance meeting). Once you do
-swap the real page back in, purchases on it are now gated two ways:
-- **Client-side** (`packages.html`): clicking "Reserve This Package" while
-  signed out shows "Please sign in..." and redirects to `login.html`,
-  instead of opening checkout.
-- **Server-side, the real enforcement** (`functions/index.js` →
-  `createRazorpayOrder`): now rejects the request outright if there's no
-  signed-in user attached to it. The client-side check alone could always be
-  bypassed by anyone poking at the network request directly — this is what
-  actually makes it impossible to purchase while signed out.
+### Nav link added everywhere
+Every page's header nav now includes a **Marketplace** link, positioned
+right after Packages (same place it appears on `marketplace.html` itself).
+This touched every HTML file in the site — that's the whole reason this
+round's file list is so long, not because of hidden other changes.
 
-Every order already records which signed-in account (`uid`) made it — that
-part was already in place from the original Razorpay build.
+### `style.css`
+All-new CSS for the browse grid, cards, the listing-detail modal, and the
+cart panel — appended after the existing My Listings styles, nothing
+existing was changed or removed.
 
-### 5. Purchase notification email to hello@ried.co.in
-Also in `functions/index.js`, inside `verifyRazorpayPayment` (the function
-that runs right after Razorpay confirms a payment). On every successful,
-verified payment it now emails **hello@ried.co.in** with: the item/package
-name, the amount paid, and the buyer's name + email (looked up from their
-Firebase account via their `uid`). Uses the same Gmail-SMTP setup as your
-existing founder-profile emails — no new secret needed, `GMAIL_APP_PASSWORD`
-is just now also used by this function.
-
-**Nothing to do here until Marketplace checkout exists** — this email only
-fires from the Packages checkout flow for now, since that's the only live
-payment flow. When Marketplace checkout is eventually built, the exact same
-`orders` write pattern will be extended to trigger it too.
-
-### 6. `firestore.rules` — small correctness fix, found while checking this
-The existing `/orders` rule checked a field called `buyerId`, but the
-Cloud Function has only ever written the field as `uid`. Since orders are
-only ever created via the Admin SDK (which bypasses rules entirely), this
-never caused a visible bug — but it meant a buyer trying to read back their
-own order would have been silently denied, since the rule was comparing
-against a field that doesn't exist. Fixed to check `uid` instead. **You do
-need to re-publish this file** in the Firestore Rules console tab.
+## What's still NOT built (next phase, whenever you're ready)
+- Buyer order history ("My Orders" on the dashboard).
+- Seller "my sales" view (so a founder can see what of THEIRS sold).
+- Admin view of amounts owed per seller, for manual payout reconciliation.
 
 ## Deploy checklist
-1. Copy every file in this folder over the matching path in your repo,
-   preserving the `js/` and `functions/` subfolders.
-2. Push to GitHub as usual.
-3. **Publish `firestore.rules`** in the Firebase Console (Firestore Database
-   → Rules tab → paste → Publish) — same "actually click Publish and wait"
-   step that caused trouble before. Use the Rules Playground afterward to
-   sanity-check a simulated read on `/orders/{anyId}` as the buyer's own uid.
-4. **Redeploy Cloud Functions** — paste the full `functions/index.js`
-   directly into your Cloud Shell's own copy of the file (not just your
-   local one — Cloud Shell's clone is a separate filesystem), then:
-   ```
-   firebase deploy --only functions
-   ```
-5. Test the nav toggle: sign in on any page, confirm "Sign In" becomes
-   "Dashboard" in the header without a page reload; sign out, confirm it
-   flips back.
-6. Test the idle timeout by lowering `SESSION_TIMEOUT_MS` in `js/auth-nav.js`
-   temporarily (e.g. to `20 * 1000` for 20 seconds) on a test copy, confirm
-   it signs you out and redirects with the message — then make sure you
-   deploy the REAL file (30 minutes) afterward, not your test copy.
-
-## Not related to this round — still open
-The second `FirebaseError: Missing or insufficient permissions` sign-in bug
-(on `neel44244@gmail.com`) that we were mid-debugging before this round
-started is **not fixed by anything here** and hasn't been re-tested yet.
-Please try signing in again after deploying this round, since a fresh
-`firestore.rules` publish is part of this deploy anyway — but if it's still
-broken, we're back to the three outstanding checks: confirm that account's
-UID in Authentication → Users matches `276Y4uyxzaRmZ8MkTooiRrJMJbR2`, confirm
-a `/profiles` document with that exact ID exists with real data in the
-Firestore Data tab, and if both check out, try signing in from a different
-device/network.
+1. Copy every file in this folder over the matching path in your repo
+   (`js/` had no changes this round — only `functions/` and the root HTML
+   files + `style.css` + `firestore.indexes.json`).
+2. Push to GitHub.
+3. **Deploy the index**: either click the auto-generated link the first time
+   `marketplace.html` throws the composite-index error in the console (same
+   one-click fix as My Listings last time), or run
+   `firebase deploy --only firestore:indexes` from Cloud Shell to apply
+   `firestore.indexes.json` directly — either works, do whichever's easier.
+4. **Redeploy Cloud Functions** — paste `functions/index.js` directly into
+   Cloud Shell's own editor, then `firebase deploy --only functions`.
+5. Test: browse `marketplace.html` signed out (should work, browsing only);
+   try Add to Cart signed out (should redirect to sign in); sign in, add a
+   couple of items, adjust quantities, remove one, then checkout with a
+   real payment; confirm the order lands in Firestore `/orders` as `paid`,
+   the cart empties afterward, and the confirmation email arrives at
+   hello@ried.co.in.
