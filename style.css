@@ -1162,7 +1162,7 @@ a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var
 .option .letter{flex-shrink:0;width:26px;height:26px;border-radius:8px;background:#fff;
   border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.78rem;
   color:var(--muted);transition:.18s}
-.option span.txt{padding-top:2px;font-size:.96rem}
+.option span.txt{padding-top:2px;font-size:.96rem;color:var(--navy)}
 .option.selected{border-color:var(--orange);background:rgba(245,130,32,.06);animation:selpop .3s ease}
 .option.selected .letter{background:var(--orange);border-color:var(--orange);color:#fff}
 @keyframes selpop{0%{transform:scale(.98)}55%{transform:scale(1.012)}100%{transform:scale(1)}}
@@ -2020,3 +2020,74 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
   .dash-grid { grid-template-columns: 1fr; }
   .admin-pending-head { flex-direction: column; align-items: flex-start; }
 }
+
+/* --- Marketplace: seller listing management (my-listings.html) --- */
+.listing-type-row { display: flex; gap: 14px; margin-top: 4px; }
+.listing-type-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted);
+  transition: .2s ease;
+}
+.listing-type-option input { display: none; }
+.listing-type-option:has(input:checked) {
+  border-color: var(--blue);
+  background: rgba(14,90,138,.06);
+  color: var(--navy);
+}
+
+.listing-photo-frame {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  border: 2px dashed var(--line);
+  background: var(--bg-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.listing-photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+.listing-photo-frame i { font-size: 30px; color: var(--muted); }
+
+.my-listings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+.my-listing-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+}
+.my-listing-photo { width: 100%; height: 140px; background: var(--bg-light); }
+.my-listing-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.my-listing-photo-empty { display: flex; align-items: center; justify-content: center; }
+.my-listing-photo-empty i { font-size: 34px; color: var(--muted); }
+.my-listing-body { padding: 16px; }
+.my-listing-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.my-listing-badge {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.my-listing-badge.active { background: rgba(46,163,89,.12); color: #1f7a3d; }
+.my-listing-badge.paused { background: rgba(148,148,148,.15); color: var(--muted); }
+.my-listing-type { font-size: .78rem; color: var(--muted); }
+.my-listing-body h4 { font-size: 1rem; color: var(--navy); margin-bottom: 6px; }
+.my-listing-price { font-weight: 800; color: var(--blue); font-size: 1.05rem; margin-bottom: 14px; }
+.my-listing-actions { display: flex; gap: 8px; flex-wrap: wrap; }
