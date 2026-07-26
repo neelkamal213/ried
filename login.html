@@ -144,6 +144,19 @@ form.addEventListener('submit', async (e) => {
     const user = cred.user;
     console.log('[login] step: signed in OK, uid:', user.uid);
 
+    // Every other authenticated page on this site (dashboard.html,
+    // profile-setup.html, admin-dashboard.html) only ever reads Firestore
+    // from inside onAuthStateChanged, which guarantees Firestore's internal
+    // auth-token binding has fully settled first. This page used to call
+    // getDoc() immediately off the sign-in promise instead — a known
+    // Firebase JS SDK timing gap where a Firestore request fired that fast
+    // can go out before the token listener has caught up, gets treated as
+    // unauthenticated, and gets denied by any rule requiring request.auth
+    // != null. Explicitly forcing a fresh ID token first closes that gap.
+    console.log('[login] step: confirming auth token is settled...');
+    await user.getIdToken(true);
+    console.log('[login] step: auth token confirmed');
+
     if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
       console.log('[login] step: admin email, redirecting to admin-dashboard.html');
       window.location.href = 'admin-dashboard.html';

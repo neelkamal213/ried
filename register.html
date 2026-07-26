@@ -153,6 +153,12 @@ form.addEventListener('submit', async (e) => {
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName });
 
+    // Force the ID token to settle before the very first Firestore write —
+    // otherwise this write can race Firestore's internal auth-token binding
+    // (a known Firebase JS SDK timing gap) and get denied even though the
+    // account was just created successfully. Same fix applied to login.html.
+    await cred.user.getIdToken(true);
+
     const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
     const role = isAdmin ? 'admin' : 'member';
     await setDoc(doc(db, 'users', cred.user.uid), {
