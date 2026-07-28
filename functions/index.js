@@ -234,6 +234,24 @@ exports.createMarketplaceOrder = onCall(
       throw new HttpsError("failed-precondition", "Your cart is empty.");
     }
 
+    // Delivery/contact details, collected on marketplace.html right before
+    // payment. Validated for presence here (never trust the client alone),
+    // then stored on the order and included in the confirmation email so
+    // RIED/sellers have what they need to actually fulfil the order.
+    const shippingInfoRaw = (request.data && request.data.shippingInfo) || {};
+    const shippingInfo = {
+      name: String(shippingInfoRaw.name || "").trim(),
+      email: String(shippingInfoRaw.email || "").trim(),
+      phone: String(shippingInfoRaw.phone || "").trim(),
+      altPhone: String(shippingInfoRaw.altPhone || "").trim(),
+      address: String(shippingInfoRaw.address || "").trim(),
+      landmark: String(shippingInfoRaw.landmark || "").trim(),
+      pincode: String(shippingInfoRaw.pincode || "").trim()
+    };
+    if (!shippingInfo.name || !shippingInfo.email || !shippingInfo.phone || !shippingInfo.address || !shippingInfo.pincode) {
+      throw new HttpsError("invalid-argument", "Please fill in Name, Email, Phone, Address and Pincode before checking out.");
+    }
+
     const lineItems = [];
     let total = 0;
     for (const ci of cartItems) {
@@ -279,6 +297,7 @@ exports.createMarketplaceOrder = onCall(
       items: lineItems,
       amount: total,
       status: "created",
+      shippingInfo,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -379,6 +398,18 @@ exports.verifyMarketplacePayment = onCall(
       items.forEach((it) => {
         lines.push(`${it.title} — Qty ${it.qty} x Rs.${it.price} = Rs.${it.lineTotal} (Seller: ${it.sellerName || it.sellerId || "unknown"})`);
       });
+
+      const ship = order.shippingInfo || {};
+      lines.push("");
+      lines.push("--- Delivery / Contact Details ---");
+      lines.push(`Name: ${ship.name || ""}`);
+      lines.push(`Email: ${ship.email || ""}`);
+      lines.push(`Phone: ${ship.phone || ""}`);
+      lines.push(`Alternate Phone: ${ship.altPhone || "(none)"}`);
+      lines.push(`Address: ${ship.address || ""}`);
+      lines.push(`Landmark: ${ship.landmark || "(none)"}`);
+      lines.push(`Pincode: ${ship.pincode || ""}`);
+
       lines.push("");
       lines.push(`Razorpay Order ID: ${razorpay_order_id}`);
       lines.push(`Razorpay Payment ID: ${razorpay_payment_id}`);
