@@ -524,7 +524,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
+  if (!user || user.isAnonymous) {
     window.location.href = 'login.html';
     return;
   }

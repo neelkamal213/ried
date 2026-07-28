@@ -117,7 +117,7 @@ const accountCard = document.getElementById('accountCard');
 onAuthStateChanged(auth, async (user) => {
   loadingState.style.display = 'none';
 
-  if (!user) {
+  if (!user || user.isAnonymous) {
     signedOutState.style.display = 'block';
     return;
   }

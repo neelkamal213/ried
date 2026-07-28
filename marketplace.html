@@ -46,7 +46,7 @@
     <div class="hero-content">
       <span class="hero-badge"><span class="dot"></span>Now Live</span>
       <h1>RIED Marketplace</h1>
-      <p>Products and services from RIED's onboarded founder network — browse, add to cart, and check out securely through Razorpay.</p>
+      <p>Products and services from RIED's onboarded founder network — browse, add to cart, and check out securely through Razorpay. No account required.</p>
     </div>
   </section>
 
@@ -194,7 +194,7 @@ window.addEventListener("scroll", function() {
 
 <script type="module">
 import {
-  app, auth, db, onAuthStateChanged,
+  app, auth, db, onAuthStateChanged, signInAnonymously,
   doc, getDoc, setDoc, collection, getDocs, query, where, orderBy, serverTimestamp
 } from "./js/firebase-init.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
@@ -217,13 +217,39 @@ function formatINR(n) {
   return '₹' + Number(n || 0).toLocaleString('en-IN');
 }
 
-function promptSignIn(message) {
+// The Marketplace never requires a real RIED account to shop — only the
+// Packages page does. The first time a visitor actually tries to use the
+// cart (Add to Cart, opening Checkout), they're transparently signed in
+// ANONYMOUSLY (Firebase Anonymous Auth) behind the scenes, purely so the
+// cart and checkout Cloud Functions still have a stable uid to key off of;
+// the buyer never sees a sign-in prompt or form. A pure browser who never
+// adds anything never gets an anonymous account created for them at all.
+// js/auth-nav.js and every founder-only page treat an anonymous session as
+// "signed out," so nothing else on the site is affected by this.
+function showCartError(message) {
   const box = document.getElementById('cartError');
   if (box) {
-    box.textContent = message || 'Please sign in to your RIED account to continue.';
+    box.textContent = message;
     box.classList.add('show');
   }
-  setTimeout(() => { window.location.href = 'login.html'; }, 1400);
+}
+
+let anonSignInPromise = null;
+async function ensureAuth() {
+  if (currentUser) return currentUser;
+  if (auth.currentUser) { currentUser = auth.currentUser; return currentUser; }
+  if (!anonSignInPromise) {
+    anonSignInPromise = signInAnonymously(auth)
+      .then(cred => cred.user)
+      .catch(e => {
+        console.error('marketplace: anonymous sign-in failed:', e);
+        return null;
+      })
+      .finally(() => { anonSignInPromise = null; });
+  }
+  const user = await anonSignInPromise;
+  if (user) currentUser = user;
+  return user;
 }
 
 // ---------------------------------------------------------------------------
@@ -362,8 +388,8 @@ async function saveCart() {
 }
 
 async function addToCart(listingId) {
-  if (!authReady) return;
-  if (!currentUser) { promptSignIn('Please sign in to add items to your cart.'); return; }
+  const user = await ensureAuth();
+  if (!user) { showCartError('Something went wrong setting up your cart — please refresh the page and try again.'); return; }
   const idx = cartItems.findIndex(i => i.listingId === listingId);
   if (idx >= 0) cartItems[idx].qty = (Number(cartItems[idx].qty) || 1) + 1;
   else cartItems.push({ listingId, qty: 1 });
@@ -463,7 +489,9 @@ function showCartStep(step) {
 
 document.getElementById('openCartBtn').addEventListener('click', async () => {
   if (!authReady) return;
-  if (!currentUser) { promptSignIn('Please sign in to view your cart.'); return; }
+  // No sign-in required to view the cart — an empty cartItems array (the
+  // default for a brand-new visitor who hasn't added anything yet) just
+  // renders the normal "Your cart is empty" state below.
   showCartStep('items');
   document.getElementById('cartOverlay').classList.remove('hidden');
   await renderCartPanel();
@@ -494,7 +522,12 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
   const errBox = document.getElementById('cartError');
   errBox.classList.remove('show');
 
-  if (!currentUser) { promptSignIn(); return; }
+  const user = await ensureAuth();
+  if (!user) {
+    errBox.textContent = 'Something went wrong setting up checkout — please refresh the page and try again.';
+    errBox.classList.add('show');
+    return;
+  }
 
   const shippingInfo = {
     name: document.getElementById('shipName').value.trim(),
@@ -573,7 +606,12 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
   } catch (err) {
     console.error('marketplace checkout failed:', err);
     if (err && err.code === 'functions/unauthenticated') {
-      promptSignIn();
+      // Shouldn't normally happen (we always establish an anonymous session
+      // before calling checkout above), but fall back to a generic retry
+      // message rather than a sign-in prompt, since Marketplace checkout
+      // never requires a real account.
+      errBox.textContent = "Checkout couldn't start — please refresh the page and try again.";
+      errBox.classList.add('show');
     } else if (err && err.code === 'functions/failed-precondition') {
       errBox.textContent = err.message || 'Your cart is empty or no longer available.';
       errBox.classList.add('show');
@@ -590,6 +628,11 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
 // ---------------------------------------------------------------------------
 // INIT
 // ---------------------------------------------------------------------------
+// Deliberately does NOT force an anonymous sign-in here on page load — a
+// pure browser who never adds anything to their cart should stay fully
+// signed-out (no Firebase Auth account created for them at all). The very
+// first Add to Cart / Checkout click is what lazily calls ensureAuth()
+// above and creates the anonymous session at that point.
 onAuthStateChanged(auth, async (user) => {
   authReady = true;
   currentUser = user;

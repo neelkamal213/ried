@@ -1,84 +1,88 @@
-# v10.2 — Cart Button Fix + Working Checkout + Delivery Details (2026-07-26)
+# v10.3 — Marketplace: No Sign-In Required (2026-07-26)
 
-Three fixes/additions on top of v10's Marketplace, all reported from your
-last test pass.
+This makes exactly the change you asked for: the Marketplace no longer asks
+anyone to sign in. Add to Cart, view the cart, and check out all work for
+any visitor — sign-in is now required **only** on the Packages page, same
+as before.
 
-## 1. Cart button was invisible
+## Why sign-in existed at all, and how it's removed
 
-Same recurring CSS bug as before (first hit on the dashboard/account pages
-back in v7): a global, unscoped `.btn-secondary` style meant only for
-colored hero sections was quietly overriding the normal-looking button on
-any page that didn't opt out of it. `marketplace.html`'s `<body>` never
-opted out, so the Cart button (and the "Remove" / "Back to Cart" buttons,
-same style) rendered as white-on-white — technically there, just invisible.
+The cart and the checkout Cloud Functions need *some* stable ID to know
+whose cart is whose, and to stop one buyer from reading or messing with
+someone else's order. Up to now that ID was a real signed-in account's uid.
 
-**Fixed** by adding `class="marketplace-page"` to `marketplace.html`'s
-`<body>` tag and adding that class to the same repair rule in `style.css`
-that already protects the dashboard and account pages. No visual changes
-anywhere else.
+Instead of removing that identifier, this round swaps it for a **Firebase
+Anonymous Auth** session — the same security mechanism, just invisible.
+The moment a visitor clicks **Add to Cart** for the first time, they're
+silently given an anonymous session in the background (no form, no popup,
+nothing they'd notice). That gives the cart and checkout Cloud Functions
+the exact same stable ID to work with as before, so nothing about the
+security model changed — the server still always reads the real cart and
+real prices from Firestore, never trusts the browser. A visitor who never
+adds anything to their cart never gets any kind of account created for
+them at all — it's created lazily, only when actually needed.
 
-## 2. Checkout button "not working"
+Since there's no real account behind an anonymous session, all the contact
+information now comes entirely from the Delivery & Contact Details form
+already added last round (name, email, phone, etc.) — which is exactly
+right, since that's the only way to know who a guest buyer actually is.
 
-The previous checkout code had no error logging at all, so a failure just
-sat there silently with nothing to go on. Added `console.error(...)` in
-both the checkout step and the payment-verification step, including the
-Firebase error code, so if it fails again the browser console (F12) will
-show exactly why.
+## What changed
 
-**My best guess at the actual cause**: the v10 Cloud Functions
-(`createMarketplaceOrder` / `verifyMarketplacePayment`) may not have been
-redeployed yet — the v10 checklist's step 4 ("redeploy Cloud Functions via
-Cloud Shell") is easy to miss since the index-link fix (step 3) is the one
-that throws an obvious on-page error, while a missing function deploy just
-looks like "the button doesn't do anything." **Please redeploy functions
-from this folder** (see checklist below) — that alone may resolve it. If it
-still fails after that, open the browser console during checkout and send
-me what it logs.
+- **`marketplace.html`** — removed every "please sign in" prompt/redirect
+  for Add to Cart, Cart, and Checkout. Added a small `ensureAuth()` helper
+  that transparently starts an anonymous session on first cart use. Hero
+  text now says "No account required."
+- **`js/firebase-init.js`** — now also exports Firebase's `signInAnonymously`
+  function (needed by `marketplace.html`).
+- **`js/auth-nav.js`** — updated so an anonymous session is treated the same
+  as being signed out everywhere else on the site: the header nav still
+  shows "Sign In" (not "Dashboard") for a Marketplace guest, and the
+  30-minute inactivity auto-sign-out timer never runs for them (that timer
+  exists to protect real account sessions — there's nothing sensitive to
+  protect in an anonymous cart session).
+- **`dashboard.html`, `admin-dashboard.html`, `account.html`,
+  `my-listings.html`, `profile-setup.html`** — small safety fix needed
+  because anonymous sessions now exist on the site: each of these
+  founder-only pages now treats an anonymous visitor exactly like a signed-out
+  one (redirects to Sign In) instead of trying to treat them as a real
+  account, which would have crashed on a missing email address if a guest
+  ever wandered onto one of these pages directly.
+- **`functions/index.js`** — no security changes needed (`createMarketplaceOrder`
+  / `verifyMarketplacePayment` already just check "is *someone*
+  authenticated," which an anonymous session satisfies). Updated the
+  hello@ried.co.in confirmation email to pull the buyer's name/email from
+  the Delivery & Contact Details form first (reliable for every checkout,
+  guest or not), falling back to the real account's name/email only if one
+  exists — since an anonymous account has no email of its own. Also added
+  an "Account Type: Guest checkout / Signed-in RIED account" line so you
+  can tell the two apart at a glance in the email.
 
-## 3. Delivery & contact details, collected and emailed
+## One required one-time setup step
 
-Checkout is now a two-step flow inside the same Cart panel:
+Firebase's **Anonymous** sign-in provider needs to be turned on for this to
+work at all (it's off by default on every Firebase project):
 
-1. **Cart** — same as before (items, quantities, total).
-2. **Delivery & Contact Details** (new) — Full Name, Email, Phone,
-   Alternate Phone (optional), Address, Landmark (optional), and Pincode.
-   Name/Email pre-fill from the signed-in account if left blank. The five
-   required fields (name, email, phone, address, pincode) are checked
-   before payment can proceed, both in the browser and again on the server
-   (the server never trusts client-side validation alone).
+1. Firebase Console → **Authentication** → **Sign-in method**.
+2. Enable **Anonymous** (it's in the provider list alongside Email/Password).
+3. Save.
 
-This information is now:
-- **Stored on the order** — every document in Firestore's `/orders`
-  collection gets a `shippingInfo` field once checkout completes.
-- **Emailed to hello@ried.co.in** — the existing purchase-confirmation
-  email (sent the moment payment is verified) now has a
-  "Delivery / Contact Details" section with all seven fields, right
-  alongside the item list and totals that were already in there.
-
-## Files in this delivery
-- `marketplace.html` — `.marketplace-page` body class; restructured Cart
-  modal (two-step: items → shipping details); checkout button now sends
-  `shippingInfo` to the server and prefills Razorpay's contact fields;
-  added console-error logging for diagnosability.
-- `style.css` — one small addition: `.marketplace-page .btn-secondary`
-  added to the existing scoped button-repair rule (and its `:hover`).
-- `functions/index.js` — `createMarketplaceOrder` now accepts, validates,
-  and stores `shippingInfo` on the order; `verifyMarketplacePayment`'s
-  confirmation email now includes it.
+If this isn't enabled, Add to Cart / Checkout will show a "Something went
+wrong setting up your cart/checkout — please refresh and try again" message
+instead of working — that's the signal to check this setting first.
 
 ## Deploy checklist
-1. Copy `marketplace.html` and `style.css` over the matching files at the
-   root of your repo, and `functions/index.js` over `functions/index.js`.
-2. Push to GitHub (covers the two static files).
-3. **Redeploy Cloud Functions** — paste `functions/index.js` into Cloud
-   Shell's editor, then `firebase deploy --only functions`. This step is
-   required for both the shipping-details capture and (possibly) the
-   checkout-button issue — don't skip it even if you did it for v10,
-   since this is a newer version of the same file.
-4. Test end-to-end: open Marketplace, add an item to cart (Cart button
-   should now be clearly visible), click it, click "Continue to Delivery
-   Details," fill in the form, click "Continue to Payment," complete a
-   real payment. Afterwards, check that the order in Firestore's `/orders`
-   collection has a `shippingInfo` field with everything you entered, and
-   that the confirmation email at hello@ried.co.in includes the same
-   details under "Delivery / Contact Details."
+1. Copy every file in this folder over the matching path in your repo.
+2. Push to GitHub.
+3. **Enable Anonymous Auth** in the Firebase Console (one-time, see above).
+4. **Redeploy Cloud Functions** via Cloud Shell — paste `functions/index.js`
+   in, then `firebase deploy --only functions` (needed for the updated
+   confirmation-email logic; the actual checkout functions' security logic
+   is unchanged so this step is about the email content, not a hard
+   requirement for checkout itself to keep working).
+5. Test as a signed-out visitor, in a fresh/incognito window: browse the
+   Marketplace, Add to Cart (no sign-in prompt should appear), open Cart,
+   Continue to Delivery Details, fill the form, complete a real payment —
+   confirm the order lands in Firestore and the email arrives correctly
+   labeled "Guest checkout." Then separately confirm Packages still
+   requires sign-in exactly as before (unaffected by this round).

@@ -539,7 +539,7 @@ document.getElementById('goDashboardBtn').addEventListener('click', () => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
+  if (!user || user.isAnonymous) {
     window.location.href = 'login.html';
     return;
   }
