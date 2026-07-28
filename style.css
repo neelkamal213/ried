@@ -1104,10 +1104,12 @@ h1, h2, h3, h4,
 .btn-secondary:hover{background:rgba(255,255,255,.24);transform:translateY(-3px)}
 .shell .btn-secondary,
 .dashboard-page .btn-secondary,
-.account-card .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
+.account-card .btn-secondary,
+.marketplace-page .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
 .shell .btn-secondary:hover,
 .dashboard-page .btn-secondary:hover,
-.account-card .btn-secondary:hover{background:#eaf1f8}
+.account-card .btn-secondary:hover,
+.marketplace-page .btn-secondary:hover{background:#eaf1f8}
 button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
 a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
 

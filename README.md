@@ -1,94 +1,84 @@
-# v10 — Marketplace: Browse Page, Cart, Checkout (2026-07-26)
+# v10.2 — Cart Button Fix + Working Checkout + Delivery Details (2026-07-26)
 
-This is Phase 2/3 of the Marketplace feature — the part that makes listings
-(built in v8) actually sellable. Seller listing management (`my-listings.html`)
-is unchanged; this round adds the buyer-facing side.
+Three fixes/additions on top of v10's Marketplace, all reported from your
+last test pass.
 
-## What's new
+## 1. Cart button was invisible
 
-### `marketplace.html` (new page)
-The public browse page — reachable from the nav (added to every page) and
-from a new "Browse Marketplace" button on the founder dashboard. Anyone,
-signed in or not, can browse: search box, a Product/Service filter, a
-category filter (built automatically from whatever categories sellers have
-used), and a responsive grid of listing cards. Clicking a card opens a
-detail view with the full description and a bigger photo. Only listings
-marked **Active** on `my-listings.html` ever show up here — paused ones stay
-hidden, same as before.
+Same recurring CSS bug as before (first hit on the dashboard/account pages
+back in v7): a global, unscoped `.btn-secondary` style meant only for
+colored hero sections was quietly overriding the normal-looking button on
+any page that didn't opt out of it. `marketplace.html`'s `<body>` never
+opted out, so the Cart button (and the "Remove" / "Back to Cart" buttons,
+same style) rendered as white-on-white — technically there, just invisible.
 
-**Sign-in is required to actually buy**, not to browse — clicking "Add to
-Cart" or "Proceed to Checkout" while signed out shows a message and sends
-the visitor to `login.html`, same pattern as the Packages checkout gate from
-v9. Once signed in, adding items to the cart is instant.
+**Fixed** by adding `class="marketplace-page"` to `marketplace.html`'s
+`<body>` tag and adding that class to the same repair rule in `style.css`
+that already protects the dashboard and account pages. No visual changes
+anywhere else.
 
-### Cart
-Stored in Firestore at `/carts/{uid}` (the rules for this were already in
-place since v8, unused until now). A cart icon in the toolbar shows a live
-item count; clicking it opens a panel listing everything in the cart with
-quantity +/- controls, a remove button per item, and a running total. If a
-listing was paused or deleted after being added to a cart, it shows as "no
-longer available" with just a remove option — it's automatically excluded
-from the total and from checkout, so nothing broken can accidentally get
-charged.
+## 2. Checkout button "not working"
 
-### Checkout — `createMarketplaceOrder` / `verifyMarketplacePayment` (new Cloud Functions)
-Added to `functions/index.js`, right after the existing Packages checkout
-functions, following the exact same security pattern:
-- The server always reads the **signed-in caller's own cart** from
-  Firestore — the client never sends item IDs or prices for the server to
-  trust. Same principle as the Packages checkout: never trust a price (or
-  a cart) coming from the browser.
-- One combined Razorpay payment covers the whole cart, however many
-  different sellers are in it — matching your decision that RIED collects
-  all Marketplace payments centrally rather than splitting them per seller
-  (no Razorpay Route). Each line item still records its own seller, so
-  there's a clear paper trail for manual payouts later.
-- On successful payment: the order is marked `paid` in `/orders`, the
-  buyer's cart is automatically cleared, and an email goes to
-  **hello@ried.co.in** with the buyer's name/email, every item purchased
-  (with per-seller breakdown), the total paid, and the Razorpay IDs — same
-  Gmail-SMTP setup already in place, no new secret needed.
-- `createRazorpayOrder`/`verifyRazorpayPayment` (the Packages functions from
-  before) are untouched.
+The previous checkout code had no error logging at all, so a failure just
+sat there silently with nothing to go on. Added `console.error(...)` in
+both the checkout step and the payment-verification step, including the
+Firebase error code, so if it fails again the browser console (F12) will
+show exactly why.
 
-### `firestore.indexes.json` — two composite indexes
-- `listings` by `sellerId` + `createdAt` (added last round for My Listings).
-- `listings` by `active` + `createdAt` (**new** — this is what
-  `marketplace.html`'s browse query needs). Without this, the browse page
-  will show the same "query requires an index" error My Listings hit —
-  except this time it's expected and pre-empted rather than a surprise.
+**My best guess at the actual cause**: the v10 Cloud Functions
+(`createMarketplaceOrder` / `verifyMarketplacePayment`) may not have been
+redeployed yet — the v10 checklist's step 4 ("redeploy Cloud Functions via
+Cloud Shell") is easy to miss since the index-link fix (step 3) is the one
+that throws an obvious on-page error, while a missing function deploy just
+looks like "the button doesn't do anything." **Please redeploy functions
+from this folder** (see checklist below) — that alone may resolve it. If it
+still fails after that, open the browser console during checkout and send
+me what it logs.
 
-### Nav link added everywhere
-Every page's header nav now includes a **Marketplace** link, positioned
-right after Packages (same place it appears on `marketplace.html` itself).
-This touched every HTML file in the site — that's the whole reason this
-round's file list is so long, not because of hidden other changes.
+## 3. Delivery & contact details, collected and emailed
 
-### `style.css`
-All-new CSS for the browse grid, cards, the listing-detail modal, and the
-cart panel — appended after the existing My Listings styles, nothing
-existing was changed or removed.
+Checkout is now a two-step flow inside the same Cart panel:
 
-## What's still NOT built (next phase, whenever you're ready)
-- Buyer order history ("My Orders" on the dashboard).
-- Seller "my sales" view (so a founder can see what of THEIRS sold).
-- Admin view of amounts owed per seller, for manual payout reconciliation.
+1. **Cart** — same as before (items, quantities, total).
+2. **Delivery & Contact Details** (new) — Full Name, Email, Phone,
+   Alternate Phone (optional), Address, Landmark (optional), and Pincode.
+   Name/Email pre-fill from the signed-in account if left blank. The five
+   required fields (name, email, phone, address, pincode) are checked
+   before payment can proceed, both in the browser and again on the server
+   (the server never trusts client-side validation alone).
+
+This information is now:
+- **Stored on the order** — every document in Firestore's `/orders`
+  collection gets a `shippingInfo` field once checkout completes.
+- **Emailed to hello@ried.co.in** — the existing purchase-confirmation
+  email (sent the moment payment is verified) now has a
+  "Delivery / Contact Details" section with all seven fields, right
+  alongside the item list and totals that were already in there.
+
+## Files in this delivery
+- `marketplace.html` — `.marketplace-page` body class; restructured Cart
+  modal (two-step: items → shipping details); checkout button now sends
+  `shippingInfo` to the server and prefills Razorpay's contact fields;
+  added console-error logging for diagnosability.
+- `style.css` — one small addition: `.marketplace-page .btn-secondary`
+  added to the existing scoped button-repair rule (and its `:hover`).
+- `functions/index.js` — `createMarketplaceOrder` now accepts, validates,
+  and stores `shippingInfo` on the order; `verifyMarketplacePayment`'s
+  confirmation email now includes it.
 
 ## Deploy checklist
-1. Copy every file in this folder over the matching path in your repo
-   (`js/` had no changes this round — only `functions/` and the root HTML
-   files + `style.css` + `firestore.indexes.json`).
-2. Push to GitHub.
-3. **Deploy the index**: either click the auto-generated link the first time
-   `marketplace.html` throws the composite-index error in the console (same
-   one-click fix as My Listings last time), or run
-   `firebase deploy --only firestore:indexes` from Cloud Shell to apply
-   `firestore.indexes.json` directly — either works, do whichever's easier.
-4. **Redeploy Cloud Functions** — paste `functions/index.js` directly into
-   Cloud Shell's own editor, then `firebase deploy --only functions`.
-5. Test: browse `marketplace.html` signed out (should work, browsing only);
-   try Add to Cart signed out (should redirect to sign in); sign in, add a
-   couple of items, adjust quantities, remove one, then checkout with a
-   real payment; confirm the order lands in Firestore `/orders` as `paid`,
-   the cart empties afterward, and the confirmation email arrives at
-   hello@ried.co.in.
+1. Copy `marketplace.html` and `style.css` over the matching files at the
+   root of your repo, and `functions/index.js` over `functions/index.js`.
+2. Push to GitHub (covers the two static files).
+3. **Redeploy Cloud Functions** — paste `functions/index.js` into Cloud
+   Shell's editor, then `firebase deploy --only functions`. This step is
+   required for both the shipping-details capture and (possibly) the
+   checkout-button issue — don't skip it even if you did it for v10,
+   since this is a newer version of the same file.
+4. Test end-to-end: open Marketplace, add an item to cart (Cart button
+   should now be clearly visible), click it, click "Continue to Delivery
+   Details," fill in the form, click "Continue to Payment," complete a
+   real payment. Afterwards, check that the order in Firestore's `/orders`
+   collection has a `shippingInfo` field with everything you entered, and
+   that the confirmation email at hello@ried.co.in includes the same
+   details under "Delivery / Contact Details."

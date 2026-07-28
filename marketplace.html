@@ -15,7 +15,7 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
-<body>
+<body class="marketplace-page">
 
   <header class="header">
     <div class="container nav">
@@ -120,19 +120,57 @@
   <div id="cartOverlay" class="marketplace-overlay hidden">
     <div class="marketplace-modal cart-modal">
       <button class="marketplace-modal-close" id="closeCartBtn"><i class="fa-solid fa-xmark"></i></button>
-      <h2 class="cart-title"><i class="fa-solid fa-cart-shopping"></i> Your Cart</h2>
 
       <div id="cartError" class="auth-error"></div>
-      <div id="cartBody"></div>
 
-      <div id="cartFooter" class="cart-footer hidden">
-        <div class="cart-total-row">
-          <span>Total</span>
-          <span id="cartTotalAmount">₹0</span>
+      <!-- STEP 1: cart items -->
+      <div id="cartStepItems">
+        <h2 class="cart-title"><i class="fa-solid fa-cart-shopping"></i> Your Cart</h2>
+        <div id="cartBody"></div>
+
+        <div id="cartFooter" class="cart-footer hidden">
+          <div class="cart-total-row">
+            <span>Total</span>
+            <span id="cartTotalAmount">₹0</span>
+          </div>
+          <button class="btn-primary" id="goToShippingBtn" style="width:100%">
+            <i class="fa-solid fa-arrow-right"></i> Continue to Delivery Details
+          </button>
         </div>
-        <button class="btn-primary" id="checkoutBtn" style="width:100%">
-          <span class="btn-label"><i class="fa-solid fa-lock"></i> Proceed to Checkout</span>
-        </button>
+      </div>
+
+      <!-- STEP 2: delivery/contact details -->
+      <div id="cartStepShipping" class="hidden">
+        <h2 class="cart-title"><i class="fa-solid fa-truck"></i> Delivery &amp; Contact Details</h2>
+        <p class="dash-card-hint" style="margin-bottom:14px">We'll pass these details to the seller(s) so your order can reach you.</p>
+
+        <label class="onboard-label">Full Name *</label>
+        <input type="text" id="shipName" class="onboard-input">
+
+        <label class="onboard-label">Email *</label>
+        <input type="email" id="shipEmail" class="onboard-input">
+
+        <label class="onboard-label">Phone *</label>
+        <input type="tel" id="shipPhone" class="onboard-input">
+
+        <label class="onboard-label">Alternate Phone <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <input type="tel" id="shipAltPhone" class="onboard-input">
+
+        <label class="onboard-label">Address *</label>
+        <textarea id="shipAddress" class="onboard-input" rows="3"></textarea>
+
+        <label class="onboard-label">Landmark <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+        <input type="text" id="shipLandmark" class="onboard-input">
+
+        <label class="onboard-label">Pincode *</label>
+        <input type="text" id="shipPincode" class="onboard-input" maxlength="10">
+
+        <div class="stage-work-actions" style="margin-top:18px">
+          <button class="btn-secondary" id="backToCartBtn"><i class="fa-solid fa-arrow-left"></i> Back to Cart</button>
+          <button class="btn-primary" id="checkoutBtn">
+            <span class="btn-label"><i class="fa-solid fa-lock"></i> Continue to Payment</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -418,9 +456,15 @@ async function renderCartPanel() {
   }));
 }
 
+function showCartStep(step) {
+  document.getElementById('cartStepItems').classList.toggle('hidden', step !== 'items');
+  document.getElementById('cartStepShipping').classList.toggle('hidden', step !== 'shipping');
+}
+
 document.getElementById('openCartBtn').addEventListener('click', async () => {
   if (!authReady) return;
   if (!currentUser) { promptSignIn('Please sign in to view your cart.'); return; }
+  showCartStep('items');
   document.getElementById('cartOverlay').classList.remove('hidden');
   await renderCartPanel();
 });
@@ -428,6 +472,17 @@ document.getElementById('closeCartBtn').addEventListener('click', () => document
 document.getElementById('cartOverlay').addEventListener('click', (e) => {
   if (e.target.id === 'cartOverlay') document.getElementById('cartOverlay').classList.add('hidden');
 });
+
+document.getElementById('goToShippingBtn').addEventListener('click', () => {
+  // Prefill what we already know about the signed-in user, editable from there.
+  const nameField = document.getElementById('shipName');
+  const emailField = document.getElementById('shipEmail');
+  if (currentUser && !nameField.value) nameField.value = currentUser.displayName || '';
+  if (currentUser && !emailField.value) emailField.value = currentUser.email || '';
+  document.getElementById('cartError').classList.remove('show');
+  showCartStep('shipping');
+});
+document.getElementById('backToCartBtn').addEventListener('click', () => showCartStep('items'));
 
 // ---------------------------------------------------------------------------
 // CHECKOUT
@@ -441,11 +496,27 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
 
   if (!currentUser) { promptSignIn(); return; }
 
+  const shippingInfo = {
+    name: document.getElementById('shipName').value.trim(),
+    email: document.getElementById('shipEmail').value.trim(),
+    phone: document.getElementById('shipPhone').value.trim(),
+    altPhone: document.getElementById('shipAltPhone').value.trim(),
+    address: document.getElementById('shipAddress').value.trim(),
+    landmark: document.getElementById('shipLandmark').value.trim(),
+    pincode: document.getElementById('shipPincode').value.trim()
+  };
+
+  if (!shippingInfo.name || !shippingInfo.email || !shippingInfo.phone || !shippingInfo.address || !shippingInfo.pincode) {
+    errBox.textContent = 'Please fill in Name, Email, Phone, Address and Pincode before continuing to payment.';
+    errBox.classList.add('show');
+    return;
+  }
+
   btn.disabled = true;
   label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparing checkout...';
 
   try {
-    const { data } = await createMarketplaceOrder();
+    const { data } = await createMarketplaceOrder({ shippingInfo });
 
     const rzp = new Razorpay({
       key: data.keyId,
@@ -454,6 +525,11 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
       order_id: data.orderId,
       name: 'RIED Marketplace',
       description: `${data.items.length} item(s)`,
+      prefill: {
+        name: shippingInfo.name,
+        email: shippingInfo.email,
+        contact: shippingInfo.phone
+      },
       image: 'images/brand/logo.png',
       theme: { color: '#1c2c40' },
       handler: async function (response) {
@@ -466,9 +542,11 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
           });
           cartItems = [];
           renderCartBadge();
+          showCartStep('items');
           document.getElementById('cartBody').innerHTML = '<p class="dash-empty"><i class="fa-solid fa-circle-check" style="color:#1c7a34"></i> Payment confirmed! We\'ll be in touch about your order shortly. Thank you for shopping the RIED Marketplace.</p>';
           document.getElementById('cartFooter').classList.add('hidden');
         } catch (verifyErr) {
+          console.error('verifyMarketplacePayment failed:', verifyErr);
           errBox.textContent = 'Payment was received but could not be verified automatically. Please contact hello@ried.co.in with your payment ID so we can confirm it manually.';
           errBox.classList.add('show');
         }
@@ -493,13 +571,15 @@ document.getElementById('checkoutBtn').addEventListener('click', async () => {
     btn.disabled = false;
 
   } catch (err) {
+    console.error('marketplace checkout failed:', err);
     if (err && err.code === 'functions/unauthenticated') {
       promptSignIn();
     } else if (err && err.code === 'functions/failed-precondition') {
       errBox.textContent = err.message || 'Your cart is empty or no longer available.';
       errBox.classList.add('show');
     } else {
-      errBox.textContent = "Checkout couldn't start — please try again, or contact hello@ried.co.in if this keeps happening.";
+      const detail = err && err.code ? ` (${err.code})` : '';
+      errBox.textContent = `Checkout couldn't start${detail} — please try again, or contact hello@ried.co.in if this keeps happening.`;
       errBox.classList.add('show');
     }
     label.innerHTML = original;
