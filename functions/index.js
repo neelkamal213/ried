@@ -223,8 +223,15 @@ exports.verifyRazorpayPayment = onCall(
 exports.createMarketplaceOrder = onCall(
   { secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET] },
   async (request) => {
+    // Marketplace checkout never requires a real RIED account — the client
+    // (marketplace.html) transparently signs every buyer in anonymously
+    // (Firebase Anonymous Auth) before ever calling this function, purely so
+    // there's a stable uid to key the cart/order off of. So request.auth
+    // should always be present by the time we get here; if it's genuinely
+    // missing, something client-side went wrong (e.g. anonymous sign-in
+    // failed or Anonymous Auth isn't enabled in the Firebase Console yet).
     if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Please sign in to checkout.");
+      throw new HttpsError("unauthenticated", "Could not start checkout — please refresh the page and try again.");
     }
     const uid = request.auth.uid;
 
@@ -315,8 +322,11 @@ exports.createMarketplaceOrder = onCall(
 exports.verifyMarketplacePayment = onCall(
   { secrets: [RAZORPAY_KEY_SECRET, GMAIL_APP_PASSWORD] },
   async (request) => {
+    // Same note as createMarketplaceOrder above — Marketplace buyers are
+    // always at least anonymously authenticated by this point, real account
+    // or not, so this should only ever fire on a genuine client-side error.
     if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Please sign in.");
+      throw new HttpsError("unauthenticated", "Could not confirm your payment — please refresh the page and try again.");
     }
 
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = request.data || {};
@@ -365,15 +375,27 @@ exports.verifyMarketplacePayment = onCall(
     // verifyRazorpayPayment above. A failure here must never make an
     // already-confirmed payment look like it failed to the buyer.
     try {
+      // Marketplace buyers are now usually anonymous guests (no code, name,
+      // or email on the Auth account itself) — so the delivery/contact
+      // details collected at checkout (order.shippingInfo) are the reliable
+      // source of the buyer's real name/email, not the Auth account lookup
+      // below. Still attempt the Auth lookup for the (now less common) case
+      // of a buyer who was actually signed in to a real RIED account.
       let buyerEmail = "unknown";
       let buyerName = "";
+      let buyerIsGuest = true;
       try {
         const userRecord = await admin.auth().getUser(request.auth.uid);
+        buyerIsGuest = !userRecord.email; // anonymous accounts never have an email
         buyerEmail = userRecord.email || buyerEmail;
         buyerName = userRecord.displayName || "";
       } catch (e) {
         logger.error("verifyMarketplacePayment: could not look up buyer for notification email", e);
       }
+
+      const ship = order.shippingInfo || {};
+      const displayName = ship.name || buyerName || "";
+      const displayEmail = ship.email || buyerEmail;
 
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
@@ -389,7 +411,8 @@ exports.verifyMarketplacePayment = onCall(
       const lines = [
         "A Marketplace payment has been confirmed on the RIED website.",
         "",
-        `Purchased By: ${buyerName ? buyerName + " " : ""}(${buyerEmail})`,
+        `Purchased By: ${displayName ? displayName + " " : ""}(${displayEmail})`,
+        `Account Type: ${buyerIsGuest ? "Guest checkout (no RIED account)" : "Signed-in RIED account"}`,
         `User Account UID: ${request.auth.uid}`,
         `Total Paid: Rs. ${order.amount != null ? order.amount : "?"}`,
         "",
@@ -399,7 +422,6 @@ exports.verifyMarketplacePayment = onCall(
         lines.push(`${it.title} — Qty ${it.qty} x Rs.${it.price} = Rs.${it.lineTotal} (Seller: ${it.sellerName || it.sellerId || "unknown"})`);
       });
 
-      const ship = order.shippingInfo || {};
       lines.push("");
       lines.push("--- Delivery / Contact Details ---");
       lines.push(`Name: ${ship.name || ""}`);
@@ -418,8 +440,8 @@ exports.verifyMarketplacePayment = onCall(
 
       await sendMail(transporter, {
         to: "hello@ried.co.in",
-        replyTo: buyerEmail !== "unknown" ? buyerEmail : undefined,
-        subject: `Marketplace Purchase Confirmed — ${buyerName || buyerEmail}`,
+        replyTo: displayEmail !== "unknown" ? displayEmail : undefined,
+        subject: `Marketplace Purchase Confirmed — ${displayName || displayEmail}`,
         text: lines.join("\n")
       });
     } catch (e) {
