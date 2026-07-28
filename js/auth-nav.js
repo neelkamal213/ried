@@ -19,6 +19,13 @@
 //      "you were signed out due to inactivity" notice for that flag).
 //      Nothing happens for signed-out visitors — the timer only ever runs
 //      while auth.currentUser is set.
+//
+// Anonymous sessions (marketplace.html silently signs guest shoppers in
+// anonymously so Cart/Checkout don't require a real account) are treated
+// the SAME as signed-out for both of the above — a guest still sees "Sign
+// In" in the nav (they don't have a real account to open a dashboard for),
+// and their anonymous session is never idle-timed-out, since there's no
+// sensitive account data to protect.
 import { auth, ADMIN_EMAILS, onAuthStateChanged, signOut } from "./firebase-init.js";
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -56,8 +63,9 @@ function stopIdleWatch() {
 
 onAuthStateChanged(auth, (user) => {
   const link = document.getElementById('navAuthLink');
+  const isRealUser = user && !user.isAnonymous;
 
-  if (user) {
+  if (isRealUser) {
     if (link) {
       const isAdmin = ADMIN_EMAILS.includes((user.email || '').toLowerCase());
       link.textContent = 'Dashboard';
