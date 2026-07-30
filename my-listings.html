@@ -56,6 +56,13 @@
           <a href="dashboard.html" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         </div>
 
+        <div class="my-listings-tabs">
+          <button class="my-listings-tab active" id="tabListingsBtn"><i class="fa-solid fa-tag"></i> My Listings</button>
+          <button class="my-listings-tab" id="tabSalesBtn"><i class="fa-solid fa-sack-dollar"></i> My Sales</button>
+        </div>
+
+        <div id="listingsTab">
+
         <!-- ADD / EDIT LISTING FORM -->
         <div class="dash-card" style="margin-bottom:22px">
           <div class="dash-card-head">
@@ -110,6 +117,18 @@
           <p class="dash-card-hint">Toggle a listing to Paused to hide it from buyers without deleting it.</p>
           <div id="myListingsGrid" class="my-listings-grid"></div>
           <p class="dash-empty hidden" id="myListingsEmpty">You haven't listed anything yet — use the form above to add your first product or service.</p>
+        </div>
+
+        </div>
+
+        <div id="salesTab" class="hidden">
+          <div class="dash-card">
+            <h3><i class="fa-solid fa-sack-dollar"></i> Your Sales</h3>
+            <p class="dash-card-hint">Everything sold through your listings. Buyer contact/delivery details are included so you can fulfil each order — RIED collects payment centrally and pays you out separately; "Paid Out" below reflects when that transfer to you was made, not the buyer's payment date.</p>
+            <div id="mySalesSummary" class="my-sales-summary"></div>
+            <div id="mySalesList"></div>
+            <p class="dash-empty hidden" id="mySalesEmpty">Nothing sold yet — once a buyer purchases one of your listings, it'll show up here.</p>
+          </div>
         </div>
 
       </div>
@@ -218,6 +237,95 @@ document.getElementById('listingPhotoInput').addEventListener('change', () => {
 });
 
 document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+let salesLoaded = false;
+document.getElementById('tabListingsBtn').addEventListener('click', () => {
+  document.getElementById('tabListingsBtn').classList.add('active');
+  document.getElementById('tabSalesBtn').classList.remove('active');
+  document.getElementById('listingsTab').classList.remove('hidden');
+  document.getElementById('salesTab').classList.add('hidden');
+});
+document.getElementById('tabSalesBtn').addEventListener('click', async () => {
+  document.getElementById('tabSalesBtn').classList.add('active');
+  document.getElementById('tabListingsBtn').classList.remove('active');
+  document.getElementById('salesTab').classList.remove('hidden');
+  document.getElementById('listingsTab').classList.add('hidden');
+  if (!salesLoaded) {
+    salesLoaded = true;
+    await loadMySales();
+  }
+});
+
+function esc2(v) { return esc(v); } // alias for readability below, same escaper
+
+async function loadMySales() {
+  const listEl = document.getElementById('mySalesList');
+  const emptyEl = document.getElementById('mySalesEmpty');
+  const summaryEl = document.getElementById('mySalesSummary');
+
+  // Equality-only filter (array-contains, no orderBy) so this never needs a
+  // Firestore composite index — matches the same "sort client-side instead"
+  // approach used on my-orders.html. Firestore validates this array-contains
+  // query against the /orders rule's `request.auth.uid in resource.data.sellerIds`
+  // check, so this only ever returns orders this seller is actually part of.
+  const q = query(collection(db, 'orders'), where('sellerIds', 'array-contains', currentUser.uid));
+  const snap = await getDocs(q);
+
+  // Flatten: one row per (order, line item) where this seller sold that item —
+  // an order can contain items from multiple sellers, so only pull out this
+  // seller's own lines, never the whole order.
+  const rows = [];
+  snap.forEach((docSnap) => {
+    const order = docSnap.data();
+    if (order.status !== 'paid') return; // skip anything not actually paid for
+    const items = Array.isArray(order.items) ? order.items : [];
+    items.forEach((it, idx) => {
+      if (it.sellerId !== currentUser.uid) return;
+      rows.push({ orderId: docSnap.id, itemIndex: idx, item: it, order });
+    });
+  });
+
+  rows.sort((a, b) => {
+    const at = a.order.createdAt && a.order.createdAt.toMillis ? a.order.createdAt.toMillis() : 0;
+    const bt = b.order.createdAt && b.order.createdAt.toMillis ? b.order.createdAt.toMillis() : 0;
+    return bt - at;
+  });
+
+  if (!rows.length) {
+    listEl.innerHTML = '';
+    summaryEl.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  emptyEl.classList.add('hidden');
+
+  const pendingTotal = rows.filter(r => r.item.payoutStatus !== 'paid').reduce((s, r) => s + (Number(r.item.lineTotal) || 0), 0);
+  const paidTotal = rows.filter(r => r.item.payoutStatus === 'paid').reduce((s, r) => s + (Number(r.item.lineTotal) || 0), 0);
+  summaryEl.innerHTML = `
+    <div class="my-sales-stat"><span>Awaiting Payout</span><strong>₹${pendingTotal.toLocaleString('en-IN')}</strong></div>
+    <div class="my-sales-stat"><span>Paid Out To Date</span><strong>₹${paidTotal.toLocaleString('en-IN')}</strong></div>
+  `;
+
+  listEl.innerHTML = rows.map(({ item, order }) => {
+    const ship = order.shippingInfo || {};
+    const isPaid = item.payoutStatus === 'paid';
+    return `
+      <div class="my-sale-card">
+        <div class="my-sale-head">
+          <div>
+            <div class="my-sale-title">${esc2(item.title)}</div>
+            <div class="my-sale-meta">Qty ${esc2(item.qty)} &middot; ₹${Number(item.lineTotal || 0).toLocaleString('en-IN')}</div>
+          </div>
+          <span class="my-sale-badge ${isPaid ? 'paid' : 'pending'}">${isPaid ? 'Paid Out' : 'Awaiting Payout'}</span>
+        </div>
+        <div class="my-sale-buyer">
+          <strong>Buyer:</strong> ${esc2(ship.name || 'Unknown')} &middot; ${esc2(ship.phone || '')} &middot; ${esc2(ship.email || '')}<br>
+          <strong>Deliver to:</strong> ${esc2(ship.address || '')}${ship.landmark ? ', ' + esc2(ship.landmark) : ''} &mdash; ${esc2(ship.pincode || '')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
 
 async function loadMyListings() {
   const grid = document.getElementById('myListingsGrid');

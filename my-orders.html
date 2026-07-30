@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>My Orders | RIED Marketplace</title>
+  <meta name="description" content="Your past purchases on the RIED Marketplace.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="dashboard-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+
+      <nav class="main-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="products.html">Products</a>
+        <a href="services.html">Services</a>
+        <a href="startup-sanctuary.html">Startup Sanctuary</a>
+        <a href="leadership.html">Leadership</a>
+        <a href="packages.html">Packages</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="login.html" id="navAuthLink">Sign In</a>
+        <a href="contact.html" class="nav-cta">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:150px">
+    <div class="container">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading your orders...
+      </div>
+
+      <div id="ordersPage" class="hidden">
+
+        <div class="dash-welcome">
+          <div>
+            <span class="quest-eyebrow"><i class="fa-solid fa-receipt"></i> RIED Marketplace</span>
+            <h1 class="dash-title">My Orders</h1>
+            <p class="dash-stage-desc">Everything you've purchased from other founders on the Marketplace. A confirmation email was also sent for each order at checkout.</p>
+          </div>
+          <a href="dashboard.html" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+
+        <div class="dash-card">
+          <div id="ordersList"></div>
+          <p class="dash-empty hidden" id="ordersEmpty">You haven't purchased anything from the Marketplace yet — <a href="marketplace.html">browse what's available</a>.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+
+      <div class="social-links">
+        <a href="https://www.linkedin.com/company/ried-pvt-ltd/" target="_blank"><i class="fab fa-linkedin"></i></a>
+        <a href="https://www.facebook.com/profile.php?id=61576517859696" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://www.instagram.com/riedpvtltd" target="_blank"><i class="fab fa-instagram"></i></a>
+        <a href="https://www.youtube.com/@riedpvtltd" target="_blank"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+  <a href="https://wa.me/919731892569?text=Hello%20RIED,%20I%20would%20like%20to%20connect." class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+  <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
+
+<script>
+window.addEventListener("scroll", function() {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+  document.body.classList.toggle("scrolled-past-hero", window.scrollY > 300);
+});
+</script>
+
+<script type="module" src="js/auth-nav.js"></script>
+
+<script type="module">
+import {
+  auth, db, ADMIN_EMAILS,
+  onAuthStateChanged,
+  collection, getDocs, query, where
+} from "./js/firebase-init.js";
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function formatWhen(ts) {
+  if (!ts || typeof ts.toDate !== 'function') return '';
+  return ts.toDate().toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadMyOrders(uid) {
+  const listEl = document.getElementById('ordersList');
+  const emptyEl = document.getElementById('ordersEmpty');
+
+  // Equality-only filters (no orderBy) so this never needs a Firestore
+  // composite index — sorted by date client-side instead. Fetches every
+  // order this account placed (Packages included) and filters down to
+  // Marketplace purchases here, since that's what this page is scoped to;
+  // broadening it to show Packages purchases too later would just mean
+  // dropping the type filter below.
+  const q = query(collection(db, 'orders'), where('uid', '==', uid), where('status', '==', 'paid'));
+  const snap = await getDocs(q);
+
+  const orders = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(o => o.type === 'marketplace')
+    .sort((a, b) => {
+      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return bt - at;
+    });
+
+  if (!orders.length) {
+    listEl.innerHTML = '';
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  emptyEl.classList.add('hidden');
+
+  listEl.innerHTML = orders.map(o => {
+    const items = Array.isArray(o.items) ? o.items : [];
+    const itemRows = items.map(it => `
+      <div class="order-item-row">
+        <div class="order-item-info">
+          <div class="order-item-title">${esc(it.title)}</div>
+          <div class="order-item-seller">Sold by ${esc(it.sellerName || 'a RIED founder')}</div>
+        </div>
+        <div class="order-item-qty">Qty ${esc(it.qty)}</div>
+        <div class="order-item-total">₹${Number(it.lineTotal || 0).toLocaleString('en-IN')}</div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="order-card">
+        <div class="order-card-head">
+          <div>
+            <div class="order-card-date">${esc(formatWhen(o.createdAt)) || 'Recently'}</div>
+            <div class="order-card-id">Order ID: ${esc(o.id)}</div>
+          </div>
+          <div class="order-card-total">₹${Number(o.amount || 0).toLocaleString('en-IN')}</div>
+        </div>
+        <div class="order-items-list">${itemRows}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user || user.isAnonymous) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  if (ADMIN_EMAILS.includes((user.email || '').toLowerCase())) {
+    window.location.href = 'admin-dashboard.html';
+    return;
+  }
+
+  await loadMyOrders(user.uid);
+
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('ordersPage').classList.remove('hidden');
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>

@@ -79,15 +79,22 @@ service cloud.firestore {
     }
 
     // Orders — both the Packages checkout (createRazorpayOrder /
-    // verifyRazorpayPayment in functions/index.js) and any future Marketplace
-    // checkout write here, ONLY server-side via the Admin SDK (which bypasses
-    // these rules entirely), never directly by a client, so a buyer can never
-    // fake a "paid" order. The buyer who placed an order (the doc's "uid"
-    // field, set by createRazorpayOrder) can read it back; an admin can read
-    // all orders (needed to track and reconcile manual seller payouts, since
-    // RIED collects payments centrally rather than splitting them automatically).
+    // verifyRazorpayPayment in functions/index.js) and Marketplace checkout
+    // write here, ONLY server-side via the Admin SDK (which bypasses these
+    // rules entirely), never directly by a client, so a buyer can never
+    // fake a "paid" order or mark their own payout as sent. The buyer who
+    // placed an order (the doc's "uid" field) can read it back; a seller can
+    // read any Marketplace order they sold into (their uid appears in the
+    // order's "sellerIds" array, set by createMarketplaceOrder — this is what
+    // powers My Sales on my-listings.html); an admin can read all orders
+    // (needed for the Marketplace Payouts view and general reconciliation,
+    // since RIED collects payments centrally rather than splitting them
+    // automatically). The 'sellerIds' in resource.data check guards against
+    // older orders (Packages, and any Marketplace order from before this
+    // field existed) that don't have this field at all.
     match /orders/{orderId} {
       allow read: if request.auth != null && (request.auth.uid == resource.data.uid ||
+        (('sellerIds' in resource.data) && request.auth.uid in resource.data.sellerIds) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create, update, delete: if false;
