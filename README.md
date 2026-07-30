@@ -1,127 +1,150 @@
-# v11 — Real Packages Pricing + Live Checkout (2026-07-30)
+# v12 — Subscription Renewal Webhook + Reminders (2026-07-30)
 
-This replaces every placeholder number on the Packages page with the real
-pricing from your Legal, Compliance, Scale-Up, and IT teams, and builds real
-checkout for all of it — including a new billing type the site has never
-had before: true monthly subscriptions.
+This closes the gap flagged in the v11 notes: until now, only the very
+FIRST month of a Scale-Up & Grant Readiness subscription sent any email —
+every renewal after that just happened quietly inside Razorpay. This adds:
 
-## What's live now
+1. **A "Renewal Payment Received" email every month** it succeeds — sent to
+   both hello@ried.co.in and the client.
+2. **Automatic reminder emails to the client** if a renewal payment fails —
+   one immediately, then a repeat every 3 days until it's paid.
+3. **An overdue alert to RIED** if a subscription is still unpaid on/after
+   the 5th of the month, so someone can follow up with the client directly.
 
-### Incorporation (one-time, includes govt. fees)
-Basic ₹45,000 (authorised capital up to ₹10L) · Standard ₹55,000 · Premium
-₹1,00,000 (up to 200 transactions/year).
+Only one file changed: `functions/index.js`. Nothing on the website itself
+(`packages.html`, etc.) needs to change for this.
 
-### Legal Services (one-time)
-Startup Package ₹80,000 · Legal Retainer ₹1,80,000 (3-month minimum, up to
-40 hours of legal services + 5 free, with the carryover/lapse/overage rules
-from your brief shown as footnotes on the card) · Investment Contract
-₹2,75,000.
+## Only one file changed, but there's real setup this time
 
-### Scale-Up & Grant Readiness (monthly subscription)
-Basic ₹10,000/month (3-month minimum) · Standard ₹12,000/month (6-month
-minimum) · Premium ₹15,000/month (12-month minimum). These are **real
-recurring Razorpay Subscriptions** — see the important section below.
+Unlike past updates, this one needs two things beyond a normal deploy,
+because it involves Razorpay contacting YOUR server automatically (a
+"webhook") instead of only responding when a customer is on the checkout
+page. Full steps are below — please follow them in order, exactly as
+written, since a step skipped or done out of order is the most likely way
+for this to not work on the first try.
 
-### IT & Infra Set-Up
-Basic ₹40,000 one-time. Standard and Premium are both **Get a Quote** — no
-listed price, so those buttons open a short lead form (name/email/phone/
-company/notes) that emails hello@ried.co.in directly. No payment involved.
+## What's happening technically (short version)
 
-## How checkout works now
-Every "Buy Now" / "Subscribe Now" button opens the same checkout-details
-modal: Full Name, Email, Phone, Alternate Phone (optional), **Company /
-Startup Name (optional)**, **GSTIN (optional)**, Address, Landmark
-(optional), Pincode. Company Name and GSTIN are deliberately optional —
-plenty of Incorporation buyers don't have either yet, since forming the
-company is literally the service they're buying. All of this is captured
-on the order record and included in the confirmation email to
-hello@ried.co.in, same pattern as Marketplace.
+- Razorpay will now call a new function, `razorpayWebhook`, every time
+  something happens to a subscription — a renewal charge succeeds, a
+  renewal charge fails, or (after enough failures) Razorpay gives up and
+  "halts" the subscription.
+- A second new function, `checkOverdueRenewals`, runs automatically once a
+  day (no setup needed for this part — Firebase sets up its own daily
+  schedule when you deploy). This is what repeats the reminder every 3 days
+  and sends the "still not paid by the 5th" alert to you.
+- A new secret, `RAZORPAY_WEBHOOK_SECRET`, is how your function proves an
+  incoming request genuinely came from Razorpay and not someone else
+  pretending to be Razorpay. You'll make up this value yourself in Step 1
+  below, then enter the exact same value in two places (Firebase and
+  Razorpay) so they can recognize each other.
 
-Sign-in is still required for every action on this page — unchanged from
-before. Marketplace remains the only page on the site that doesn't require
-it.
+## Step-by-step deploy
 
-## Important: real recurring subscriptions (Scale-Up & Grant Readiness)
+**Step 1 — Make up a secret value.** In Cloud Shell, run:
+```
+openssl rand -hex 32
+```
+This prints a long random string. Copy it somewhere safe (a notes app is
+fine) — you'll paste this exact same value into two places in Steps 2 and 5.
+It's not a password you need to remember, just a shared secret between
+Firebase and Razorpay.
 
-This is a genuinely new kind of integration for this site, so a few things
-worth understanding:
+**Step 2 — Store it as a Firebase secret.** Still in Cloud Shell:
+```
+cd ~/ried
+firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET
+```
+When it asks for the value, paste the string from Step 1 and press Enter.
 
-- **A Razorpay Plan is created automatically** the first time anyone
-  subscribes to a given tier, and reused for every subscriber after that
-  (cached in Firestore) — you don't need to set anything up manually in the
-  Razorpay Dashboard beforehand, beyond the one prerequisite below.
-- **The "minimum X months" is enforced by your service agreement, not by
-  Razorpay technically.** Razorpay doesn't have a built-in "bill for a
-  minimum term, then let the customer cancel anytime" feature — so these
-  subscriptions are set up to keep auto-renewing indefinitely, and there's
-  no self-serve cancel button anywhere on the site. A customer who wants to
-  stop has to contact RIED, and cancelling happens from your side (Razorpay
-  Dashboard → Subscriptions → find it → Cancel) — which is actually the
-  natural way to enforce "you committed to X months" in practice.
-- **Only the very first month's charge sends you an email.** After that,
-  Razorpay auto-charges the customer every month on its own — those renewal
-  charges show up in the Razorpay Dashboard's Subscriptions tab, but nothing
-  emails hello@ried.co.in about them yet. If you want an email every time a
-  renewal charge happens too, that needs a Razorpay webhook — a fairly
-  contained follow-up build, just flagging it as a known gap rather than
-  something silently missing.
-- **One prerequisite to check before testing**: Razorpay Subscriptions may
-  need to be explicitly turned on for your account (some Razorpay features
-  need separate activation beyond basic Orders/Payments — similar to how
-  "Route" would have needed activation if you'd gone that way for
-  Marketplace payouts). If a Scale-Up subscription checkout fails
-  immediately, this is the first thing to check in your Razorpay Dashboard.
+**Step 3 — Update the code.**
+1. Copy `functions/index.js` from this folder over the matching file in
+   your GitHub repo (replace the whole file).
+2. In Cloud Shell, make sure you're working from a fresh clone (same
+   lesson as last time — don't reuse an old clone):
+   ```
+   rm -rf ~/ried
+   git clone https://github.com/neelkamal213/ried.git ~/ried
+   cd ~/ried/functions
+   npm install
+   ```
+3. If `npm install` doesn't show `nodemailer` afterwards (run
+   `ls node_modules | grep nodemailer` to check), run
+   `npm install nodemailer@6.9.14 --save` directly, same as last time.
 
-## What changed under the hood
-- **`functions/index.js`** — `PACKAGE_CATALOG` replaced entirely with the
-  real pricing (server-side source of truth — this is what actually gets
-  charged, never trust a price from the browser). `createRazorpayOrder`/
-  `verifyRazorpayPayment` (one-time packages) now also capture and email the
-  business/contact details. Two brand-new functions, `createScaleUpSubscription`
-  and `verifyScaleUpSubscription`, handle the recurring Scale-Up billing.
-  A third new function, `submitQuoteRequest`, handles the IT Get-a-Quote
-  lead form.
-- **`packages.html`** — fully rebuilt with the real copy, pricing, and
-  feature lists for all 12 tiers, plus the new checkout-details modal and
-  the separate Get-a-Quote modal.
-- **`style.css`** — a small set of new classes for the checkout modal's
-  package summary box and the footnote/sub-feature text under some cards,
-  plus (important) a one-line fix so this page's "Cancel" buttons don't
-  repeat a bug that's hit 3 times before on this site: an old, unscoped
-  button style meant only for colored hero sections was overriding the
-  normal button look. Caught and fixed proactively this time before it
-  could show up as an invisible button.
+**Step 4 — Deploy.**
+```
+cd ~/ried
+firebase deploy --only functions
+```
+This may take a few minutes since it's creating 2 brand-new functions
+(`razorpayWebhook`, `checkOverdueRenewals`) alongside updating the existing
+ones. If it asks you to enable an API (e.g. "Cloud Scheduler API" or
+"Cloud Build API") or pick a Cloud Scheduler location/region, choose
+**Yes/Enable** and pick the closest region to India (e.g. `asia-south1`) if
+asked — this is normal and only happens the first time a scheduled
+function like `checkOverdueRenewals` is deployed on this project.
 
-## No Firestore rules or index changes needed
-Every new record this round is stored in the same `/orders` collection
-Marketplace already uses (just with new `type` values, `"package"` and
-`"scaleup-subscription"`) — the existing security rules there already cover
-this with zero changes. Nothing new to publish in the Firebase Console.
+When it finishes, look through the output for a line that looks like:
+```
+✔  functions[razorpayWebhook(us-central1)]: ... Function URL: https://us-central1-<your-project>.cloudfunctions.net/razorpayWebhook
+```
+**Copy that full URL** — you'll need it in Step 5. (If you don't see it in
+the output, it's also on the Firebase Console: Build → Functions →
+click `razorpayWebhook` → the URL is shown at the top.)
+
+**Step 5 — Register the webhook in Razorpay.**
+1. Go to the [Razorpay Dashboard](https://dashboard.razorpay.com).
+2. Go to **Settings → Webhooks** (left sidebar).
+3. Click **+ Add New Webhook**.
+4. **Webhook URL**: paste the URL you copied at the end of Step 4.
+5. **Secret**: paste the exact same random string from Step 1 (must match
+   what you stored in Firebase in Step 2 — if these two don't match
+   exactly, Razorpay's calls will get rejected).
+6. **Active Events**: tick these three only:
+   - `subscription.charged`
+   - `subscription.pending`
+   - `subscription.halted`
+7. Click **Create Webhook** to save.
+
+That's it — no code changes are needed on the Razorpay side beyond this.
+
+## How to test it
+
+Real subscription renewals only happen once a month, so you can't easily
+wait for a natural test. Two options:
+- **Easiest**: in the Razorpay Dashboard, most webhook entries have a
+  "Test" or "Send Test Webhook" option once created — use that to send a
+  sample `subscription.charged` event and confirm your function receives
+  it (Firebase Console → Functions → `razorpayWebhook` → Logs tab should
+  show it came in).
+- **Realistic but slower**: subscribe to a Scale-Up tier yourself with a
+  small test amount if you have Razorpay Test Mode set up, and use
+  Razorpay's test-mode tools to simulate a renewal charge and a failure.
+
+Either way, check the Firebase Console → Functions → `razorpayWebhook` →
+Logs after triggering a test event — you should see it logged there within
+a few seconds of Razorpay sending it.
+
+## One assumption worth knowing about
+
+Razorpay bills each subscription on its own "anchor date" — the day of the
+month someone first subscribed — not on a fixed calendar date for everyone.
+So the "alert RIED by the 5th" rule only fires for a subscription once we
+already know (via the webhook) that a charge attempt actually failed — never
+just because a charge hasn't happened yet that month. This avoids false
+alarms for a subscriber whose renewal date is, say, the 20th, who is
+completely on schedule and hasn't done anything wrong.
 
 ## Deploy checklist
-1. Copy every file in this folder over the matching path in your repo.
-2. Push to GitHub.
-3. **Check Razorpay Subscriptions is enabled** on your Razorpay account
-   (see above) — do this before testing a Scale-Up subscription.
-4. **Redeploy Cloud Functions via Cloud Shell** — this is required this
-   time, not optional, since three brand-new functions are being deployed
-   for the first time (`createScaleUpSubscription`,
-   `verifyScaleUpSubscription`, `submitQuoteRequest`) alongside the updated
-   `createRazorpayOrder`/`verifyRazorpayPayment`. Paste `functions/index.js`
-   into Cloud Shell's editor, then `firebase deploy --only functions`.
-5. Test all three flows with real payments/submissions:
-   - **One-time**: buy an Incorporation or Legal package, confirm the order
-     in Firestore's `/orders` collection has your businessInfo and shows
-     `status: "paid"`, and the confirmation email arrives.
-   - **Subscription**: subscribe to a Scale-Up tier, confirm the first
-     charge processes, check the Razorpay Dashboard's Subscriptions tab
-     shows it as active with the right monthly amount, and confirm the
-     "New Subscription Started" email arrives.
-   - **Get a Quote**: submit a quote request for IT Standard or Premium,
-     confirm no payment is attempted at all, and the lead email arrives.
-
-## One more thing
-`packages-coming-soon.html` is now fully unused — nothing on the site links
-to it anymore (the nav always pointed straight at `packages.html`, which is
-what this round replaces). You can delete it from your repo whenever you
-like; it's not required, just tidy-up.
+1. Run `openssl rand -hex 32` in Cloud Shell, save the value.
+2. `firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET` — paste that value.
+3. Copy `functions/index.js` from this folder into your repo, push to GitHub.
+4. Fresh clone in Cloud Shell, `npm install` in `functions/`, check nodemailer installed.
+5. `firebase deploy --only functions` from `~/ried` — approve any API-enable prompts.
+6. Copy the `razorpayWebhook` URL from the deploy output.
+7. Razorpay Dashboard → Settings → Webhooks → Add New Webhook — paste URL,
+   paste the same secret from Step 1, tick `subscription.charged` /
+   `subscription.pending` / `subscription.halted`, save.
+8. Send a test webhook event from the Razorpay Dashboard and confirm it
+   shows up in Firebase Console → Functions → `razorpayWebhook` → Logs.
