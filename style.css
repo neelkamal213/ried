@@ -1105,11 +1105,13 @@ h1, h2, h3, h4,
 .shell .btn-secondary,
 .dashboard-page .btn-secondary,
 .account-card .btn-secondary,
-.marketplace-page .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
+.marketplace-page .btn-secondary,
+.packages-page .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
 .shell .btn-secondary:hover,
 .dashboard-page .btn-secondary:hover,
 .account-card .btn-secondary:hover,
-.marketplace-page .btn-secondary:hover{background:#eaf1f8}
+.marketplace-page .btn-secondary:hover,
+.packages-page .btn-secondary:hover{background:#eaf1f8}
 button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
 a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
 
@@ -2278,3 +2280,44 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
   font-size: 1.1rem;
   margin-bottom: 14px;
 }
+
+/* PACKAGES PAGE — business-info checkout modal + Get a Quote modal
+   (reuse .marketplace-overlay/.marketplace-modal/.onboard-input/.auth-error/
+   .stage-work-actions/.cart-title, already generic enough for any page). */
+.checkout-package-summary {
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+}
+.checkout-package-summary .cps-name {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 1.02rem;
+}
+.checkout-package-summary .cps-price {
+  color: var(--blue);
+  font-weight: 700;
+  margin-top: 3px;
+  font-size: .95rem;
+}
+.package-footnotes {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  background: var(--bg-light);
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.package-footnotes li { margin-bottom: 4px; }
+.package-footnotes li:last-child { margin-bottom: 0; }
+.package-sub-feature {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 2px 0 10px 24px;
+  line-height: 1.5;
+}
+.package-price.package-price-quote { font-size: 26px; }

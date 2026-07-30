@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Packages | RIED</title>
-  <meta name="description" content="RIED service packages for Incorporation, Grant Readiness, Scale-Up and Legal Services.">
+  <meta name="description" content="RIED service packages for Incorporation, Legal Services, Scale-Up &amp; Grant Readiness, and IT &amp; Infra Set-Up.">
 
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="images/brand/round_logo.png">
@@ -15,7 +15,7 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
-<body>
+<body class="packages-page">
 
   <header class="header">
     <div class="container nav">
@@ -46,9 +46,9 @@
     </div>
 
     <div class="hero-content">
-      <span class="hero-badge"><span class="dot"></span>Direct Purchase</span>
+      <span class="hero-badge"><span class="dot"></span>Now Live</span>
       <h1>Packages</h1>
-      <p>Pick a package, see exactly what's included, and get moving &mdash; no lengthy back-and-forth needed.</p>
+      <p>Real, final pricing across Incorporation, Legal Services, Scale-Up &amp; Grant Readiness, and IT &amp; Infra Set-Up &mdash; pick what fits, check out securely, and we'll take it from there.</p>
     </div>
   </section>
 
@@ -57,9 +57,9 @@
 
       <div class="draft-banner" style="max-width:900px;margin-left:auto;margin-right:auto">
         <i class="fa-solid fa-circle-info"></i>
-        <span>Pricing and inclusions below are illustrative placeholders while RIED finalises its official service
-        list. Purchases will be governed by our
-        <a href="terms.html">Terms &amp; Conditions</a> and <a href="refund-policy.html">Refund Policy</a>.</span>
+        <span>All purchases are governed by our
+        <a href="terms.html">Terms &amp; Conditions</a> and <a href="refund-policy.html">Refund Policy</a>.
+        Signing in is required to check out &mdash; browsing is open to everyone.</span>
       </div>
 
       <div id="checkoutStatus" class="form-status" style="max-width:900px;margin:0 auto 30px"></div>
@@ -79,146 +79,58 @@
 
           <div class="package-card">
             <span class="package-tier-name">Basic</span>
-            <div class="package-price">&#8377;15,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
+            <div class="package-price">&#8377;45,000 <span>one-time, incl. govt. fees</span></div>
+            <p class="package-price-note">Authorised capital up to &#8377;10 Lakhs</p>
             <ul class="package-features">
               <li><i class="fa-solid fa-check"></i> Private Limited Company registration</li>
               <li><i class="fa-solid fa-check"></i> DIN &amp; DSC for up to 2 directors</li>
               <li><i class="fa-solid fa-check"></i> MOA &amp; AOA drafting</li>
               <li><i class="fa-solid fa-check"></i> PAN &amp; TAN application</li>
+              <li><i class="fa-solid fa-check"></i> INC 20A &amp; ADT 1</li>
+              <li><i class="fa-solid fa-check"></i> Shareholding Pattern Certificate</li>
+              <li><i class="fa-solid fa-check"></i> Bank Resolution Letter</li>
+              <li><i class="fa-solid fa-check"></i> Startup India Registration</li>
+              <li><i class="fa-solid fa-check"></i> EPF &amp; ESI Registration</li>
             </ul>
-            <button type="button" class="package-btn" data-package-id="incorporation-basic"><span class="btn-label">Reserve This Package</span></button>
+            <button type="button" class="package-btn" data-package-id="incorporation-basic" data-billing-type="onetime"
+              data-package-name="Incorporation — Basic" data-price-display="₹45,000 one-time (incl. govt. fees)">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
           </div>
 
           <div class="package-card popular">
             <span class="package-popular-badge">Most Popular</span>
             <span class="package-tier-name">Standard</span>
-            <div class="package-price">&#8377;25,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
+            <div class="package-price">&#8377;55,000 <span>one-time, incl. govt. fees</span></div>
+            <p class="package-price-note">Authorised capital up to &#8377;10 Lakhs</p>
             <ul class="package-features">
               <li><i class="fa-solid fa-check"></i> Everything in Basic</li>
               <li><i class="fa-solid fa-check"></i> GST registration</li>
               <li><i class="fa-solid fa-check"></i> Trademark availability search</li>
               <li><i class="fa-solid fa-check"></i> 3 months of compliance support</li>
             </ul>
-            <button type="button" class="package-btn" data-package-id="incorporation-standard"><span class="btn-label">Reserve This Package</span></button>
+            <button type="button" class="package-btn" data-package-id="incorporation-standard" data-billing-type="onetime"
+              data-package-name="Incorporation — Standard" data-price-display="₹55,000 one-time (incl. govt. fees)">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
           </div>
 
           <div class="package-card">
             <span class="package-tier-name">Premium</span>
-            <div class="package-price">&#8377;45,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
+            <div class="package-price">&#8377;1,00,000 <span>one-time, incl. govt. fees</span></div>
+            <p class="package-price-note">Up to 200 transactions per year</p>
             <ul class="package-features">
               <li><i class="fa-solid fa-check"></i> Everything in Standard</li>
-              <li><i class="fa-solid fa-check"></i> Full first-year compliance package</li>
-              <li><i class="fa-solid fa-check"></i> Employment agreement templates</li>
+              <li><i class="fa-solid fa-check"></i> Book-keeping</li>
+              <li class="package-sub-feature">Includes accounting, checking TDS compliances, filing of PT returns, and TDS returns</li>
+              <li><i class="fa-solid fa-check"></i> AOC-4</li>
+              <li><i class="fa-solid fa-check"></i> MGT-7A</li>
               <li><i class="fa-solid fa-check"></i> Founder cap table setup</li>
             </ul>
-            <button type="button" class="package-btn" data-package-id="incorporation-premium"><span class="btn-label">Reserve This Package</span></button>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ============================================================
-           GRANT READINESS
-           ============================================================ -->
-      <div class="package-category">
-        <div class="package-category-header">
-          <div class="feature-icon-wrap"><i class="fas fa-hand-holding-dollar"></i></div>
-          <span class="section-tag-line">Non-Dilutive Funding</span>
-          <h2 class="section-title">Grant Readiness</h2>
-          <p>Map the right schemes and put your strongest application forward.</p>
-        </div>
-
-        <div class="packages-grid">
-
-          <div class="package-card">
-            <span class="package-tier-name">Basic</span>
-            <div class="package-price">&#8377;20,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
-            <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Grant scheme mapping &amp; eligibility check</li>
-              <li><i class="fa-solid fa-check"></i> Review of 1 existing application</li>
-            </ul>
-            <button type="button" class="package-btn" data-package-id="grant-basic"><span class="btn-label">Reserve This Package</span></button>
-          </div>
-
-          <div class="package-card popular">
-            <span class="package-popular-badge">Most Popular</span>
-            <span class="package-tier-name">Standard</span>
-            <div class="package-price">&#8377;35,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
-            <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Everything in Basic</li>
-              <li><i class="fa-solid fa-check"></i> Full application drafting for 1 scheme</li>
-              <li><i class="fa-solid fa-check"></i> Pitch deck review</li>
-            </ul>
-            <button type="button" class="package-btn" data-package-id="grant-standard"><span class="btn-label">Reserve This Package</span></button>
-          </div>
-
-          <div class="package-card">
-            <span class="package-tier-name">Premium</span>
-            <div class="package-price">&#8377;60,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
-            <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Everything in Standard</li>
-              <li><i class="fa-solid fa-check"></i> Applications for up to 3 schemes</li>
-              <li><i class="fa-solid fa-check"></i> Dedicated grant strategy session</li>
-            </ul>
-            <button type="button" class="package-btn" data-package-id="grant-premium"><span class="btn-label">Reserve This Package</span></button>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- ============================================================
-           SCALE-UP
-           ============================================================ -->
-      <div class="package-category">
-        <div class="package-category-header">
-          <div class="feature-icon-wrap"><i class="fas fa-rocket"></i></div>
-          <span class="section-tag-line">Ready To Grow</span>
-          <h2 class="section-title">Scale-Up</h2>
-          <p>Execution support for founders moving from early traction into structured growth.</p>
-        </div>
-
-        <div class="packages-grid">
-
-          <div class="package-card">
-            <span class="package-tier-name">Basic</span>
-            <div class="package-price">&#8377;30,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
-            <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Market readiness assessment</li>
-              <li><i class="fa-solid fa-check"></i> 30-60-90 day growth roadmap</li>
-            </ul>
-            <button type="button" class="package-btn" data-package-id="scaleup-basic"><span class="btn-label">Reserve This Package</span></button>
-          </div>
-
-          <div class="package-card popular">
-            <span class="package-popular-badge">Most Popular</span>
-            <span class="package-tier-name">Standard</span>
-            <div class="package-price">&#8377;55,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
-            <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Everything in Basic</li>
-              <li><i class="fa-solid fa-check"></i> Investor readiness review</li>
-              <li><i class="fa-solid fa-check"></i> Financial model review</li>
-            </ul>
-            <button type="button" class="package-btn" data-package-id="scaleup-standard"><span class="btn-label">Reserve This Package</span></button>
-          </div>
-
-          <div class="package-card">
-            <span class="package-tier-name">Premium</span>
-            <div class="package-price">&#8377;95,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
-            <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Everything in Standard</li>
-              <li><i class="fa-solid fa-check"></i> Monthly advisory for 3 months</li>
-              <li><i class="fa-solid fa-check"></i> Ecosystem partner introductions</li>
-            </ul>
-            <button type="button" class="package-btn" data-package-id="scaleup-premium"><span class="btn-label">Reserve This Package</span></button>
+            <button type="button" class="package-btn" data-package-id="incorporation-premium" data-billing-type="onetime"
+              data-package-name="Incorporation — Premium" data-price-display="₹1,00,000 one-time (incl. govt. fees)">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
           </div>
 
         </div>
@@ -232,45 +144,212 @@
           <div class="feature-icon-wrap"><i class="fas fa-scale-balanced"></i></div>
           <span class="section-tag-line">Stay Protected</span>
           <h2 class="section-title">Legal Services</h2>
-          <p>Practical legal support scoped for early-stage founders, not enterprise retainers.</p>
+          <p>Practical legal support scoped for early-stage founders, from foundational paperwork through investment-stage transactions.</p>
+        </div>
+
+        <div class="packages-grid">
+
+          <div class="package-card">
+            <span class="package-tier-name">Startup Package</span>
+            <div class="package-price">&#8377;80,000 <span>one-time</span></div>
+            <ul class="package-features">
+              <li><i class="fa-solid fa-check"></i> Customer-Facing Contracts / Terms of Use / Privacy Policy (up to 2 iterations)</li>
+              <li class="package-sub-feature">Standalone value: &#8377;20,000</li>
+              <li><i class="fa-solid fa-check"></i> Founder Agreements Template (up to 2 iterations)</li>
+              <li class="package-sub-feature">Standalone value: &#8377;30,000</li>
+              <li><i class="fa-solid fa-check"></i> Employment Agreement Templates (NDA, IP Assignment Agreement)</li>
+              <li class="package-sub-feature">Standalone value: &#8377;20,000</li>
+            </ul>
+            <button type="button" class="package-btn" data-package-id="legal-startup" data-billing-type="onetime"
+              data-package-name="Legal Services — Startup Package" data-price-display="₹80,000 one-time">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
+          </div>
+
+          <div class="package-card popular">
+            <span class="package-popular-badge">Most Popular</span>
+            <span class="package-tier-name">Legal Retainer</span>
+            <div class="package-price">&#8377;1,80,000 <span>one-time &middot; 3-month minimum</span></div>
+            <p class="package-price-note">Up to 40 hours of legal services, plus 5 hours free</p>
+            <ul class="package-features">
+              <li><i class="fa-solid fa-check"></i> Everything in Startup Package</li>
+              <li><i class="fa-solid fa-check"></i> Custom Vendor Agreements (case-by-case)</li>
+              <li><i class="fa-solid fa-check"></i> Dedicated legal coordination for 3 months</li>
+              <li><i class="fa-solid fa-check"></i> General Corporate Legal Advisory &mdash; Contract Law, Employment Law, Commercial Agreements</li>
+              <li><i class="fa-solid fa-check"></i> Preliminary IP Advisory &amp; Registration (excluding objection handling)</li>
+            </ul>
+            <ul class="package-footnotes">
+              <li>* If the 40 hours aren't used within 3 months, the remaining unused hours carry over to the following month at no additional cost.</li>
+              <li>* If the startup doesn't use the carried-over hours in that following month, they lapse.</li>
+              <li>* If the startup uses time beyond 40 hours, the additional 5 free hours are provided at no cost.</li>
+              <li>* Any time used beyond the 45th hour is charged at an hourly rate of &#8377;5,000.</li>
+            </ul>
+            <button type="button" class="package-btn" data-package-id="legal-retainer" data-billing-type="onetime"
+              data-package-name="Legal Services — Legal Retainer (3-Month Minimum)" data-price-display="₹1,80,000 one-time (3-month minimum)">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
+          </div>
+
+          <div class="package-card">
+            <span class="package-tier-name">Investment Contract</span>
+            <div class="package-price">&#8377;2,75,000 <span>one-time</span></div>
+            <ul class="package-features">
+              <li><i class="fa-solid fa-check"></i> Drafting / reviewing of term sheets</li>
+              <li><i class="fa-solid fa-check"></i> Assisting startups in addressing specific legal issues identified during legal due diligence</li>
+              <li><i class="fa-solid fa-check"></i> Drafting / reviewing of transaction documents (SSA, SHA, CCD Subscription Agreement, Convertible Notes)</li>
+              <li><i class="fa-solid fa-check"></i> Regulatory compliances under Companies Act 2013 (company valuation, drafting &amp; filing of board resolutions, filing of MGT-14, Form PAS-3, updating statutory registers, updating Form PAS-5)</li>
+              <li><i class="fa-solid fa-check"></i> Regulatory compliances under FEMA (FDI, including filing of Form FC-GPR, liaising with the AD Bank for FEMA filings)</li>
+            </ul>
+            <ul class="package-footnotes">
+              <li>* Subject to the complexity of the transaction and any non-compliances that need to be addressed.</li>
+            </ul>
+            <button type="button" class="package-btn" data-package-id="legal-investment" data-billing-type="onetime"
+              data-package-name="Legal Services — Investment Contract" data-price-display="₹2,75,000 one-time">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+           SCALE-UP & GRANT READINESS
+           ============================================================ -->
+      <div class="package-category">
+        <div class="package-category-header">
+          <div class="feature-icon-wrap"><i class="fas fa-rocket"></i></div>
+          <span class="section-tag-line">Ready To Grow</span>
+          <h2 class="section-title">Scale-Up &amp; Grant Readiness</h2>
+          <p>Ongoing, monthly advisory support &mdash; billed automatically so momentum never stalls.</p>
         </div>
 
         <div class="packages-grid">
 
           <div class="package-card">
             <span class="package-tier-name">Basic</span>
-            <div class="package-price">&#8377;12,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
+            <div class="package-price">&#8377;10,000 <span>/month &middot; min. 3 months</span></div>
+            <p class="package-price-note">Billed automatically every month; minimum term applies per RIED's service agreement</p>
             <ul class="package-features">
-              <li><i class="fa-solid fa-check"></i> Standard contract templates</li>
-              <li><i class="fa-solid fa-check"></i> NDA, Founder &amp; Vendor Agreements</li>
+              <li><i class="fa-solid fa-check"></i> Founder Discovery &amp; Commercialization</li>
+              <li><i class="fa-solid fa-check"></i> Market readiness assessment</li>
+              <li><i class="fa-solid fa-check"></i> Custom 30-60-90 day growth roadmap</li>
+              <li><i class="fa-solid fa-check"></i> Grant scheme mapping &amp; eligibility check</li>
+              <li><i class="fa-solid fa-check"></i> Review of 1 existing application</li>
+              <li><i class="fa-solid fa-check"></i> Review of 1 existing pitch deck</li>
+              <li><i class="fa-solid fa-check"></i> Dedicated data room for easy document access</li>
             </ul>
-            <button type="button" class="package-btn" data-package-id="legal-basic"><span class="btn-label">Reserve This Package</span></button>
+            <button type="button" class="package-btn" data-package-id="scaleup-basic" data-billing-type="subscription"
+              data-package-name="Scale-Up &amp; Grant Readiness — Basic" data-price-display="₹10,000/month (min. 3 months)">
+              <span class="btn-label"><i class="fa-solid fa-arrows-rotate"></i> Subscribe Now</span>
+            </button>
           </div>
 
           <div class="package-card popular">
             <span class="package-popular-badge">Most Popular</span>
             <span class="package-tier-name">Standard</span>
-            <div class="package-price">&#8377;25,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
+            <div class="package-price">&#8377;12,000 <span>/month &middot; min. 6 months</span></div>
+            <p class="package-price-note">Billed automatically every month; minimum term applies per RIED's service agreement</p>
             <ul class="package-features">
               <li><i class="fa-solid fa-check"></i> Everything in Basic</li>
-              <li><i class="fa-solid fa-check"></i> Custom contract drafting (up to 3 documents)</li>
-              <li><i class="fa-solid fa-check"></i> IP filing guidance</li>
+              <li><i class="fa-solid fa-check"></i> Investor readiness review &amp; redesign</li>
+              <li><i class="fa-solid fa-check"></i> Financial model review &amp; redesign</li>
+              <li><i class="fa-solid fa-check"></i> Technical concept review &amp; redesign</li>
+              <li><i class="fa-solid fa-check"></i> Applications for up to 3 schemes</li>
+              <li><i class="fa-solid fa-check"></i> Pitch deck review &amp; redesign for up to 3 schemes</li>
             </ul>
-            <button type="button" class="package-btn" data-package-id="legal-standard"><span class="btn-label">Reserve This Package</span></button>
+            <button type="button" class="package-btn" data-package-id="scaleup-standard" data-billing-type="subscription"
+              data-package-name="Scale-Up &amp; Grant Readiness — Standard" data-price-display="₹12,000/month (min. 6 months)">
+              <span class="btn-label"><i class="fa-solid fa-arrows-rotate"></i> Subscribe Now</span>
+            </button>
           </div>
 
           <div class="package-card">
             <span class="package-tier-name">Premium</span>
-            <div class="package-price">&#8377;50,000 <span>one-time</span></div>
-            <p class="package-price-note">Placeholder price &mdash; final pricing to be confirmed</p>
+            <div class="package-price">&#8377;15,000 <span>/month &middot; min. 12 months</span></div>
+            <p class="package-price-note">Billed automatically every month; minimum term applies per RIED's service agreement</p>
             <ul class="package-features">
               <li><i class="fa-solid fa-check"></i> Everything in Standard</li>
-              <li><i class="fa-solid fa-check"></i> Dedicated legal coordination for 3 months</li>
-              <li><i class="fa-solid fa-check"></i> Dispute resolution support coordination</li>
+              <li><i class="fa-solid fa-check"></i> Monthly advisory for 12 months</li>
+              <li><i class="fa-solid fa-check"></i> Ecosystem partner introductions</li>
+              <li><i class="fa-solid fa-check"></i> Applications for up to 10 schemes</li>
+              <li><i class="fa-solid fa-check"></i> Dedicated grant strategy session</li>
+              <li><i class="fa-solid fa-check"></i> Pitch deck review &amp; redesign for up to 10 schemes</li>
             </ul>
-            <button type="button" class="package-btn" data-package-id="legal-premium"><span class="btn-label">Reserve This Package</span></button>
+            <button type="button" class="package-btn" data-package-id="scaleup-premium" data-billing-type="subscription"
+              data-package-name="Scale-Up &amp; Grant Readiness — Premium" data-price-display="₹15,000/month (min. 12 months)">
+              <span class="btn-label"><i class="fa-solid fa-arrows-rotate"></i> Subscribe Now</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ============================================================
+           IT & INFRA SET-UP
+           ============================================================ -->
+      <div class="package-category">
+        <div class="package-category-header">
+          <div class="feature-icon-wrap"><i class="fas fa-server"></i></div>
+          <span class="section-tag-line">Build On Solid Ground</span>
+          <h2 class="section-title">IT &amp; Infra Set-Up</h2>
+          <p>From a first assessment to a fully hardened, investor-ready technical foundation.</p>
+        </div>
+
+        <div class="packages-grid">
+
+          <div class="package-card">
+            <span class="package-tier-name">Basic</span>
+            <div class="package-price">&#8377;40,000 <span>one-time</span></div>
+            <p class="package-price-note">Ideal for early-stage startups that need a clear picture of their current tech posture and a solid foundational online presence</p>
+            <ul class="package-features">
+              <li><i class="fa-solid fa-check"></i> Assessment of current IT systems &amp; infrastructure</li>
+              <li><i class="fa-solid fa-check"></i> Review of existing website + actionable redesign / revamp recommendations</li>
+              <li><i class="fa-solid fa-check"></i> If no website exists: design + hosting of a clean, professional basic website (up to 5 pages)</li>
+              <li><i class="fa-solid fa-check"></i> Comprehensive assessment report with prioritised improvement roadmap</li>
+            </ul>
+            <button type="button" class="package-btn" data-package-id="it-basic" data-billing-type="onetime"
+              data-package-name="IT &amp; Infra Set-Up — Basic" data-price-display="₹40,000 one-time">
+              <span class="btn-label"><i class="fa-solid fa-cart-shopping"></i> Buy Now</span>
+            </button>
+          </div>
+
+          <div class="package-card popular">
+            <span class="package-popular-badge">Most Popular</span>
+            <span class="package-tier-name">Standard</span>
+            <div class="package-price package-price-quote">Get a Quote</div>
+            <p class="package-price-note">Best for startups ready to move from "makeshift" to a reliable, scalable foundation</p>
+            <ul class="package-features">
+              <li><i class="fa-solid fa-check"></i> Everything in Basic, plus:</li>
+              <li><i class="fa-solid fa-check"></i> Cloud infrastructure setup / migration (AWS / Azure / GCP &mdash; basic production-ready environment)</li>
+              <li><i class="fa-solid fa-check"></i> Domain, DNS, SSL &amp; professional email configuration</li>
+              <li><i class="fa-solid fa-check"></i> Basic cybersecurity hygiene (firewall rules, access controls, MFA recommendations)</li>
+              <li><i class="fa-solid fa-check"></i> Staging + production environments with proper separation</li>
+              <li><i class="fa-solid fa-check"></i> Documentation of the entire setup for easy hand-over</li>
+              <li><i class="fa-solid fa-check"></i> 30 days of post-setup support</li>
+            </ul>
+            <button type="button" class="package-btn" data-package-id="it-standard" data-billing-type="quote"
+              data-package-name="IT &amp; Infra Set-Up — Standard">
+              <span class="btn-label"><i class="fa-solid fa-comment-dots"></i> Get a Quote</span>
+            </button>
+          </div>
+
+          <div class="package-card">
+            <span class="package-tier-name">Premium</span>
+            <div class="package-price package-price-quote">Get a Quote</div>
+            <p class="package-price-note">Recommended for startups preparing for growth, external audits, investor due-diligence, or higher traffic / compliance needs</p>
+            <ul class="package-features">
+              <li><i class="fa-solid fa-check"></i> Everything in Standard, plus:</li>
+              <li><i class="fa-solid fa-check"></i> Full DevOps foundation (CI/CD pipeline, monitoring, logging, alerts)</li>
+              <li><i class="fa-solid fa-check"></i> Advanced security hardening + vulnerability assessment</li>
+              <li><i class="fa-solid fa-check"></i> Scalable architecture design (auto-scaling, load balancing, backups &amp; disaster recovery)</li>
+              <li><i class="fa-solid fa-check"></i> Custom dashboard / admin panel integration, if required</li>
+              <li><i class="fa-solid fa-check"></i> Performance optimisation &amp; cost-optimisation recommendations</li>
+              <li><i class="fa-solid fa-check"></i> 90 days of priority support + knowledge-transfer sessions for the founding / tech team</li>
+            </ul>
+            <button type="button" class="package-btn" data-package-id="it-premium" data-billing-type="quote"
+              data-package-name="IT &amp; Infra Set-Up — Premium">
+              <span class="btn-label"><i class="fa-solid fa-comment-dots"></i> Get a Quote</span>
+            </button>
           </div>
 
         </div>
@@ -323,6 +402,101 @@
 
   <a href="contact.html#idea-form" id="ideaBtn">💡 Got An Idea?</a>
 
+  <!-- ============================================================
+       CHECKOUT MODAL — business/contact details, for Buy Now +
+       Subscribe Now purchases (everything except Get a Quote).
+       ============================================================ -->
+  <div id="checkoutOverlay" class="marketplace-overlay hidden">
+    <div class="marketplace-modal">
+      <button class="marketplace-modal-close" id="closeCheckoutBtn"><i class="fa-solid fa-xmark"></i></button>
+
+      <h2 class="cart-title"><i class="fa-solid fa-lock"></i> Checkout Details</h2>
+
+      <div class="checkout-package-summary">
+        <div class="cps-name" id="checkoutPackageName"></div>
+        <div class="cps-price" id="checkoutPackagePrice"></div>
+      </div>
+
+      <div id="checkoutError" class="auth-error"></div>
+
+      <label class="onboard-label">Full Name *</label>
+      <input type="text" id="bizName" class="onboard-input">
+
+      <label class="onboard-label">Email *</label>
+      <input type="email" id="bizEmail" class="onboard-input">
+
+      <label class="onboard-label">Phone *</label>
+      <input type="tel" id="bizPhone" class="onboard-input">
+
+      <label class="onboard-label">Alternate Phone <span class="onboard-optional">(optional)</span></label>
+      <input type="tel" id="bizAltPhone" class="onboard-input">
+
+      <label class="onboard-label">Company / Startup Name <span class="onboard-optional">(optional &mdash; if you don't have one registered yet, leave blank)</span></label>
+      <input type="text" id="bizCompany" class="onboard-input">
+
+      <label class="onboard-label">GSTIN <span class="onboard-optional">(optional)</span></label>
+      <input type="text" id="bizGstin" class="onboard-input">
+
+      <label class="onboard-label">Address *</label>
+      <textarea id="bizAddress" class="onboard-input" rows="3"></textarea>
+
+      <label class="onboard-label">Landmark <span class="onboard-optional">(optional)</span></label>
+      <input type="text" id="bizLandmark" class="onboard-input">
+
+      <label class="onboard-label">Pincode *</label>
+      <input type="text" id="bizPincode" class="onboard-input" maxlength="10">
+
+      <div class="stage-work-actions" style="margin-top:18px">
+        <button class="btn-secondary" id="cancelCheckoutBtn">Cancel</button>
+        <button class="btn-primary" id="checkoutSubmitBtn">
+          <span class="btn-label"><i class="fa-solid fa-lock"></i> Continue to Payment</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       GET A QUOTE MODAL — IT & Infra Standard / Premium (no fixed
+       price, so this just captures a lead and emails hello@ried.co.in
+       instead of opening Razorpay).
+       ============================================================ -->
+  <div id="quoteOverlay" class="marketplace-overlay hidden">
+    <div class="marketplace-modal">
+      <button class="marketplace-modal-close" id="closeQuoteBtn"><i class="fa-solid fa-xmark"></i></button>
+
+      <h2 class="cart-title"><i class="fa-solid fa-comment-dots"></i> Request a Quote</h2>
+
+      <div class="checkout-package-summary">
+        <div class="cps-name" id="quotePackageName"></div>
+        <div class="cps-price">Custom pricing &mdash; we'll follow up with a quote</div>
+      </div>
+
+      <div id="quoteError" class="auth-error"></div>
+
+      <label class="onboard-label">Full Name *</label>
+      <input type="text" id="quoteName" class="onboard-input">
+
+      <label class="onboard-label">Email *</label>
+      <input type="email" id="quoteEmail" class="onboard-input">
+
+      <label class="onboard-label">Phone *</label>
+      <input type="tel" id="quotePhone" class="onboard-input">
+
+      <label class="onboard-label">Company / Startup Name <span class="onboard-optional">(optional)</span></label>
+      <input type="text" id="quoteCompany" class="onboard-input">
+
+      <label class="onboard-label">Notes / Requirements <span class="onboard-optional">(optional)</span></label>
+      <textarea id="quoteNotes" class="onboard-input" rows="4" placeholder="Anything specific about your current setup or what you need help with"></textarea>
+
+      <div class="stage-work-actions" style="margin-top:18px">
+        <button class="btn-secondary" id="cancelQuoteBtn">Cancel</button>
+        <button class="btn-primary" id="quoteSubmitBtn">
+          <span class="btn-label"><i class="fa-solid fa-paper-plane"></i> Send Request</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 <script>
 window.addEventListener("scroll", function() {
   const header = document.querySelector(".header");
@@ -337,11 +511,17 @@ window.addEventListener("scroll", function() {
 
 <script type="module">
 /*
- * Razorpay checkout, backed by the createRazorpayOrder / verifyRazorpayPayment
- * Cloud Functions (see /functions/index.js). Those functions must be deployed
- * (firebase deploy --only functions) before this will actually process a
- * payment — until then, clicking "Reserve This Package" will show a friendly
- * "checkout isn't live yet" message instead of failing silently.
+ * Razorpay checkout for Packages, backed by the Cloud Functions in
+ * /functions/index.js:
+ *   - createRazorpayOrder / verifyRazorpayPayment       — one-time packages
+ *   - createScaleUpSubscription / verifyScaleUpSubscription — Scale-Up & Grant
+ *     Readiness (real recurring monthly billing via Razorpay Subscriptions)
+ *   - submitQuoteRequest                                 — IT & Infra
+ *     Standard/Premium's "Get a Quote" (no payment, just a lead email)
+ *
+ * Sign-in is required for every action on this page (unlike Marketplace,
+ * which never requires it) — enforced client-side here for a fast, friendly
+ * message, and authoritatively server-side in every Cloud Function above.
  */
 import { app, auth, onAuthStateChanged } from "./js/firebase-init.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
@@ -349,45 +529,149 @@ import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/
 const functions = getFunctions(app);
 const createRazorpayOrder = httpsCallable(functions, "createRazorpayOrder");
 const verifyRazorpayPayment = httpsCallable(functions, "verifyRazorpayPayment");
+const createScaleUpSubscription = httpsCallable(functions, "createScaleUpSubscription");
+const verifyScaleUpSubscription = httpsCallable(functions, "verifyScaleUpSubscription");
+const submitQuoteRequest = httpsCallable(functions, "submitQuoteRequest");
 
 const statusBox = document.getElementById('checkoutStatus');
-
 function showStatus(message, isError) {
   statusBox.textContent = message;
   statusBox.classList.remove('ok', 'err');
   statusBox.classList.add('show', isError ? 'err' : 'ok');
 }
 
-// Purchases require a signed-in RIED account (enforced again, authoritatively,
-// server-side in createRazorpayOrder — this client check is just fast, friendly UX).
 let authReady = false;
 let isSignedIn = false;
+let currentUser = null;
 onAuthStateChanged(auth, (user) => {
   authReady = true;
   isSignedIn = !!user;
+  currentUser = user;
 });
 
-document.querySelectorAll('.package-btn[data-package-id]').forEach((btn) => {
-  btn.addEventListener('click', async () => {
-    if (!authReady) {
-      showStatus("Just a moment — checking your sign-in status. Please click again in a second.", true);
-      return;
-    }
-    if (!isSignedIn) {
-      showStatus("Please sign in to your RIED account to purchase a package. Redirecting you to Sign In...", true);
-      setTimeout(() => { window.location.href = 'login.html'; }, 1400);
-      return;
-    }
+function requireSignIn() {
+  if (!authReady) {
+    showStatus("Just a moment — checking your sign-in status. Please click again in a second.", true);
+    return false;
+  }
+  if (!isSignedIn) {
+    showStatus("Please sign in to your RIED account to continue. Redirecting you to Sign In...", true);
+    setTimeout(() => { window.location.href = 'login.html'; }, 1400);
+    return false;
+  }
+  return true;
+}
 
-    const packageId = btn.dataset.packageId;
-    const label = btn.querySelector('.btn-label');
-    const originalText = label.textContent;
-    btn.disabled = true;
-    label.textContent = 'Preparing checkout...';
-    statusBox.classList.remove('show');
+// ---------------------------------------------------------------------------
+// CHECKOUT MODAL — Buy Now (onetime) + Subscribe Now (subscription)
+// ---------------------------------------------------------------------------
+let selectedPackage = null;
 
-    try {
-      const { data } = await createRazorpayOrder({ packageId });
+const checkoutOverlay = document.getElementById('checkoutOverlay');
+const checkoutError = document.getElementById('checkoutError');
+
+function openCheckoutModal(btn) {
+  selectedPackage = {
+    id: btn.dataset.packageId,
+    billingType: btn.dataset.billingType,
+    name: btn.dataset.packageName,
+    priceDisplay: btn.dataset.priceDisplay
+  };
+  document.getElementById('checkoutPackageName').textContent = selectedPackage.name;
+  document.getElementById('checkoutPackagePrice').textContent = selectedPackage.priceDisplay;
+  checkoutError.classList.remove('show');
+
+  const nameField = document.getElementById('bizName');
+  const emailField = document.getElementById('bizEmail');
+  if (currentUser && !nameField.value) nameField.value = currentUser.displayName || '';
+  if (currentUser && !emailField.value) emailField.value = currentUser.email || '';
+
+  checkoutOverlay.classList.remove('hidden');
+}
+
+document.querySelectorAll('.package-btn[data-billing-type="onetime"], .package-btn[data-billing-type="subscription"]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    if (!requireSignIn()) return;
+    openCheckoutModal(btn);
+  });
+});
+
+document.getElementById('closeCheckoutBtn').addEventListener('click', () => checkoutOverlay.classList.add('hidden'));
+document.getElementById('cancelCheckoutBtn').addEventListener('click', () => checkoutOverlay.classList.add('hidden'));
+checkoutOverlay.addEventListener('click', (e) => {
+  if (e.target.id === 'checkoutOverlay') checkoutOverlay.classList.add('hidden');
+});
+
+document.getElementById('checkoutSubmitBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('checkoutSubmitBtn');
+  const label = btn.querySelector('.btn-label');
+  const original = label.innerHTML;
+  checkoutError.classList.remove('show');
+
+  const businessInfo = {
+    name: document.getElementById('bizName').value.trim(),
+    email: document.getElementById('bizEmail').value.trim(),
+    phone: document.getElementById('bizPhone').value.trim(),
+    altPhone: document.getElementById('bizAltPhone').value.trim(),
+    companyName: document.getElementById('bizCompany').value.trim(),
+    gstin: document.getElementById('bizGstin').value.trim(),
+    address: document.getElementById('bizAddress').value.trim(),
+    landmark: document.getElementById('bizLandmark').value.trim(),
+    pincode: document.getElementById('bizPincode').value.trim()
+  };
+
+  if (!businessInfo.name || !businessInfo.email || !businessInfo.phone || !businessInfo.address || !businessInfo.pincode) {
+    checkoutError.textContent = 'Please fill in Name, Email, Phone, Address and Pincode before continuing to payment.';
+    checkoutError.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparing checkout...';
+
+  try {
+    if (selectedPackage.billingType === 'subscription') {
+      const { data } = await createScaleUpSubscription({ packageId: selectedPackage.id, businessInfo });
+
+      const rzp = new Razorpay({
+        key: data.keyId,
+        subscription_id: data.subscriptionId,
+        name: 'RIED Pvt. Ltd.',
+        description: data.packageName,
+        prefill: { name: businessInfo.name, email: businessInfo.email, contact: businessInfo.phone },
+        image: 'images/brand/logo.png',
+        theme: { color: '#1c2c40' },
+        handler: async function (response) {
+          label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Confirming payment...';
+          try {
+            await verifyScaleUpSubscription({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_subscription_id: response.razorpay_subscription_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            checkoutOverlay.classList.add('hidden');
+            showStatus(`Subscription started for ${data.packageName}. You'll be billed ₹${Number(data.amount).toLocaleString('en-IN')} automatically every month going forward (minimum ${data.minCycles} months) — we'll be in touch shortly to kick off the work. Thank you!`, false);
+          } catch (verifyErr) {
+            console.error('verifyScaleUpSubscription failed:', verifyErr);
+            checkoutError.textContent = 'Payment was received but could not be verified automatically. Please contact hello@ried.co.in with your payment ID so we can confirm it manually.';
+            checkoutError.classList.add('show');
+          }
+        },
+        modal: {
+          ondismiss: function () { label.innerHTML = original; btn.disabled = false; }
+        }
+      });
+
+      rzp.on('payment.failed', function () {
+        checkoutError.textContent = 'Payment failed or was cancelled. No charge was made — please try again.';
+        checkoutError.classList.add('show');
+        label.innerHTML = original;
+        btn.disabled = false;
+      });
+
+      rzp.open();
+    } else {
+      const { data } = await createRazorpayOrder({ packageId: selectedPackage.id, businessInfo });
 
       const rzp = new Razorpay({
         key: data.keyId,
@@ -396,50 +680,132 @@ document.querySelectorAll('.package-btn[data-package-id]').forEach((btn) => {
         order_id: data.orderId,
         name: 'RIED Pvt. Ltd.',
         description: data.packageName,
+        prefill: { name: businessInfo.name, email: businessInfo.email, contact: businessInfo.phone },
         image: 'images/brand/logo.png',
         theme: { color: '#1c2c40' },
         handler: async function (response) {
-          label.textContent = 'Confirming payment...';
+          label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Confirming payment...';
           try {
             await verifyRazorpayPayment({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
-            showStatus(`Payment confirmed for ${data.packageName}. We'll be in touch at the email on your Razorpay receipt to kick off the work — thank you!`, false);
+            checkoutOverlay.classList.add('hidden');
+            showStatus(`Payment confirmed for ${data.packageName}. We'll be in touch shortly to kick off the work — thank you!`, false);
           } catch (verifyErr) {
-            showStatus('Payment was received but could not be verified automatically. Please contact hello@ried.co.in with your payment ID so we can confirm it manually.', true);
+            console.error('verifyRazorpayPayment failed:', verifyErr);
+            checkoutError.textContent = 'Payment was received but could not be verified automatically. Please contact hello@ried.co.in with your payment ID so we can confirm it manually.';
+            checkoutError.classList.add('show');
           }
         },
         modal: {
-          ondismiss: function () {
-            label.textContent = originalText;
-            btn.disabled = false;
-          }
+          ondismiss: function () { label.innerHTML = original; btn.disabled = false; }
         }
       });
 
       rzp.on('payment.failed', function () {
-        showStatus('Payment failed or was cancelled. No charge was made — please try again or contact us if this keeps happening.', true);
-        label.textContent = originalText;
+        checkoutError.textContent = 'Payment failed or was cancelled. No charge was made — please try again.';
+        checkoutError.classList.add('show');
+        label.innerHTML = original;
         btn.disabled = false;
       });
 
       rzp.open();
-      label.textContent = originalText;
-      btn.disabled = false;
-
-    } catch (err) {
-      if (err && err.code === 'functions/unauthenticated') {
-        showStatus("Please sign in to your RIED account to purchase a package. Redirecting you to Sign In...", true);
-        setTimeout(() => { window.location.href = 'login.html'; }, 1400);
-      } else {
-        showStatus("Online checkout isn't live yet — please use the Contact page to reserve this package for now, or email hello@ried.co.in.", true);
-      }
-      label.textContent = originalText;
-      btn.disabled = false;
     }
+
+    label.innerHTML = original;
+    btn.disabled = false;
+
+  } catch (err) {
+    console.error('package checkout failed:', err);
+    if (err && err.code === 'functions/unauthenticated') {
+      checkoutError.textContent = 'Please sign in to your RIED account to continue. Redirecting you to Sign In...';
+      checkoutError.classList.add('show');
+      setTimeout(() => { window.location.href = 'login.html'; }, 1400);
+    } else if (err && err.code === 'functions/invalid-argument') {
+      checkoutError.textContent = err.message || 'Please double-check the details you entered.';
+      checkoutError.classList.add('show');
+    } else {
+      const detail = err && err.code ? ` (${err.code})` : '';
+      checkoutError.textContent = `Checkout couldn't start${detail} — please try again, or contact hello@ried.co.in if this keeps happening.`;
+      checkoutError.classList.add('show');
+    }
+    label.innerHTML = original;
+    btn.disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET A QUOTE MODAL — IT & Infra Standard / Premium
+// ---------------------------------------------------------------------------
+let selectedQuotePackage = null;
+const quoteOverlay = document.getElementById('quoteOverlay');
+const quoteError = document.getElementById('quoteError');
+
+document.querySelectorAll('.package-btn[data-billing-type="quote"]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    if (!requireSignIn()) return;
+    selectedQuotePackage = { id: btn.dataset.packageId, name: btn.dataset.packageName };
+    document.getElementById('quotePackageName').textContent = selectedQuotePackage.name;
+    quoteError.classList.remove('show');
+
+    const nameField = document.getElementById('quoteName');
+    const emailField = document.getElementById('quoteEmail');
+    if (currentUser && !nameField.value) nameField.value = currentUser.displayName || '';
+    if (currentUser && !emailField.value) emailField.value = currentUser.email || '';
+
+    quoteOverlay.classList.remove('hidden');
   });
+});
+
+document.getElementById('closeQuoteBtn').addEventListener('click', () => quoteOverlay.classList.add('hidden'));
+document.getElementById('cancelQuoteBtn').addEventListener('click', () => quoteOverlay.classList.add('hidden'));
+quoteOverlay.addEventListener('click', (e) => {
+  if (e.target.id === 'quoteOverlay') quoteOverlay.classList.add('hidden');
+});
+
+document.getElementById('quoteSubmitBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('quoteSubmitBtn');
+  const label = btn.querySelector('.btn-label');
+  const original = label.innerHTML;
+  quoteError.classList.remove('show');
+
+  const lead = {
+    name: document.getElementById('quoteName').value.trim(),
+    email: document.getElementById('quoteEmail').value.trim(),
+    phone: document.getElementById('quotePhone').value.trim(),
+    companyName: document.getElementById('quoteCompany').value.trim(),
+    notes: document.getElementById('quoteNotes').value.trim()
+  };
+
+  if (!lead.name || !lead.email || !lead.phone) {
+    quoteError.textContent = 'Please fill in Name, Email and Phone before requesting a quote.';
+    quoteError.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  label.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+
+  try {
+    await submitQuoteRequest({ packageId: selectedQuotePackage.id, lead });
+    quoteOverlay.classList.add('hidden');
+    showStatus(`Thanks! Your quote request for ${selectedQuotePackage.name} has been sent — we'll be in touch shortly.`, false);
+  } catch (err) {
+    console.error('submitQuoteRequest failed:', err);
+    if (err && err.code === 'functions/unauthenticated') {
+      quoteError.textContent = 'Please sign in to your RIED account to continue. Redirecting you to Sign In...';
+      quoteError.classList.add('show');
+      setTimeout(() => { window.location.href = 'login.html'; }, 1400);
+    } else {
+      quoteError.textContent = "Couldn't send your request — please try again, or email hello@ried.co.in directly.";
+      quoteError.classList.add('show');
+    }
+  }
+
+  label.innerHTML = original;
+  btn.disabled = false;
 });
 </script>
 
