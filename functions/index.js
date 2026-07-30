@@ -16,8 +16,9 @@
  * (See the deployment guide provided alongside this file for exact steps.)
  */
 
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
@@ -36,6 +37,14 @@ const IS_INDIVIDUAL_VALUE = "Individual / No Company Yet";
 //   firebase functions:secrets:set RAZORPAY_KEY_SECRET
 const RAZORPAY_KEY_ID = defineSecret("RAZORPAY_KEY_ID");
 const RAZORPAY_KEY_SECRET = defineSecret("RAZORPAY_KEY_SECRET");
+
+// Set once via: firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET
+// This is a value YOU make up when creating the webhook in the Razorpay
+// Dashboard (Settings -> Webhooks) — NOT the same as RAZORPAY_KEY_SECRET
+// above. Razorpay signs every webhook request it sends us with this same
+// value so razorpayWebhook (below) can verify the request genuinely came
+// from Razorpay and wasn't forged.
+const RAZORPAY_WEBHOOK_SECRET = defineSecret("RAZORPAY_WEBHOOK_SECRET");
 
 // Gmail App Password for riedprivatelimited@gmail.com, used only to send the
 // founder-profile notification email (see notifyOnProfileSubmit below). Set
@@ -159,6 +168,23 @@ function extractBusinessInfo(raw) {
     throw new HttpsError("invalid-argument", "Please fill in Name, Email, Phone, Address and Pincode before continuing to payment.");
   }
   return info;
+}
+
+// ---------------------------------------------------------------------------
+// Scale-Up subscription renewal tracking — shared by verifyScaleUpSubscription
+// (first charge), razorpayWebhook (every charge after that, plus failures),
+// and checkOverdueRenewals (the daily reminder/escalation sweep). See the
+// big comment above razorpayWebhook below for the full picture.
+// ---------------------------------------------------------------------------
+const REMINDER_INTERVAL_DAYS = 3; // how often the client gets re-reminded while a renewal is stuck pending
+const RIED_ALERT_DAY_OF_MONTH = 5; // if a subscription still hasn't been charged by this day of the month, RIED gets an overdue alert
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function daysBetween(a, b) {
+  return Math.abs(a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24);
 }
 
 exports.createRazorpayOrder = onCall(
@@ -435,7 +461,18 @@ exports.verifyScaleUpSubscription = onCall(
       {
         status: verified ? "active" : "verification_failed",
         paymentId: razorpay_payment_id,
-        verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+        // Seed the renewal-tracking fields with this first charge, so
+        // checkOverdueRenewals (below) doesn't mistake month 1 for an unpaid
+        // month before razorpayWebhook has ever fired for this subscription.
+        ...(verified
+          ? {
+              renewalStatus: "ok",
+              lastChargeAt: admin.firestore.FieldValue.serverTimestamp(),
+              lastChargeMonth: monthKey(new Date()),
+              lastChargePaymentId: razorpay_payment_id
+            }
+          : {})
       },
       { merge: true }
     );
@@ -446,10 +483,9 @@ exports.verifyScaleUpSubscription = onCall(
 
     // Notify hello@ried.co.in — best-effort, same as every other confirmation
     // email on this site. IMPORTANT: this only fires for the FIRST payment on
-    // a new subscription. There is no webhook wired up yet to notify RIED of
-    // the automatic monthly renewal charges Razorpay will keep making after
-    // this — those show up in the Razorpay Dashboard's Subscriptions tab, but
-    // not via email, until a webhook handler is added in a future round.
+    // a new subscription. Every renewal charge after this one is handled by
+    // razorpayWebhook below (subscription.charged), which is what actually
+    // notifies RIED and the client of month 2, 3, etc.
     try {
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
@@ -481,7 +517,7 @@ exports.verifyScaleUpSubscription = onCall(
         `Razorpay Subscription ID: ${razorpay_subscription_id}`,
         `Razorpay Payment ID (first charge): ${razorpay_payment_id}`,
         "",
-        "Note: only the FIRST monthly charge triggers this email. Subsequent auto-renewal charges are visible in the Razorpay Dashboard's Subscriptions tab, not emailed here yet — a webhook can be added in a future round if you'd like renewal notifications too."
+        "Note: this email only covers the first charge. Every renewal after this sends its own \"Renewal Payment Received\" email (to you and the client), and a reminder/overdue-alert flow kicks in automatically if a renewal payment fails — see razorpayWebhook and checkOverdueRenewals in functions/index.js."
       ];
 
       await sendMail(transporter, {
@@ -853,15 +889,352 @@ exports.verifyMarketplacePayment = onCall(
  * second 2nd-gen Firestore trigger (each first-ever trigger of a given kind
  * needs its own Eventarc warm-up, so it's simplest to keep this to one).
  */
-function sendMail(transporter, { to, subject, text, replyTo }) {
+function sendMail(transporter, { to, subject, text, replyTo, fromName }) {
   return transporter.sendMail({
-    from: `"RIED Website — Founder Profile" <${GMAIL_SENDER}>`,
+    from: `"${fromName || "RIED Website — Founder Profile"}" <${GMAIL_SENDER}>`,
     to,
     replyTo: replyTo || undefined,
     subject,
     text
   });
 }
+
+/**
+ * razorpayWebhook / checkOverdueRenewals
+ *
+ * Together these two functions are what makes Scale-Up & Grant Readiness
+ * subscriptions behave like real recurring billing after the first month:
+ *
+ *   - razorpayWebhook is a plain HTTP endpoint (not onCall — Razorpay calls
+ *     this directly, there's no signed-in Firebase user involved) that
+ *     Razorpay pings every time something happens to a subscription. We
+ *     listen for three events: subscription.charged (a renewal payment
+ *     succeeded), subscription.pending (a renewal payment attempt failed and
+ *     Razorpay is retrying), and subscription.halted (Razorpay has given up
+ *     retrying entirely). You configure this URL + these three events once
+ *     in the Razorpay Dashboard — see the deploy guide provided alongside
+ *     this file for the exact steps.
+ *
+ *   - checkOverdueRenewals runs automatically once a day (no Dashboard setup
+ *     needed — Firebase creates the Cloud Scheduler job for this on deploy).
+ *     Razorpay's webhook only tells us ONCE that a payment is pending; this
+ *     is what repeats the "please pay" reminder to the client every few days,
+ *     and what escalates to RIED if a subscription is still unpaid on/after
+ *     the 5th of the month.
+ *
+ * Every subscription's tracking state lives on its own /orders/{id} doc:
+ *   renewalStatus      "ok" | "pending" | "halted"
+ *   lastChargeAt        when the last successful charge happened
+ *   lastChargeMonth      "YYYY-MM" of the last successful charge
+ *   renewalPendingSince  when the current failed-payment streak started
+ *   lastReminderAt       when the client was last emailed about it
+ *   reminderCount        how many reminders have gone out this streak
+ *   riedAlertMonth       "YYYY-MM" RIED was last alerted about, so the same
+ *                        month never triggers two overdue alerts
+ */
+exports.razorpayWebhook = onRequest(
+  { secrets: [RAZORPAY_WEBHOOK_SECRET, GMAIL_APP_PASSWORD] },
+  async (req, res) => {
+    const signature = req.headers["x-razorpay-signature"];
+    const rawBody = req.rawBody; // Buffer — required for a byte-exact signature check
+
+    if (!signature || !rawBody) {
+      res.status(400).send("Missing signature or body.");
+      return;
+    }
+
+    const expected = crypto
+      .createHmac("sha256", RAZORPAY_WEBHOOK_SECRET.value())
+      .update(rawBody)
+      .digest("hex");
+
+    if (expected !== signature) {
+      logger.error("razorpayWebhook: signature mismatch — rejecting request.");
+      res.status(400).send("Invalid signature.");
+      return;
+    }
+
+    const event = req.body && req.body.event;
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    try {
+      if (event === "subscription.charged") {
+        await handleSubscriptionCharged(req.body, transporter);
+      } else if (event === "subscription.pending") {
+        await handleSubscriptionPending(req.body, transporter);
+      } else if (event === "subscription.halted") {
+        await handleSubscriptionHalted(req.body, transporter);
+      } else {
+        logger.info(`razorpayWebhook: ignoring unhandled event "${event}"`);
+      }
+    } catch (e) {
+      // Acknowledge with 200 regardless (below) — an error on our side
+      // shouldn't make Razorpay think this webhook URL itself is broken,
+      // which after enough failures it will start disabling automatically.
+      logger.error(`razorpayWebhook: error handling event "${event}"`, e);
+    }
+
+    res.status(200).send("ok");
+  }
+);
+
+async function handleSubscriptionCharged(body, transporter) {
+  const sub = body.payload && body.payload.subscription && body.payload.subscription.entity;
+  const payment = body.payload && body.payload.payment && body.payload.payment.entity;
+  if (!sub || !sub.id) return;
+
+  const orderRef = db.collection("orders").doc(sub.id);
+  const orderSnap = await orderRef.get();
+  if (!orderSnap.exists) {
+    logger.error(`razorpayWebhook: subscription.charged for unknown subscription ${sub.id}`);
+    return;
+  }
+  const order = orderSnap.data();
+
+  // The very first charge on a brand-new subscription is already handled
+  // and emailed by verifyScaleUpSubscription (called from the browser right
+  // after checkout) — skip it here so RIED/the client never get two emails
+  // for the same charge.
+  if (payment && payment.id && payment.id === order.lastChargePaymentId) {
+    return;
+  }
+
+  await orderRef.set(
+    {
+      renewalStatus: "ok",
+      lastChargeAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastChargeMonth: monthKey(new Date()),
+      lastChargePaymentId: payment ? payment.id : null,
+      renewalPendingSince: admin.firestore.FieldValue.delete(),
+      lastReminderAt: admin.firestore.FieldValue.delete(),
+      reminderCount: 0
+    },
+    { merge: true }
+  );
+
+  const info = order.businessInfo || {};
+  const amountPaid = payment ? payment.amount / 100 : order.amount;
+
+  try {
+    await sendMail(transporter, {
+      to: "hello@ried.co.in",
+      subject: `Renewal Payment Received — ${order.packageName || order.packageId || ""}`,
+      text: [
+        "A Scale-Up & Grant Readiness subscription renewal payment has been received.",
+        "",
+        `Package: ${order.packageName || order.packageId || ""}`,
+        `Amount: Rs. ${amountPaid}`,
+        `Client: ${info.name || ""} (${info.email || ""})`,
+        `Company / Startup: ${info.companyName || "(not provided)"}`,
+        `Razorpay Subscription ID: ${sub.id}`,
+        `Razorpay Payment ID: ${payment ? payment.id : "unknown"}`
+      ].join("\n")
+    });
+  } catch (e) {
+    logger.error("handleSubscriptionCharged: failed to send RIED notification", e);
+  }
+
+  if (info.email) {
+    try {
+      await sendMail(transporter, {
+        to: info.email,
+        fromName: "RIED — Billing",
+        subject: `Payment Received — ${order.packageName || "your RIED subscription"}`,
+        text: [
+          `Hi ${info.name || "there"},`,
+          "",
+          `We've received your monthly payment of Rs. ${amountPaid} for ${order.packageName || "your Scale-Up & Grant Readiness subscription"}.`,
+          "",
+          "Thank you for continuing with RIED.",
+          "",
+          "— Team RIED"
+        ].join("\n")
+      });
+    } catch (e) {
+      logger.error("handleSubscriptionCharged: failed to send client receipt", e);
+    }
+  }
+}
+
+async function handleSubscriptionPending(body, transporter) {
+  const sub = body.payload && body.payload.subscription && body.payload.subscription.entity;
+  if (!sub || !sub.id) return;
+
+  const orderRef = db.collection("orders").doc(sub.id);
+  const orderSnap = await orderRef.get();
+  if (!orderSnap.exists) return;
+  const order = orderSnap.data();
+
+  // Only send the very first "your payment failed" email from here — every
+  // reminder after this one (every few days) and the eventual RIED
+  // escalation are handled by checkOverdueRenewals below, so this doesn't
+  // fire again on every retry ping Razorpay sends while still pending.
+  if (order.renewalStatus === "pending") return;
+
+  await orderRef.set(
+    {
+      renewalStatus: "pending",
+      renewalPendingSince: admin.firestore.FieldValue.serverTimestamp(),
+      lastReminderAt: admin.firestore.FieldValue.serverTimestamp(),
+      reminderCount: 1
+    },
+    { merge: true }
+  );
+
+  const info = order.businessInfo || {};
+  if (info.email) {
+    try {
+      await sendMail(transporter, {
+        to: info.email,
+        fromName: "RIED — Billing",
+        subject: `Action Needed — Payment Due for ${order.packageName || "your RIED subscription"}`,
+        text: [
+          `Hi ${info.name || "there"},`,
+          "",
+          `We weren't able to process this month's payment for ${order.packageName || "your Scale-Up & Grant Readiness subscription"}.`,
+          "",
+          "Please make sure your payment method is valid and has sufficient funds — Razorpay will keep retrying automatically. Reach out to hello@ried.co.in if you need help.",
+          "",
+          "— Team RIED"
+        ].join("\n")
+      });
+    } catch (e) {
+      logger.error("handleSubscriptionPending: failed to send client reminder", e);
+    }
+  }
+}
+
+async function handleSubscriptionHalted(body, transporter) {
+  const sub = body.payload && body.payload.subscription && body.payload.subscription.entity;
+  if (!sub || !sub.id) return;
+
+  const orderRef = db.collection("orders").doc(sub.id);
+  const orderSnap = await orderRef.get();
+  if (!orderSnap.exists) return;
+  const order = orderSnap.data();
+
+  await orderRef.set(
+    { renewalStatus: "halted", riedAlertMonth: monthKey(new Date()) },
+    { merge: true }
+  );
+
+  const info = order.businessInfo || {};
+  try {
+    await sendMail(transporter, {
+      to: "hello@ried.co.in",
+      subject: `URGENT — Subscription Halted (Payment Failed) — ${order.packageName || ""}`,
+      text: [
+        "Razorpay has stopped retrying a Scale-Up & Grant Readiness subscription after repeated failed payments.",
+        "",
+        `Package: ${order.packageName || order.packageId || ""}`,
+        `Client: ${info.name || ""} (${info.email || ""})`,
+        `Phone: ${info.phone || ""}`,
+        `Razorpay Subscription ID: ${sub.id}`,
+        "",
+        "This client needs to be contacted directly to resolve payment before the subscription can resume — there's no self-serve way for them to restart it from the website."
+      ].join("\n")
+    });
+  } catch (e) {
+    logger.error("handleSubscriptionHalted: failed to send RIED alert", e);
+  }
+}
+
+exports.checkOverdueRenewals = onSchedule(
+  { schedule: "every day 09:00", timeZone: "Asia/Kolkata", secrets: [GMAIL_APP_PASSWORD] },
+  async () => {
+    const now = new Date();
+    const currentMonth = monthKey(now);
+    const dayOfMonth = now.getDate();
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    const snap = await db.collection("orders").where("type", "==", "scaleup-subscription").get();
+
+    for (const doc of snap.docs) {
+      const order = doc.data();
+      if (order.status !== "active") continue; // never completed a first charge, or was cancelled
+      if (order.lastChargeMonth === currentMonth) continue; // already paid this month
+
+      const info = order.businessInfo || {};
+
+      if (dayOfMonth < RIED_ALERT_DAY_OF_MONTH && order.renewalStatus === "pending") {
+        const lastReminder = order.lastReminderAt ? order.lastReminderAt.toDate() : null;
+        if ((!lastReminder || daysBetween(now, lastReminder) >= REMINDER_INTERVAL_DAYS) && info.email) {
+          try {
+            await sendMail(transporter, {
+              to: info.email,
+              fromName: "RIED — Billing",
+              subject: `Reminder — Payment Still Due for ${order.packageName || "your RIED subscription"}`,
+              text: [
+                `Hi ${info.name || "there"},`,
+                "",
+                `This month's payment for ${order.packageName || "your Scale-Up & Grant Readiness subscription"} is still pending.`,
+                "",
+                "Please update or confirm your payment method so we can process it — reach out to hello@ried.co.in if you're running into trouble.",
+                "",
+                "— Team RIED"
+              ].join("\n")
+            });
+            await doc.ref.set(
+              {
+                lastReminderAt: admin.firestore.FieldValue.serverTimestamp(),
+                reminderCount: (order.reminderCount || 0) + 1
+              },
+              { merge: true }
+            );
+          } catch (e) {
+            logger.error(`checkOverdueRenewals: failed to send reminder for ${doc.id}`, e);
+          }
+        }
+      }
+
+      // Important: only escalate when we actually KNOW a charge attempt
+      // failed (renewalStatus "pending" or "halted", set by razorpayWebhook
+      // above) — not merely because no charge has landed yet this calendar
+      // month. Razorpay bills each subscription on its own anchor date (the
+      // day it was first subscribed), which won't always fall on or before
+      // the 5th, so "no charge yet this month" alone is not the same as
+      // "overdue" and would otherwise cause false alarms for subscribers
+      // who are perfectly on schedule.
+      if (
+        dayOfMonth >= RIED_ALERT_DAY_OF_MONTH &&
+        (order.renewalStatus === "pending" || order.renewalStatus === "halted") &&
+        order.riedAlertMonth !== currentMonth
+      ) {
+        try {
+          await sendMail(transporter, {
+            to: "hello@ried.co.in",
+            subject: `Overdue — Subscription Payment Not Received — ${order.packageName || ""}`,
+            text: [
+              `A Scale-Up & Grant Readiness subscription has not been paid for ${currentMonth}, and it's now on or past the ${RIED_ALERT_DAY_OF_MONTH}th of the month.`,
+              "",
+              `Package: ${order.packageName || order.packageId || ""}`,
+              `Client: ${info.name || ""} (${info.email || ""})`,
+              `Phone: ${info.phone || ""}`,
+              `Status: ${order.renewalStatus || "unknown"}`,
+              `Razorpay Subscription ID: ${doc.id}`,
+              "",
+              "This may need a manual follow-up with the client."
+            ].join("\n")
+          });
+          await doc.ref.set({ riedAlertMonth: currentMonth }, { merge: true });
+        } catch (e) {
+          logger.error(`checkOverdueRenewals: failed to send RIED overdue alert for ${doc.id}`, e);
+        }
+      }
+    }
+  }
+);
 
 exports.notifyOnProfileSubmit = onDocumentWritten(
   { document: "profiles/{uid}", secrets: [GMAIL_APP_PASSWORD] },
