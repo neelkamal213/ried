@@ -680,7 +680,12 @@ exports.createMarketplaceOrder = onCall(
         title: listing.title || "",
         price,
         qty,
-        lineTotal
+        lineTotal,
+        // Payout tracking (Tier 20) — every line item starts "pending" until
+        // an admin marks it as paid out via markSellerPayout, once RIED has
+        // actually transferred that seller their share. Never touched by the
+        // buyer/checkout flow again after this.
+        payoutStatus: "pending"
       });
     }
 
@@ -699,10 +704,19 @@ exports.createMarketplaceOrder = onCall(
       notes: { uid, kind: "marketplace" }
     });
 
+    // Denormalized list of distinct seller uids on this order (Tier 20) —
+    // lets a seller's "My Sales" page query `where('sellerIds','array-contains',uid)`
+    // directly against /orders, instead of needing to read every order on the
+    // site and filter client-side. Firestore's array-contains + the matching
+    // `request.auth.uid in resource.data.sellerIds` rules check is what makes
+    // this both efficient and secure — see firestore.rules.
+    const sellerIds = [...new Set(lineItems.map((li) => li.sellerId).filter(Boolean))];
+
     await db.collection("orders").doc(order.id).set({
       type: "marketplace",
       uid,
       items: lineItems,
+      sellerIds,
       amount: total,
       status: "created",
       shippingInfo,
@@ -852,6 +866,67 @@ exports.verifyMarketplacePayment = onCall(
     return { verified: true };
   }
 );
+
+/**
+ * markSellerPayout
+ *
+ * The other half of Marketplace's payout-reconciliation view (Tier 20,
+ * admin-dashboard.html): every Marketplace order's line items start life
+ * with `payoutStatus: "pending"` (set in createMarketplaceOrder above).
+ * Since RIED collects all Marketplace payments centrally and pays sellers
+ * out manually/by hand (the payout model locked in back in Tier 9), there's
+ * no automatic trigger for "this seller has been paid" — an admin has to
+ * say so themselves, after they've actually sent the money. This is the
+ * only way that ever happens: `/orders` rules block ALL client-side
+ * writes unconditionally (`allow create, update, delete: if false`), same
+ * as every other order field, so this has to go through the Admin SDK here.
+ */
+async function requireAdmin(uid) {
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Please sign in.");
+  }
+  const userSnap = await db.collection("users").doc(uid).get();
+  if (!userSnap.exists || userSnap.data().role !== "admin") {
+    throw new HttpsError("permission-denied", "Admin access required.");
+  }
+}
+
+exports.markSellerPayout = onCall(async (request) => {
+  await requireAdmin(request.auth && request.auth.uid);
+
+  const { orderId, itemIndex, paid } = request.data || {};
+  if (!orderId || typeof itemIndex !== "number") {
+    throw new HttpsError("invalid-argument", "Missing orderId or itemIndex.");
+  }
+
+  const orderRef = db.collection("orders").doc(String(orderId));
+  const orderSnap = await orderRef.get();
+  if (!orderSnap.exists) {
+    throw new HttpsError("not-found", "Order not found.");
+  }
+
+  const order = orderSnap.data();
+  const items = Array.isArray(order.items) ? order.items.slice() : [];
+  if (itemIndex < 0 || itemIndex >= items.length) {
+    throw new HttpsError("invalid-argument", "Invalid item index.");
+  }
+
+  const markPaid = paid !== false; // default true — this endpoint is also used to undo a mistaken mark-as-paid
+  items[itemIndex] = {
+    ...items[itemIndex],
+    payoutStatus: markPaid ? "paid" : "pending",
+    // Timestamp.now() (a concrete value), not FieldValue.serverTimestamp() —
+    // the serverTimestamp() sentinel does not resolve correctly when nested
+    // inside an array element being written this way, so a plain server-side
+    // timestamp is used instead. Close enough for this purpose (a manual,
+    // human-initiated action, not something needing microsecond precision).
+    payoutPaidAt: markPaid ? admin.firestore.Timestamp.now() : null,
+    payoutMarkedBy: markPaid ? request.auth.uid : null
+  };
+
+  await orderRef.update({ items });
+  return { success: true };
+});
 
 /**
  * notifyOnProfileSubmit
