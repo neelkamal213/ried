@@ -48,26 +48,118 @@ const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");
 const GMAIL_SENDER = "riedprivatelimited@gmail.com";
 
 // ---------------------------------------------------------------------------
-// PLACEHOLDER CATALOG — mirrors packages.html's placeholder pricing exactly.
-// This is the server-side source of truth for prices. When RIED's real
-// services/pricing list is ready, update ONLY this object (and packages.html's
-// displayed copy) — the checkout logic below never needs to change.
-// Amounts are in whole INR rupees; Razorpay wants paise (rupees * 100).
+// PACKAGE CATALOG — server-side source of truth for RIED's real service
+// pricing, finalized 2026-07-30 after the Legal/Compliance/Scale-Up/IT
+// team review. When pricing changes, update ONLY this object (and
+// packages.html's displayed copy to match) — the checkout logic below
+// never needs to change. Amounts are whole INR rupees; Razorpay wants
+// paise (rupees * 100).
+//
+// billingType:
+//   "onetime"      — a single Razorpay Order/Payment (createRazorpayOrder).
+//   "subscription" — a recurring Razorpay Subscription, billed monthly
+//                    (createScaleUpSubscription). minCycles is RIED's
+//                    minimum-commitment term. Razorpay itself has no
+//                    "minimum term then cancel anytime" primitive, so the
+//                    subscription is created with a long total_count
+//                    (SUBSCRIPTION_TOTAL_CYCLES below) that just keeps it
+//                    auto-renewing — the minimum term is enforced by RIED's
+//                    service agreement/terms, not by Razorpay technically.
+//   "quote"        — no fixed price. submitQuoteRequest below just emails a
+//                    lead to hello@ried.co.in; there is no payment at all.
 // ---------------------------------------------------------------------------
+const SUBSCRIPTION_TOTAL_CYCLES = 120; // 10 years of monthly billing — a practical stand-in for "renews until cancelled," since Razorpay requires a finite total_count.
+
 const PACKAGE_CATALOG = {
-  "incorporation-basic":     { name: "Incorporation — Basic",     amount: 15000 },
-  "incorporation-standard":  { name: "Incorporation — Standard",  amount: 25000 },
-  "incorporation-premium":   { name: "Incorporation — Premium",   amount: 45000 },
-  "grant-basic":             { name: "Grant Readiness — Basic",    amount: 20000 },
-  "grant-standard":          { name: "Grant Readiness — Standard", amount: 35000 },
-  "grant-premium":           { name: "Grant Readiness — Premium",  amount: 60000 },
-  "scaleup-basic":           { name: "Scale-Up — Basic",          amount: 30000 },
-  "scaleup-standard":        { name: "Scale-Up — Standard",       amount: 55000 },
-  "scaleup-premium":         { name: "Scale-Up — Premium",        amount: 95000 },
-  "legal-basic":             { name: "Legal Services — Basic",    amount: 12000 },
-  "legal-standard":          { name: "Legal Services — Standard", amount: 25000 },
-  "legal-premium":           { name: "Legal Services — Premium",  amount: 50000 }
+  "incorporation-basic": {
+    name: "Incorporation — Basic",
+    billingType: "onetime",
+    amount: 45000
+  },
+  "incorporation-standard": {
+    name: "Incorporation — Standard",
+    billingType: "onetime",
+    amount: 55000
+  },
+  "incorporation-premium": {
+    name: "Incorporation — Premium",
+    billingType: "onetime",
+    amount: 100000
+  },
+  "legal-startup": {
+    name: "Legal Services — Startup Package",
+    billingType: "onetime",
+    amount: 80000
+  },
+  "legal-retainer": {
+    name: "Legal Services — Legal Retainer (3-Month Minimum)",
+    billingType: "onetime",
+    amount: 180000
+  },
+  "legal-investment": {
+    name: "Legal Services — Investment Contract",
+    billingType: "onetime",
+    amount: 275000
+  },
+  "scaleup-basic": {
+    name: "Scale-Up & Grant Readiness — Basic",
+    billingType: "subscription",
+    amount: 10000,
+    minCycles: 3
+  },
+  "scaleup-standard": {
+    name: "Scale-Up & Grant Readiness — Standard",
+    billingType: "subscription",
+    amount: 12000,
+    minCycles: 6
+  },
+  "scaleup-premium": {
+    name: "Scale-Up & Grant Readiness — Premium",
+    billingType: "subscription",
+    amount: 15000,
+    minCycles: 12
+  },
+  "it-basic": {
+    name: "IT & Infra Set-Up — Basic",
+    billingType: "onetime",
+    amount: 40000
+  },
+  "it-standard": {
+    name: "IT & Infra Set-Up — Standard",
+    billingType: "quote"
+  },
+  "it-premium": {
+    name: "IT & Infra Set-Up — Premium",
+    billingType: "quote"
+  }
 };
+
+// Shared by createRazorpayOrder and createScaleUpSubscription — the
+// business/delivery details collected on packages.html right before
+// payment. Validated for presence here (never trust the client alone),
+// then stored on the order/subscription record and included in the
+// confirmation email so RIED has what it needs to actually kick off the
+// work. companyName/gstin are deliberately optional — many Incorporation
+// buyers don't have a registered company or GSTIN yet, that's the whole
+// point of the service.
+function extractBusinessInfo(raw) {
+  const r = raw || {};
+  const info = {
+    name: String(r.name || "").trim(),
+    email: String(r.email || "").trim(),
+    phone: String(r.phone || "").trim(),
+    altPhone: String(r.altPhone || "").trim(),
+    address: String(r.address || "").trim(),
+    landmark: String(r.landmark || "").trim(),
+    pincode: String(r.pincode || "").trim(),
+    companyName: String(r.companyName || "").trim(),
+    gstin: String(r.gstin || "").trim()
+  };
+  if (!info.name || !info.email || !info.phone || !info.address || !info.pincode) {
+    throw new HttpsError("invalid-argument", "Please fill in Name, Email, Phone, Address and Pincode before continuing to payment.");
+  }
+  return info;
+}
 
 exports.createRazorpayOrder = onCall(
   { secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET] },
@@ -82,9 +174,11 @@ exports.createRazorpayOrder = onCall(
     const packageId = request.data && request.data.packageId;
     const pkg = PACKAGE_CATALOG[packageId];
 
-    if (!pkg) {
+    if (!pkg || pkg.billingType !== "onetime") {
       throw new HttpsError("invalid-argument", "Unknown package selected.");
     }
+
+    const businessInfo = extractBusinessInfo(request.data && request.data.businessInfo);
 
     const razorpay = new Razorpay({
       key_id: RAZORPAY_KEY_ID.value(),
@@ -97,18 +191,20 @@ exports.createRazorpayOrder = onCall(
       notes: {
         packageId,
         packageName: pkg.name,
-        uid: request.auth ? request.auth.uid : "guest"
+        uid: request.auth.uid
       }
     });
 
     // Record the attempt before payment completes, so we have a record even
     // if the user closes the tab mid-checkout.
     await db.collection("orders").doc(order.id).set({
+      type: "package",
       packageId,
       packageName: pkg.name,
       amount: pkg.amount,
       status: "created",
-      uid: request.auth ? request.auth.uid : null,
+      uid: request.auth.uid,
+      businessInfo,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -170,6 +266,10 @@ exports.verifyRazorpayPayment = onCall(
         }
       }
 
+      const info = order.businessInfo || {};
+      const displayName = info.name || buyerName || "";
+      const displayEmail = info.email || buyerEmail;
+
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 465,
@@ -185,8 +285,19 @@ exports.verifyRazorpayPayment = onCall(
         "",
         `Item Purchased: ${order.packageName || order.packageId || "Unknown package"}`,
         `Amount Paid: Rs. ${order.amount != null ? order.amount : "?"}`,
-        `Purchased By: ${buyerName ? buyerName + " " : ""}(${buyerEmail})`,
+        `Purchased By: ${displayName ? displayName + " " : ""}(${displayEmail})`,
         `User Account UID: ${order.uid || "unknown"}`,
+        "",
+        "--- Business / Contact Details ---",
+        `Name: ${info.name || ""}`,
+        `Company / Startup: ${info.companyName || "(not provided)"}`,
+        `GSTIN: ${info.gstin || "(not provided)"}`,
+        `Email: ${info.email || ""}`,
+        `Phone: ${info.phone || ""}`,
+        `Alternate Phone: ${info.altPhone || "(none)"}`,
+        `Address: ${info.address || ""}`,
+        `Landmark: ${info.landmark || "(none)"}`,
+        `Pincode: ${info.pincode || ""}`,
         "",
         `Razorpay Order ID: ${razorpay_order_id}`,
         `Razorpay Payment ID: ${razorpay_payment_id}`
@@ -194,7 +305,7 @@ exports.verifyRazorpayPayment = onCall(
 
       await sendMail(transporter, {
         to: "hello@ried.co.in",
-        replyTo: buyerEmail !== "unknown" ? buyerEmail : undefined,
+        replyTo: displayEmail !== "unknown" ? displayEmail : undefined,
         subject: `Purchase Confirmed — ${order.packageName || order.packageId || ""}`,
         text: lines.join("\n")
       });
@@ -203,6 +314,260 @@ exports.verifyRazorpayPayment = onCall(
     }
 
     return { verified: true };
+  }
+);
+
+/**
+ * createScaleUpSubscription / verifyScaleUpSubscription
+ *
+ * The Scale-Up & Grant Readiness packages are billed monthly as real
+ * recurring Razorpay Subscriptions (per RIED's explicit choice), not
+ * one-time Orders like everything else on this page. A Razorpay "Plan"
+ * (how much, how often) is created once per tier and cached in Firestore
+ * at /config/razorpayPlans so repeat subscribers reuse the same Plan
+ * rather than creating a new one every checkout; a fresh "Subscription"
+ * (one specific customer's recurring commitment against that Plan) is
+ * created per purchase.
+ */
+exports.createScaleUpSubscription = onCall(
+  { secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in to subscribe to a package.");
+    }
+
+    const packageId = request.data && request.data.packageId;
+    const pkg = PACKAGE_CATALOG[packageId];
+
+    if (!pkg || pkg.billingType !== "subscription") {
+      throw new HttpsError("invalid-argument", "Unknown package selected.");
+    }
+
+    const businessInfo = extractBusinessInfo(request.data && request.data.businessInfo);
+
+    const razorpay = new Razorpay({
+      key_id: RAZORPAY_KEY_ID.value(),
+      key_secret: RAZORPAY_KEY_SECRET.value()
+    });
+
+    const planConfigRef = db.collection("config").doc("razorpayPlans");
+    const planConfigSnap = await planConfigRef.get();
+    let planId = planConfigSnap.exists ? planConfigSnap.data()[packageId] : null;
+
+    if (!planId) {
+      const plan = await razorpay.plans.create({
+        period: "monthly",
+        interval: 1,
+        item: {
+          name: pkg.name,
+          amount: pkg.amount * 100,
+          currency: "INR"
+        },
+        notes: { packageId }
+      });
+      planId = plan.id;
+      await planConfigRef.set({ [packageId]: planId }, { merge: true });
+    }
+
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: planId,
+      customer_notify: 1,
+      total_count: SUBSCRIPTION_TOTAL_CYCLES,
+      notes: {
+        packageId,
+        packageName: pkg.name,
+        uid: request.auth.uid,
+        minCycles: String(pkg.minCycles)
+      }
+    });
+
+    await db.collection("orders").doc(subscription.id).set({
+      type: "scaleup-subscription",
+      packageId,
+      packageName: pkg.name,
+      amount: pkg.amount,
+      minCycles: pkg.minCycles,
+      status: "created",
+      uid: request.auth.uid,
+      businessInfo,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return {
+      subscriptionId: subscription.id,
+      keyId: RAZORPAY_KEY_ID.value(),
+      packageName: pkg.name,
+      amount: pkg.amount,
+      minCycles: pkg.minCycles
+    };
+  }
+);
+
+exports.verifyScaleUpSubscription = onCall(
+  { secrets: [RAZORPAY_KEY_SECRET, GMAIL_APP_PASSWORD] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in.");
+    }
+
+    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = request.data || {};
+    if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature) {
+      throw new HttpsError("invalid-argument", "Missing subscription verification fields.");
+    }
+
+    // Subscription signatures are computed differently from one-time Orders:
+    // HMAC of "payment_id|subscription_id" (NOT "order_id|payment_id").
+    const expectedSignature = crypto
+      .createHmac("sha256", RAZORPAY_KEY_SECRET.value())
+      .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+      .digest("hex");
+    const verified = expectedSignature === razorpay_signature;
+
+    const orderRef = db.collection("orders").doc(razorpay_subscription_id);
+    const orderSnap = await orderRef.get();
+    const order = orderSnap.exists ? orderSnap.data() : {};
+
+    if (order.uid && order.uid !== request.auth.uid) {
+      throw new HttpsError("permission-denied", "This subscription does not belong to your account.");
+    }
+
+    await orderRef.set(
+      {
+        status: verified ? "active" : "verification_failed",
+        paymentId: razorpay_payment_id,
+        verifiedAt: admin.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    if (!verified) {
+      throw new HttpsError("permission-denied", "Payment signature could not be verified.");
+    }
+
+    // Notify hello@ried.co.in — best-effort, same as every other confirmation
+    // email on this site. IMPORTANT: this only fires for the FIRST payment on
+    // a new subscription. There is no webhook wired up yet to notify RIED of
+    // the automatic monthly renewal charges Razorpay will keep making after
+    // this — those show up in the Razorpay Dashboard's Subscriptions tab, but
+    // not via email, until a webhook handler is added in a future round.
+    try {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+      });
+
+      const info = order.businessInfo || {};
+      const lines = [
+        "A new Scale-Up & Grant Readiness subscription has started on the RIED website.",
+        "",
+        `Package: ${order.packageName || order.packageId || "Unknown package"}`,
+        `Monthly Amount: Rs. ${order.amount != null ? order.amount : "?"} / month`,
+        `Minimum Commitment: ${order.minCycles || "?"} months`,
+        `User Account UID: ${request.auth.uid}`,
+        "",
+        "--- Business / Contact Details ---",
+        `Name: ${info.name || ""}`,
+        `Company / Startup: ${info.companyName || "(not provided)"}`,
+        `GSTIN: ${info.gstin || "(not provided)"}`,
+        `Email: ${info.email || ""}`,
+        `Phone: ${info.phone || ""}`,
+        `Alternate Phone: ${info.altPhone || "(none)"}`,
+        `Address: ${info.address || ""}`,
+        `Landmark: ${info.landmark || "(none)"}`,
+        `Pincode: ${info.pincode || ""}`,
+        "",
+        `Razorpay Subscription ID: ${razorpay_subscription_id}`,
+        `Razorpay Payment ID (first charge): ${razorpay_payment_id}`,
+        "",
+        "Note: only the FIRST monthly charge triggers this email. Subsequent auto-renewal charges are visible in the Razorpay Dashboard's Subscriptions tab, not emailed here yet — a webhook can be added in a future round if you'd like renewal notifications too."
+      ];
+
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: info.email || undefined,
+        subject: `New Subscription Started — ${order.packageName || order.packageId || ""}`,
+        text: lines.join("\n")
+      });
+    } catch (e) {
+      logger.error("verifyScaleUpSubscription: failed to send notification email", e);
+    }
+
+    return { verified: true };
+  }
+);
+
+/**
+ * submitQuoteRequest
+ *
+ * IT & Infra Set-Up's Standard/Premium tiers have no fixed price ("Get
+ * Quote") — there's nothing for Razorpay to charge, so this just captures
+ * a lead (name/email/phone/company/notes) and emails it straight to
+ * hello@ried.co.in. Unlike the payment-confirmation emails above, this
+ * email IS the entire point of the action, so unlike those (best-effort,
+ * never fail an already-successful payment) a failure here is surfaced
+ * back to the user as a real error rather than swallowed.
+ */
+exports.submitQuoteRequest = onCall(
+  { secrets: [GMAIL_APP_PASSWORD] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in to request a quote.");
+    }
+
+    const packageId = request.data && request.data.packageId;
+    const pkg = PACKAGE_CATALOG[packageId];
+    if (!pkg || pkg.billingType !== "quote") {
+      throw new HttpsError("invalid-argument", "Unknown package selected.");
+    }
+
+    const raw = (request.data && request.data.lead) || {};
+    const lead = {
+      name: String(raw.name || "").trim(),
+      email: String(raw.email || "").trim(),
+      phone: String(raw.phone || "").trim(),
+      companyName: String(raw.companyName || "").trim(),
+      notes: String(raw.notes || "").trim()
+    };
+    if (!lead.name || !lead.email || !lead.phone) {
+      throw new HttpsError("invalid-argument", "Please fill in Name, Email and Phone before requesting a quote.");
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+      });
+
+      const lines = [
+        "A new quote request has been submitted on the RIED website.",
+        "",
+        `Package: ${pkg.name}`,
+        `Name: ${lead.name}`,
+        `Company / Startup: ${lead.companyName || "(not provided)"}`,
+        `Email: ${lead.email}`,
+        `Phone: ${lead.phone}`,
+        `User Account UID: ${request.auth.uid}`,
+        "",
+        "--- Notes / Requirements ---",
+        lead.notes || "(none provided)"
+      ];
+
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: lead.email,
+        subject: `Quote Request — ${pkg.name}`,
+        text: lines.join("\n")
+      });
+    } catch (e) {
+      logger.error("submitQuoteRequest: failed to send quote request email", e);
+      throw new HttpsError("internal", "Could not send your quote request — please try again, or email hello@ried.co.in directly.");
+    }
+
+    return { submitted: true };
   }
 );
 
