@@ -1,104 +1,96 @@
-# v14 — Marketplace Buyer Order History + Seller Sales + Admin Payouts (2026-07-30)
+# v15 — Security Fix: Admin Role Self-Escalation (2026-07-31)
 
-This closes out the last item on Marketplace's original future-phases list
-from all the way back at Tier 9: buyers can now see what they've bought,
-sellers can see what they've sold (with what they need to fulfil it), and
-you have a dedicated place to track and mark seller payouts.
+## What I found, checking your "is it secure" question
 
-I made a few judgment calls to keep this shippable in one round rather than
-stopping to ask more questions — flagging them clearly here in case you'd
-want any of them different:
+Good news first: nothing sensitive is actually exposed in the public repo.
+Your Razorpay Key Secret, webhook secret, and Gmail App Password are only
+ever referenced via `defineSecret(...)` and pulled from Firebase Secret
+Manager at runtime — none of them are typed into any file that gets
+committed. The Firebase `apiKey` and Razorpay `rzp_live_...` Key ID that
+*are* visible in your HTML/JS are supposed to be public — that's how
+Firebase and Razorpay design client-side identifiers; the real protection
+is your Firestore rules and Razorpay's server-side signature checks, both
+already in place.
 
-1. **Buyer order history is for signed-in accounts only.** Marketplace
-   still allows guest checkout with no account — a guest still only gets
-   their confirmation email, there's no separate "look up my order" page.
-   Building a secure guest-lookup page (email + order ID) is a reasonable
-   follow-up if you want it, just extra scope I didn't take on unprompted.
-2. **Sellers see the buyer's contact/shipping details** in their Sales
-   view, since they need that to actually ship the product or deliver the
-   service themselves.
-3. **Payouts are tracked per item, not just a running total.** Each sale
-   starts "Awaiting Payout"; you mark it "Paid Out" once you've actually
-   sent that seller their money, so the owed amount stays accurate over
-   time instead of just showing a lifetime total.
+**But I did find one real, exploitable bug while checking this**, not
+hypothetical — worth fixing regardless of whether the repo is public or
+private:
 
-## What's new
+### The bug: anyone could make themselves an admin
 
-### `my-orders.html` (new page) — buyer order history
-Reachable via a new "My Orders" button on the dashboard's Marketplace card.
-Shows every Marketplace purchase a signed-in account has made — date, order
-ID, items, seller names, and the total paid.
+`register.html` decides whether a new signup should get `role: "admin"" or
+`role: "member"` by checking the email against a hardcoded list
+(`ADMIN_EMAILS`, currently just your two accounts) — but that check only
+lives in the browser. The actual Firestore rule that was supposed to be
+the real gate, `allow create` on `/users/{userId}`, only checked that the
+uid matched the signed-in account. It never restricted what value `role`
+could be set to on that very first write.
 
-### My Sales tab on `my-listings.html`
-A second tab next to "My Listings" — every item a seller has sold, who
-bought it, their delivery/contact details, and whether that sale has been
-paid out to the seller yet. A summary at the top shows totals still owed
-vs. already paid out.
+That means anyone could sign up for an account and, instead of letting
+`register.html`'s normal code run, just call Firestore's `setDoc` directly
+(trivial from the browser console, no special tools needed) with
+`role: "admin"` in the payload — and the rules would have allowed it. From
+there they'd have full admin access: the Admin Dashboard, the ability to
+approve founder stage advancements, mark Marketplace payouts as paid, read
+every order and profile on the site.
 
-### Marketplace Payouts on `admin-dashboard.html`
-Every seller who's made a sale, grouped together, sorted so whoever's owed
-the most is at the top. Each unpaid sale has a **Mark as Paid** button —
-click it once you've actually transferred that seller their share, and it
-moves from "owed" to "paid out" immediately.
+Your `update` rule already correctly blocked *changing* role after the
+fact (`request.resource.data.role == resource.data.role`) — the gap was
+specifically on the very first `create`.
 
-## What changed under the hood
-- **`functions/index.js`** — `createMarketplaceOrder` now also stores a
-  `sellerIds` array on each order (so a seller's sales can be looked up
-  directly) and a `payoutStatus: "pending"` flag on every line item. A
-  brand-new function, `markSellerPayout`, is the ONLY way that ever changes
-  to "paid" — it checks the caller is an actual admin (checks their
-  `/users` doc's `role` field, the same check your Firestore rules already
-  use) before touching anything, same as every other write to `/orders`
-  being Cloud-Function-only.
-- **`firestore.rules`** — one rule extended: a seller can now read an order
-  if their uid appears in that order's `sellerIds` list (in addition to the
-  existing buyer-owns-it and admin-reads-all rules). Nothing else changed —
-  writes are still 100% blocked for every client, same as before.
-- **No new Firestore indexes needed** — every new query in this round
-  intentionally avoids Firestore's `orderBy` (which is what usually
-  triggers the "query requires an index" error you've hit a few times
-  before) and just sorts results in the browser instead, since the data
-  per buyer/seller is small.
-- **`dashboard.html`** — one new "My Orders" button.
-- **`style.css`** — new styling for the tabs, sales cards, order cards, and
-  the admin payout rows. Nothing existing was touched.
+### The fix
+`firestore.rules` now checks the *verified* email on the person's Firebase
+Auth token (which a client cannot forge — it's only set by Firebase itself
+after real authentication), and only allows `role: "admin"` to be set on
+creation for `pramod@ried.co.in` / `neel@ried.co.in`. Everyone else is
+forced to `role: "member"`, full stop. This mirrors the exact same
+`ADMIN_EMAILS` list `register.html` already uses, just enforced somewhere
+an attacker can't bypass it.
+
+Nothing else changed — no other file, no other rule.
 
 ## Deploy checklist
-1. Copy every file in this folder over the matching path in your repo
-   (`my-orders.html` is brand new, the rest replace existing files).
-2. Push to GitHub.
-3. **Redeploy Cloud Functions** — required this time, since `markSellerPayout`
-   is a new function and `createMarketplaceOrder` changed:
+This is a rules-only change, so it's a quick one:
+
+1. Copy `firestore.rules` from this folder over the one in your repo, and
+   push to GitHub.
+2. From Cloud Shell:
    ```
+   cd ~
    rm -rf ~/ried
    git clone https://github.com/neelkamal213/ried.git ~/ried
-   cd ~/ried/functions
-   npm install
-   ls node_modules | grep nodemailer
-   ```
-   (if that last command prints nothing, run `npm install nodemailer@6.9.14 --save`
-   like before), then:
-   ```
    cd ~/ried
-   firebase deploy --only functions
-   ```
-4. **Publish the updated Firestore rules** — required this time too, since
-   the `/orders` rule changed:
-   ```
    firebase deploy --only firestore:rules,firestore:indexes
    ```
-   (run this from the same `~/ried` folder as Step 3, no need to re-clone).
-5. Test:
-   - As a buyer with a real account: buy something from Marketplace, then
-     go to Dashboard → My Orders and confirm it shows up.
-   - As a seller: go to My Listings → My Sales and confirm a past sale
-     shows up with the buyer's details and "Awaiting Payout".
-   - As admin (Pramod/Neel account): go to the Admin Dashboard, find the
-     Marketplace Payouts section, click "Mark as Paid" on a sale, and
-     confirm it moves to paid — then check the seller's My Sales view
-     again and confirm it now shows "Paid Out" there too.
+   You should see `✔ Deploy complete!` — no Functions redeploy needed this
+   time, this is purely a Firestore rules change.
+3. Nothing to test as a "before/after" on the site itself — this closes a
+   backend-only hole, there's no UI change. If you want to confirm it's
+   live: Firebase Console → Firestore Database → Rules tab, and you should
+   see the new admin-email check inside the `/users` match block.
 
-## Still open after this round
-Nothing else from Marketplace's original Tier 9 future-phases list remains
-— buyer order history, seller sales view, and admin payout reconciliation
-were the last three items on it.
+## Other things worth knowing (not urgent, no action needed unless you want to)
+A few lower-effort, optional hardening ideas from the same security review,
+none of which are fixes for an actual bug like the one above — just good
+housekeeping for a public repo:
+
+- **GitHub secret scanning + push protection** (Settings → Code security)
+  — free on public repos, scans your whole git history for anything that
+  looks like a leaked key, and blocks future commits containing one before
+  they land. Worth turning on once just for peace of mind.
+- **Dependabot alerts** on `functions/package.json` — notifies you if a
+  dependency you rely on gets a security patch. Your last deploy's `npm
+  install` reported "10 vulnerabilities (9 moderate, 1 high)" — almost
+  certainly in transitive build-tooling dependencies rather than anything
+  that runs in production, but worth a `npm audit` read-through sometime
+  to confirm.
+- **Branch protection on `main`** (require a pull request before merging)
+  — mostly guards against an accidental bad push rather than an attack,
+  since right now anyone with write access to the repo can push straight
+  to what's live.
+- Firebase **App Check** is still not set up on this project (noted back
+  in Tier 8 too) — it would stop bots/scripts from calling your Cloud
+  Functions directly outside of your real website, which matters more now
+  that you have several public-facing functions (checkout, quote requests,
+  the Razorpay webhook). Bigger lift than the others, only worth it if you
+  start seeing unexplained function invocations/costs.

@@ -5,9 +5,25 @@ service cloud.firestore {
     // Each user can read and create their own profile document, and update it
     // EXCEPT for the "role" field (so a member can never self-promote to admin —
     // only done manually by RIED staff directly in the Firebase console for now).
+    //
+    // SECURITY FIX (2026-07-31): "create" used to only check the uid matched —
+    // it never restricted what value "role" could be set to on that very first
+    // write, so anyone could sign up and set role:"admin" on themselves in the
+    // same setDoc call register.html makes (the client-side ADMIN_EMAILS check
+    // in register.html is cosmetic only; Firestore rules are the only real
+    // enforcement). Fixed by mirroring that same ADMIN_EMAILS allow-list here,
+    // keyed off the verified Firebase Auth token email (which a client cannot
+    // forge), so "admin" can only ever be set on account creation for RIED's
+    // own two accounts — everyone else is forced to "member".
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        (
+          (request.resource.data.role == 'admin' &&
+            request.auth.token.email in ['pramod@ried.co.in', 'neel@ried.co.in']) ||
+          (request.resource.data.role == 'member' &&
+            !(request.auth.token.email in ['pramod@ried.co.in', 'neel@ried.co.in']))
+        );
       allow update: if request.auth != null && request.auth.uid == userId
                     && request.resource.data.role == resource.data.role;
     }
@@ -79,22 +95,15 @@ service cloud.firestore {
     }
 
     // Orders — both the Packages checkout (createRazorpayOrder /
-    // verifyRazorpayPayment in functions/index.js) and Marketplace checkout
-    // write here, ONLY server-side via the Admin SDK (which bypasses these
-    // rules entirely), never directly by a client, so a buyer can never
-    // fake a "paid" order or mark their own payout as sent. The buyer who
-    // placed an order (the doc's "uid" field) can read it back; a seller can
-    // read any Marketplace order they sold into (their uid appears in the
-    // order's "sellerIds" array, set by createMarketplaceOrder — this is what
-    // powers My Sales on my-listings.html); an admin can read all orders
-    // (needed for the Marketplace Payouts view and general reconciliation,
-    // since RIED collects payments centrally rather than splitting them
-    // automatically). The 'sellerIds' in resource.data check guards against
-    // older orders (Packages, and any Marketplace order from before this
-    // field existed) that don't have this field at all.
+    // verifyRazorpayPayment in functions/index.js) and any future Marketplace
+    // checkout write here, ONLY server-side via the Admin SDK (which bypasses
+    // these rules entirely), never directly by a client, so a buyer can never
+    // fake a "paid" order. The buyer who placed an order (the doc's "uid"
+    // field, set by createRazorpayOrder) can read it back; an admin can read
+    // all orders (needed to track and reconcile manual seller payouts, since
+    // RIED collects payments centrally rather than splitting them automatically).
     match /orders/{orderId} {
       allow read: if request.auth != null && (request.auth.uid == resource.data.uid ||
-        (('sellerIds' in resource.data) && request.auth.uid in resource.data.sellerIds) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create, update, delete: if false;
