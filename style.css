@@ -2856,3 +2856,25 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
 .portal-tab i { margin-right: 6px; }
 .portal-tab:hover { border-color: var(--blue-light); }
 .portal-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* ============================================================
+   ADMIN DASHBOARD — CLIENT CORNER / INTERNSHIP CORNER split (Phase 4)
+   ============================================================ */
+.admin-corner-header {
+  max-width: 720px;
+  margin: 44px auto 18px;
+  padding: 0 4px;
+  border-left: 4px solid var(--blue);
+  padding-left: 16px;
+}
+.admin-corner-header h2 {
+  font-size: 1.3rem;
+  color: var(--navy);
+  margin: 0 0 4px;
+}
+.admin-corner-header p { color: var(--muted); font-size: .88rem; margin: 0; }
+.admin-corner-header.intern-corner { border-left-color: var(--orange); }
+
+.suggestion-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+
+.attendance-export-row { display: flex; flex-wrap: wrap; gap: 10px; }

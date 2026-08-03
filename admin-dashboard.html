@@ -61,6 +61,11 @@
         </button>
       </div>
 
+      <div class="admin-corner-header client-corner">
+        <h2><i class="fa-solid fa-building-user"></i> Client Corner</h2>
+        <p>Founder Flywheel advancement requests and Marketplace seller payouts.</p>
+      </div>
+
       <div id="pendingApprovalsWrap" class="admin-pending-wrap hidden">
         <h3 class="admin-pending-title"><i class="fa-solid fa-hourglass-half"></i> Pending Stage Advancement Requests</h3>
         <div id="pendingApprovalsList" class="admin-pending-list-inner"></div>
@@ -69,6 +74,70 @@
       <div id="payoutsWrap" class="admin-pending-wrap hidden">
         <h3 class="admin-pending-title"><i class="fa-solid fa-sack-dollar"></i> Marketplace Payouts</h3>
         <div id="payoutsList" class="admin-pending-list-inner"></div>
+      </div>
+
+      <div class="admin-corner-header intern-corner">
+        <h2><i class="fa-solid fa-user-graduate"></i> Internship Corner</h2>
+        <p>Applications, daily tasks, attendance, and requests for the Internship Program.</p>
+      </div>
+
+      <div id="internAppsWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-clipboard-user"></i> Pending Internship Applications</h3>
+        <div id="internAppsList" class="admin-pending-list-inner"></div>
+      </div>
+
+      <div id="taskAssignWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-list-check"></i> Assign a Daily Task</h3>
+        <div class="admin-pending-list-inner">
+          <label class="onboard-label">Intern</label>
+          <select id="taskInternSelect" class="onboard-input"></select>
+
+          <div id="taskSuggestions" class="hidden">
+            <label class="onboard-label">Suggested Tasks <span class="onboard-optional">(based on their skills check)</span></label>
+            <div class="suggestion-chip-row" id="suggestionChipRow"></div>
+          </div>
+
+          <label class="onboard-label">Title</label>
+          <input type="text" id="taskTitle" class="onboard-input" placeholder="e.g. Update the FAQ section on the About page">
+
+          <label class="onboard-label">Description</label>
+          <textarea id="taskDescription" class="onboard-input" rows="3" placeholder="What exactly should they do?"></textarea>
+
+          <label class="onboard-label">Timeline / Due Date</label>
+          <input type="date" id="taskDueDate" class="onboard-input">
+
+          <div class="onboard-checkbox-row">
+            <input type="checkbox" id="taskClientRelated">
+            <label for="taskClientRelated">This is a client-related task</label>
+          </div>
+
+          <div id="taskAssignError" class="auth-error"></div>
+          <div id="taskAssignSuccess" class="auth-error" style="background:rgba(28,122,52,.08);border-color:rgba(28,122,52,.25);color:#1c7a34"></div>
+          <button class="btn-primary" id="taskAssignBtn" style="margin-top:14px"><i class="fa-solid fa-paper-plane"></i> Assign Task</button>
+        </div>
+      </div>
+
+      <div id="taskReviewWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-magnifying-glass"></i> Tasks Awaiting Review</h3>
+        <div id="taskReviewList" class="admin-pending-list-inner"></div>
+      </div>
+
+      <div id="attendanceWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-clock"></i> Attendance</h3>
+        <div class="admin-pending-list-inner">
+          <div class="attendance-export-row">
+            <button class="btn-secondary" id="exportTodayBtn"><i class="fa-solid fa-download"></i> Export Today</button>
+            <button class="btn-secondary" id="exportWeekBtn"><i class="fa-solid fa-download"></i> Export This Week</button>
+            <button class="btn-secondary" id="exportMonthBtn"><i class="fa-solid fa-download"></i> Export This Month</button>
+          </div>
+          <h4 style="margin:18px 0 10px;color:var(--navy);font-size:.95rem">Flagged Days (worth a second look)</h4>
+          <div id="attendanceAnomaliesList"></div>
+        </div>
+      </div>
+
+      <div id="internRequestsWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-inbox"></i> Intern Requests</h3>
+        <div id="internRequestsList" class="admin-pending-list-inner"></div>
       </div>
 
     </div>
@@ -115,7 +184,8 @@ window.addEventListener("scroll", function() {
 <script type="module">
 import {
   auth, db, app, ADMIN_EMAILS, onAuthStateChanged, signOut,
-  doc, setDoc, collection, getDocs, query, where, serverTimestamp
+  doc, setDoc, updateDoc, addDoc, collection, getDocs, query, where,
+  serverTimestamp, arrayUnion, Timestamp
 } from "./js/firebase-init.js";
 import { STAGE_LABELS, getNextStage } from "./js/flywheel-stages.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
@@ -305,6 +375,465 @@ async function loadMarketplacePayouts() {
   });
 }
 
+/* ===========================================================================
+ * INTERNSHIP CORNER (Phase 4, 2026-08-03) — applications, task assignment/
+ * review, attendance, and requests. All writes here are direct client
+ * Firestore calls (no new Cloud Functions needed for the writes themselves —
+ * see the big comment above notifyOnInternApprovalDecision in
+ * functions/index.js for why) guarded by rules already built in Phase 3.
+ * =========================================================================== */
+
+const CATEGORY_META = {
+  html: { label: 'HTML', icon: 'fa-code' },
+  css: { label: 'CSS', icon: 'fa-paintbrush' },
+  java: { label: 'Core Java', icon: 'fa-mug-hot' },
+  logical: { label: 'Logical Reasoning', icon: 'fa-brain' },
+  task: { label: 'Task-Based', icon: 'fa-list-check' }
+};
+
+// Simple, hand-authored suggestions keyed by an intern's STRONGEST assessment
+// category — not AI-generated, just a lookup table, per the original ask to
+// "suggest tasks for Admins based on assessment results." Mentors can always
+// ignore these and write their own task from scratch.
+const TASK_SUGGESTIONS = {
+  html: [
+    { title: 'Build a landing page section', description: 'Design and build a small responsive section (hero or feature block) using our existing style guide.' },
+    { title: 'Audit a page for accessibility', description: 'Review one live page for basic accessibility issues (alt text, heading order, contrast) and list fixes.' }
+  ],
+  css: [
+    { title: 'Refresh a component\'s styling', description: 'Polish the hover/focus states and spacing on one existing UI component to match our newer pages.' },
+    { title: 'Build a responsive layout mockup', description: 'Take a rough design and turn it into a responsive, mobile-first layout.' }
+  ],
+  java: [
+    { title: 'Write a small data-processing script', description: 'Write a small utility (Java or similar) that parses a CSV export and summarizes it.' },
+    { title: 'Debug a small logic exercise', description: 'Given a short buggy snippet, find and fix the bug and explain the root cause.' }
+  ],
+  logical: [
+    { title: 'Draft a process workflow diagram', description: 'Map out one of our internal or client-facing processes as a simple flow diagram.' },
+    { title: 'Research task', description: 'Research and summarize 3 competitor approaches to a specific problem, with a recommendation.' }
+  ],
+  task: [
+    { title: 'QA a live feature', description: 'Click through one feature end-to-end on the live site and log any bugs or rough edges found.' },
+    { title: 'Draft outreach or presentation content', description: 'Draft a short outreach message or a few presentation slides for an upcoming client conversation.' }
+  ]
+};
+
+let internsCache = []; // all /interns docs, fetched once and reused across sections
+let internsMap = {}; // uid -> fullName, for attendance/task displays that only store a uid
+
+async function loadAllInterns() {
+  const snap = await getDocs(collection(db, 'interns'));
+  internsCache = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+  internsMap = {};
+  internsCache.forEach(i => { internsMap[i.uid] = i.fullName || i.email || i.uid; });
+}
+
+function scoreBarsHTML(categoryScores) {
+  const cat = categoryScores || {};
+  return Object.keys(CATEGORY_META).filter(k => cat[k] !== undefined && cat[k] !== null).map(k => {
+    const meta = CATEGORY_META[k];
+    return `
+      <div class="score-bar-row">
+        <div class="score-bar-label"><span><i class="fa-solid ${meta.icon}"></i>${meta.label}</span><span>${cat[k]}/100</span></div>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${cat[k]}%"></div></div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadInternApplications() {
+  const listEl = document.getElementById('internAppsList');
+  const wrapEl = document.getElementById('internAppsWrap');
+  wrapEl.classList.remove('hidden');
+  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading applications&hellip;</p>';
+
+  const pending = internsCache.filter(i => i.status === 'assessment_completed');
+  if (!pending.length) {
+    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No applications waiting on review right now.</p>';
+    return;
+  }
+
+  listEl.innerHTML = pending.map(i => `
+    <div class="admin-pending-item" data-uid="${esc(i.uid)}">
+      <div class="admin-pending-head">
+        <div>
+          <strong>${esc(i.fullName || i.email)}</strong>
+          <span class="account-role-badge" style="margin:0 0 0 10px">Score: ${i.assessmentScore != null ? i.assessmentScore : '?'}/100</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-primary intern-approve-btn"><i class="fa-solid fa-check"></i> Approve</button>
+          <button class="btn-secondary intern-reject-btn"><i class="fa-solid fa-xmark"></i> Reject</button>
+        </div>
+      </div>
+      <div class="admin-pending-meta">${esc(i.email || '')} &middot; ${esc(i.collegeName || '')} &middot; ${esc(i.fieldOfStudy || '')}</div>
+      ${scoreBarsHTML(i.assessmentCategoryScores)}
+      <div class="admin-approve-error auth-error"></div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.intern-approve-btn, .intern-reject-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.admin-pending-item');
+      const uid = item.dataset.uid;
+      const isApprove = btn.classList.contains('intern-approve-btn');
+      const errBox = item.querySelector('.admin-approve-error');
+      errBox.classList.remove('show');
+      item.querySelectorAll('button').forEach(b => b.disabled = true);
+      try {
+        await updateDoc(doc(db, 'interns', uid), {
+          status: isApprove ? 'approved' : 'rejected',
+          reviewedAt: serverTimestamp()
+        });
+        item.remove();
+        if (!listEl.querySelector('.admin-pending-item')) {
+          listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No applications waiting on review right now.</p>';
+        }
+        await loadAllInterns();
+        populateTaskInternSelect();
+      } catch (e) {
+        errBox.textContent = `That didn't go through: ${e.message || e}`;
+        errBox.classList.add('show');
+        item.querySelectorAll('button').forEach(b => b.disabled = false);
+      }
+    });
+  });
+}
+
+function populateTaskInternSelect() {
+  const wrapEl = document.getElementById('taskAssignWrap');
+  wrapEl.classList.remove('hidden');
+  const select = document.getElementById('taskInternSelect');
+  const approved = internsCache.filter(i => i.status === 'approved');
+  if (!approved.length) {
+    select.innerHTML = '<option value="">No approved interns yet</option>';
+    return;
+  }
+  select.innerHTML = approved.map(i => `<option value="${esc(i.uid)}">${esc(i.fullName || i.email)}</option>`).join('');
+  renderTaskSuggestions();
+}
+
+function renderTaskSuggestions() {
+  const uid = document.getElementById('taskInternSelect').value;
+  const intern = internsCache.find(i => i.uid === uid);
+  const box = document.getElementById('taskSuggestions');
+  const row = document.getElementById('suggestionChipRow');
+  const cat = intern && intern.assessmentCategoryScores;
+  if (!cat) { box.classList.add('hidden'); return; }
+
+  const top = Object.keys(cat).filter(k => cat[k] !== null && cat[k] !== undefined).sort((a, b) => cat[b] - cat[a])[0];
+  const suggestions = TASK_SUGGESTIONS[top] || [];
+  if (!suggestions.length) { box.classList.add('hidden'); return; }
+
+  box.classList.remove('hidden');
+  row.innerHTML = suggestions.map((s, i) => `<button type="button" class="request-type-btn" data-i="${i}">${esc(s.title)}</button>`).join('');
+  row.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const s = suggestions[Number(btn.dataset.i)];
+      document.getElementById('taskTitle').value = s.title;
+      document.getElementById('taskDescription').value = s.description;
+    });
+  });
+}
+
+document.getElementById('taskInternSelect').addEventListener('change', renderTaskSuggestions);
+
+document.getElementById('taskAssignBtn').addEventListener('click', async () => {
+  const errBox = document.getElementById('taskAssignError');
+  const okBox = document.getElementById('taskAssignSuccess');
+  errBox.classList.remove('show');
+  okBox.classList.remove('show');
+
+  const internUid = document.getElementById('taskInternSelect').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  const description = document.getElementById('taskDescription').value.trim();
+  const dueDate = document.getElementById('taskDueDate').value;
+  const clientRelated = document.getElementById('taskClientRelated').checked;
+
+  if (!internUid || !title || !description) {
+    errBox.textContent = 'Please pick an intern and fill in a title and description.';
+    errBox.classList.add('show');
+    return;
+  }
+
+  const btn = document.getElementById('taskAssignBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Assigning...';
+
+  try {
+    const intern = internsCache.find(i => i.uid === internUid);
+    await addDoc(collection(db, 'internTasks'), {
+      internUid,
+      internName: intern ? (intern.fullName || intern.email) : '',
+      title, description, dueDate, clientRelated,
+      status: 'assigned',
+      assignedAt: serverTimestamp(),
+      mentorComments: []
+    });
+    okBox.textContent = 'Task assigned!';
+    okBox.classList.add('show');
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskDescription').value = '';
+    document.getElementById('taskDueDate').value = '';
+    document.getElementById('taskClientRelated').checked = false;
+    loadTaskReview();
+  } catch (e) {
+    errBox.textContent = `Couldn't assign that task: ${e.message || e}`;
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Assign Task';
+  }
+});
+
+async function loadTaskReview() {
+  const listEl = document.getElementById('taskReviewList');
+  const wrapEl = document.getElementById('taskReviewWrap');
+  wrapEl.classList.remove('hidden');
+  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading tasks&hellip;</p>';
+
+  let snap;
+  try {
+    snap = await getDocs(query(collection(db, 'internTasks'), where('status', '==', 'completed')));
+  } catch (e) {
+    listEl.innerHTML = `<p class="admin-empty">Couldn't load tasks: ${esc(e.message || e)}</p>`;
+    return;
+  }
+
+  const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => !t.reviewed);
+  if (!tasks.length) {
+    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No completed tasks waiting on review.</p>';
+    return;
+  }
+
+  listEl.innerHTML = tasks.map(t => `
+    <div class="admin-pending-item" data-id="${esc(t.id)}">
+      <div class="admin-pending-head">
+        <div><strong>${esc(t.title)}</strong></div>
+        <span class="account-role-badge">${esc(t.internName || t.internUid)}</span>
+      </div>
+      <div class="admin-pending-meta">${esc(t.description || '')}</div>
+      <label class="onboard-label">Comment / Corrections</label>
+      <textarea class="onboard-input task-review-comment" rows="2" placeholder="Looks great! or: please fix ..."></textarea>
+      <div class="admin-approve-error auth-error"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-primary task-approve-btn"><i class="fa-solid fa-check"></i> Approve &amp; Close</button>
+        <button class="btn-secondary task-reopen-btn"><i class="fa-solid fa-rotate-left"></i> Reopen With Comment</button>
+      </div>
+    </div>
+  `).join('');
+
+  listEl.querySelectorAll('.task-approve-btn, .task-reopen-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.admin-pending-item');
+      const taskId = item.dataset.id;
+      const comment = item.querySelector('.task-review-comment').value.trim();
+      const isReopen = btn.classList.contains('task-reopen-btn');
+      const errBox = item.querySelector('.admin-approve-error');
+      errBox.classList.remove('show');
+
+      if (isReopen && !comment) {
+        errBox.textContent = 'Please add a comment explaining what needs fixing before reopening.';
+        errBox.classList.add('show');
+        return;
+      }
+
+      item.querySelectorAll('button').forEach(b => b.disabled = true);
+      try {
+        const updates = {};
+        if (comment) {
+          // Timestamp.now(), not serverTimestamp() — the sentinel doesn't
+          // resolve correctly on a value inside an array element added via
+          // arrayUnion (same gotcha documented on markSellerPayout/breaks
+          // in functions/index.js, hit again here on the client SDK).
+          updates.mentorComments = arrayUnion({ comment, at: Timestamp.now() });
+        }
+        if (isReopen) {
+          updates.status = 'reopened';
+        } else {
+          updates.reviewed = true;
+          updates.reviewedAt = serverTimestamp();
+        }
+        await updateDoc(doc(db, 'internTasks', taskId), updates);
+        item.remove();
+        if (!listEl.querySelector('.admin-pending-item')) {
+          listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No completed tasks waiting on review.</p>';
+        }
+      } catch (e) {
+        errBox.textContent = `That didn't go through: ${e.message || e}`;
+        errBox.classList.add('show');
+        item.querySelectorAll('button').forEach(b => b.disabled = false);
+      }
+    });
+  });
+}
+
+function kolkataDateKeyAdmin(date) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
+
+async function loadAttendanceAnomalies() {
+  const listEl = document.getElementById('attendanceAnomaliesList');
+  document.getElementById('attendanceWrap').classList.remove('hidden');
+  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading&hellip;</p>';
+
+  let snap;
+  try {
+    snap = await getDocs(query(collection(db, 'attendance'), where('flagged', '==', true)));
+  } catch (e) {
+    listEl.innerHTML = `<p class="admin-empty">Couldn't load attendance: ${esc(e.message || e)}</p>`;
+    return;
+  }
+
+  const rows = snap.docs.map(d => d.data()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  if (!rows.length) {
+    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No flagged attendance days right now.</p>';
+    return;
+  }
+  listEl.innerHTML = rows.map(r => `
+    <div class="admin-pending-item">
+      <div class="admin-pending-head">
+        <div><strong>${esc(internsMap[r.uid] || r.uid)}</strong> &middot; ${esc(r.date)}</div>
+        <span class="attendance-flag-badge"><i class="fa-solid fa-triangle-exclamation"></i> ${esc(r.flagReason || 'Flagged')}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(v => `"${String(v === undefined || v === null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function exportAttendanceRange(startKey, endKey, label) {
+  // Single-field range query (date >= start && date <= end) — needs no
+  // composite index, since it's only ever a range on one field (see the
+  // established Firestore index-avoidance pattern used throughout this
+  // project).
+  const snap = await getDocs(query(collection(db, 'attendance'), where('date', '>=', startKey), where('date', '<=', endKey)));
+  const rows = [['Intern', 'Date', 'Clock In', 'Clock Out', 'Break (min)', 'Worked (min)', 'Flagged', 'Flag Reason']];
+  snap.docs.map(d => d.data()).sort((a, b) => (a.date || '').localeCompare(b.date || '')).forEach(r => {
+    rows.push([
+      internsMap[r.uid] || r.uid,
+      r.date || '',
+      r.clockInAt && r.clockInAt.toDate ? r.clockInAt.toDate().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+      r.clockOutAt && r.clockOutAt.toDate ? r.clockOutAt.toDate().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '',
+      r.totalBreakMinutes != null ? r.totalBreakMinutes : '',
+      r.totalWorkedMinutes != null ? r.totalWorkedMinutes : '',
+      r.flagged ? 'Yes' : 'No',
+      r.flagReason || ''
+    ]);
+  });
+  downloadCSV(`ried-attendance-${label}-${startKey}-to-${endKey}.csv`, rows);
+}
+
+document.getElementById('exportTodayBtn').addEventListener('click', () => {
+  const today = kolkataDateKeyAdmin(new Date());
+  exportAttendanceRange(today, today, 'today');
+});
+document.getElementById('exportWeekBtn').addEventListener('click', () => {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+  exportAttendanceRange(kolkataDateKeyAdmin(weekAgo), kolkataDateKeyAdmin(now), 'this-week');
+});
+document.getElementById('exportMonthBtn').addEventListener('click', () => {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  exportAttendanceRange(kolkataDateKeyAdmin(monthStart), kolkataDateKeyAdmin(now), 'this-month');
+});
+
+async function loadInternRequests() {
+  const listEl = document.getElementById('internRequestsList');
+  document.getElementById('internRequestsWrap').classList.remove('hidden');
+  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading requests&hellip;</p>';
+
+  const TYPE_LABELS = {
+    edit_profile: 'Edit Profile', appointment_letter: 'Appointment Letter', leave_request: 'Leave Request',
+    experience_letter: 'Experience Letter', resignation: 'Resignation'
+  };
+
+  let snap;
+  try {
+    snap = await getDocs(query(collection(db, 'internRequests'), where('status', '==', 'pending')));
+  } catch (e) {
+    listEl.innerHTML = `<p class="admin-empty">Couldn't load requests: ${esc(e.message || e)}</p>`;
+    return;
+  }
+
+  const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => {
+    const at = a.submittedAt && a.submittedAt.toMillis ? a.submittedAt.toMillis() : 0;
+    const bt = b.submittedAt && b.submittedAt.toMillis ? b.submittedAt.toMillis() : 0;
+    return bt - at;
+  });
+
+  if (!rows.length) {
+    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending requests right now.</p>';
+    return;
+  }
+
+  listEl.innerHTML = rows.map(r => {
+    const details = r.details || {};
+    let detailsHTML = '';
+    if (r.type === 'edit_profile') detailsHTML = esc(details.requestedChanges || '');
+    else if (r.type === 'leave_request') detailsHTML = `${esc(details.startDate || '')} to ${esc(details.endDate || '')} — ${esc(details.reason || '')}`;
+    else if (r.type === 'resignation') detailsHTML = `Last working day: ${esc(details.lastWorkingDay || '')} — ${esc(details.reason || '')}`;
+
+    return `
+      <div class="admin-pending-item" data-id="${esc(r.id)}">
+        <div class="admin-pending-head">
+          <div>
+            <strong>${esc(TYPE_LABELS[r.type] || r.type)}</strong>
+            <span class="account-role-badge" style="margin:0 0 0 10px">${esc(r.internName || r.internEmail)}</span>
+          </div>
+        </div>
+        <div class="admin-pending-meta">${detailsHTML}</div>
+        ${r.notes ? `<div class="admin-pending-meta">Notes: ${esc(r.notes)}</div>` : ''}
+        <label class="onboard-label">Note back to the intern <span class="onboard-optional">(optional)</span></label>
+        <textarea class="onboard-input request-admin-note" rows="2"></textarea>
+        <div class="admin-approve-error auth-error"></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn-primary request-approve-btn"><i class="fa-solid fa-check"></i> Approve</button>
+          <button class="btn-secondary request-reject-btn"><i class="fa-solid fa-xmark"></i> Reject</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.request-approve-btn, .request-reject-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.admin-pending-item');
+      const requestId = item.dataset.id;
+      const adminNote = item.querySelector('.request-admin-note').value.trim();
+      const isApprove = btn.classList.contains('request-approve-btn');
+      const errBox = item.querySelector('.admin-approve-error');
+      errBox.classList.remove('show');
+      item.querySelectorAll('button').forEach(b => b.disabled = true);
+      try {
+        await updateDoc(doc(db, 'internRequests', requestId), {
+          status: isApprove ? 'approved' : 'rejected',
+          adminNote,
+          reviewedAt: serverTimestamp()
+        });
+        item.remove();
+        if (!listEl.querySelector('.admin-pending-item')) {
+          listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending requests right now.</p>';
+        }
+      } catch (e) {
+        errBox.textContent = `That didn't go through: ${e.message || e}`;
+        errBox.classList.add('show');
+        item.querySelectorAll('button').forEach(b => b.disabled = false);
+      }
+    });
+  });
+}
+
 onAuthStateChanged(auth, async (user) => {
   if (!user || user.isAnonymous) {
     window.location.href = 'login.html';
@@ -326,6 +855,13 @@ onAuthStateChanged(auth, async (user) => {
 
   loadPendingApprovals();
   loadMarketplacePayouts();
+
+  await loadAllInterns();
+  loadInternApplications();
+  populateTaskInternSelect();
+  loadTaskReview();
+  loadAttendanceAnomalies();
+  loadInternRequests();
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {

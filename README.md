@@ -1,111 +1,77 @@
-# v19 — Internship Program Phase 3: Intern Portal (2026-08-03)
+# v20 — Internship Program Phase 4: Mentor/Admin Side (2026-08-03)
 
 ## What this adds
 
-The full intern-side portal from your original request, unlocked once an
-application is approved:
+This is the last piece of the original Internship Program request — the
+Mentor (Neel/Pramod) side of everything Phases 1-3 built. The Admin
+Dashboard now has a clear **Client Corner** (your existing founder
+Flywheel approvals + Marketplace payouts, unchanged) and a brand new
+**Internship Corner** below it, per your instruction partway through Phase 1
+to keep these visually separate rather than one mixed list.
 
-- **Attendance** — Clock In / Start Break / End Break / Clock Out, with a
-  live status card showing what's happening right now and a running log of
-  today's breaks. All the actual timestamps are set on the server (not the
-  browser), so a candidate can't fake their hours by editing anything on
-  their end. A "Recent Days" table shows the last 10 completed days —
-  clock-in/out times, break time, and total worked — with a small flag if a
-  day's break ran long or the total time looks well short of a 9-hour day
-  (this is just a heads-up marker for now; the full Mentor-side attendance
-  report/anomaly view is Phase 4).
-- **My Tasks** — a list of whatever's been assigned, each with an
-  Acknowledge button, then a Mark Complete button once acknowledged, plus a
-  spot for Mentor comments to show up once Phase 4 adds the ability to leave
-  them.
-- **Request Center** — Edit Profile, Appointment Letter, Leave Request,
-  Experience Letter, and Resignation, all as one simple form that adjusts
-  its fields per type, plus a history of everything submitted and its
-  status. Every submission emails hello@ried.co.in immediately, same as
-  everything else on this site.
+Internship Corner has five sections:
 
-## Important — this phase depends on Phase 4, which isn't built yet
+1. **Pending Internship Applications** — every candidate who's finished
+   their skills check, with their score breakdown, and Approve / Reject
+   buttons. Approving is what actually unlocks their Intern Portal — this
+   replaces the manual Firebase Console edit the v19 README had you doing
+   as a stand-in. Both approving and rejecting email the candidate directly
+   (a real notification either way), plus a copy to hello@ried.co.in.
+2. **Assign a Daily Task** — pick an approved intern, and you'll see 1-2
+   suggested tasks based on their strongest skills-check category (you can
+   use a suggestion as a starting point or ignore it and write your own).
+   Fill in a title, description, and due date, tick "client-related" if it
+   is one, and assign it — it shows up on their Intern Portal immediately.
+3. **Tasks Awaiting Review** — every task an intern has marked complete.
+   Add a comment and either Approve & Close it, or Reopen With Comment to
+   send it back (which puts a "Mark Complete" button back on their end).
+4. **Attendance** — three one-click CSV exports (Today / This Week / This
+   Month) with every intern's clock times, break minutes, and worked
+   minutes, plus a "Flagged Days" list surfacing anything that looked off
+   (break ran long, or the day was well under 9 hours) so you don't have to
+   scroll through everyone's raw attendance to find what's worth a look.
+5. **Intern Requests** — every pending Edit Profile / Appointment Letter /
+   Leave Request / Experience Letter / Resignation request, with an
+   optional note back to the intern, and Approve / Reject. Both actions
+   email the intern directly plus hello@ried.co.in — this is also where
+   Leave Request approvals get their required "goes to both the intern and
+   hello@ried.co.in" email from your original ask.
 
-The original flow is: intern applies → Mentor approves → intern gets portal
-access. **The "Mentor approves" step is Phase 4**, which hasn't been built.
-So right now, nothing will actually reach the `approved` status on its own
-— which means the portal above has nothing to show yet, and no task exists
-for anyone to acknowledge.
+## A nice side effect of how this was built
 
-To actually test this round before Phase 4 exists, you'll need to do two
-manual, one-time steps directly in the Firebase Console for a test account.
-Full steps below — this is just for testing now; once Phase 4 ships, this
-will all happen through a real Approve button instead.
-
-### Step A — Manually approve a test intern account (to unlock the portal)
-
-1. Go to the [Firebase Console](https://console.firebase.google.com) →
-   your `ried-website` project → **Firestore Database**.
-2. Click into the **`interns`** collection.
-3. Find the document for your test intern account (the document ID is that
-   account's Firebase Auth UID — if you're not sure which one, cross-check
-   against the **Authentication** tab, or just use whichever test account
-   you signed up with earlier).
-4. Click on the `status` field's value (it'll currently say `onboarded` or
-   `assessment_completed`) to edit it.
-5. Change the value to exactly: `approved` (lowercase, no quotes needed —
-   the Console field type stays "string").
-6. Click the checkmark / hit Enter to save.
-
-That account can now sign in and reach `intern-portal.html` (via the "Go To
-My Intern Portal" button that now shows on their dashboard).
-
-### Step B — Manually create one test task (to test the My Tasks tab)
-
-1. Still in Firestore Database, click **Start collection** (or, if it
-   already exists from testing, just **Add document** inside it) and name
-   the collection **`internTasks`**.
-2. Let Firestore auto-generate the Document ID.
-3. Add these fields (use the **Add field** button for each):
-   - `internUid` (string) — the SAME UID you used in Step A.
-   - `title` (string) — e.g. `Update the FAQ section on the About page`
-   - `description` (string) — e.g. `Review the current FAQ copy and suggest two improvements.`
-   - `status` (string) — `assigned`
-   - `dueDate` (string) — e.g. `2026-08-10`
-   - `assignedAt` (timestamp) — click the clock icon and pick "now" (or any
-     recent date/time)
-4. Save.
-
-That task will now show up under My Tasks for that intern, with an
-Acknowledge button, then a Mark Complete button once acknowledged.
-
-Requests don't need any manual setup — the Request Center's own Submit
-button creates real `internRequests` documents.
+Every write this round needed — approving an application, assigning a task,
+reviewing one, deciding on a request — turned out to already be covered by
+the Firestore rules built back in Phase 3 (they were written ahead of time
+specifically so this round wouldn't need a rules republish). **So this
+round needs NO Firestore rules changes at all** — only a Cloud Functions
+deploy, for the two new notification emails. `firestore.rules` is included
+in this folder unchanged, just so the folder is a complete, self-contained
+snapshot — you don't need to redeploy it.
 
 ## What's in this folder
 
-- **`functions/index.js`** — full file, with `clockIn`, `startBreak`,
-  `endBreak`, `clockOut`, and `notifyOnInternRequest` appended at the end.
-  Attendance times are entirely server-set (never trusts a client-sent
-  time) and the four functions enforce the state machine (can't clock in
-  twice, can't clock out mid-break, etc.) so a day's record can't be gamed.
-  Everything from before (Marketplace, Packages, subscriptions, Phase 1/2
-  Internship) is unchanged.
-- **`firestore.rules`** — three new collections added: `/attendance`
-  (Cloud-Function-only writes, exactly like `/orders`), `/internTasks`
-  (Mentor-only create, intern can only self-advance status one safe step at
-  a time), `/internRequests` (intern can only create their own, starting at
-  `pending` — only an admin can change it after that). The `internTasks`
-  create-by-admin and `internRequests` update-by-admin rules are written
-  now, ahead of Phase 4's actual admin UI, the same way `/carts`+`/orders`
-  were pre-built ahead of Marketplace's checkout back at the very start of
-  that feature — saves a second Console-publish round once Phase 4 ships.
-- **`style.css`** — new section appended at the end for the attendance
-  widget, task cards, and request center — nothing existing was touched.
-- **`intern-portal.html`** — brand new page, the actual portal (three tabs:
-  Attendance / My Tasks / Request Center).
-- **`intern-dashboard.html`** — added the `approved` status branch with the
-  "Go To My Intern Portal" button.
+- **`functions/index.js`** — two new triggers appended at the end:
+  `notifyOnInternApprovalDecision` (emails the candidate + hello@ried.co.in
+  the moment an application is approved or rejected) and
+  `notifyOnInternRequestReviewed` (emails the intern + hello@ried.co.in the
+  moment a request is approved or rejected, with your optional note
+  included). Everything else in this file is unchanged.
+- **`js/firebase-init.js`** — added `arrayUnion` and `Timestamp` to the
+  shared Firestore imports/exports (needed for Mentor comments on tasks).
+- **`admin-dashboard.html`** — full rewrite of the page body: the Client
+  Corner / Internship Corner split, plus all five new Internship Corner
+  sections described above.
+- **`style.css`** — a small new section appended at the end: the corner
+  header styling (blue accent for Client Corner, orange for Internship
+  Corner) and a couple of small layout helpers for the suggestion chips and
+  export buttons.
+- **`firestore.rules`** — included unchanged (see above), just for
+  completeness.
 
-## Deploy checklist — please do these in order
+## Deploy checklist
 
-1. Copy every file in this folder over the matching path in your repo, push
-   to GitHub.
+1. Copy every file in this folder over the matching path in your repo
+   (note the `js/firebase-init.js` path), push to GitHub.
 2. Redeploy Cloud Functions (fresh clone, as always):
    ```
    cd ~
@@ -120,43 +86,50 @@ button creates real `internRequests` documents.
    cd ~/ried
    firebase deploy --only functions
    ```
-   This adds `clockIn`, `startBreak`, `endBreak`, `clockOut`, and
-   `notifyOnInternRequest` as new functions — it should NOT ask about
-   deleting anything.
-3. Redeploy Firestore rules:
-   ```
-   firebase deploy --only firestore:rules,firestore:indexes
-   ```
-   (No Storage rules changes this round.)
-4. Do Steps A and B above (manual Console edits) for one test intern
-   account.
+   This adds `notifyOnInternApprovalDecision` and
+   `notifyOnInternRequestReviewed` — it should NOT ask about deleting
+   anything.
+3. That's it — **no Firestore rules redeploy needed this round** (see
+   above). No Storage rules changes either.
 
 ## Test checklist
 
-Using the test account you approved in Step A:
-- Sign in, dashboard should show "Approved" with a "Go To My Intern Portal"
-  button — click it.
-- **Attendance tab**: click Clock In, confirm the status card updates to
-  "Working since [time]" and Start Break / Clock Out buttons appear. Click
-  Start Break, confirm it switches to "On a break" with an End Break
-  button. Click End Break, confirm it's back to "Working." Click Clock Out,
-  confirm it shows "Shift complete" with a worked-time total. Refresh the
-  page and confirm the status is remembered (it reads from Firestore, not
-  just in-memory).
-- **My Tasks tab**: after Step B's manual test task, confirm it shows up
-  with an Acknowledge button. Click it, confirm it becomes Mark Complete.
-  Click that, confirm the status badge shows "completed."
-- **Request Center tab**: submit one of each type if you have time (at
-  minimum, try Leave Request since it has the most fields), confirm it
-  shows up in "My Requests" below with a "pending" badge, and confirm
-  hello@ried.co.in gets an email for each one with the right details.
+Using the test account you approved manually back in the v19 round (or a
+fresh one that's completed the skills check):
+1. If you want to test the Approve flow itself rather than reusing an
+   already-approved account, sign up a second test account and get it all
+   the way through onboarding + the skills check, so it lands on
+   "assessment_completed."
+2. Sign in to the Admin Dashboard as Pramod or Neel — confirm you see the
+   Client Corner / Internship Corner split, with that candidate showing up
+   under Pending Internship Applications with their score.
+3. Click Approve — confirm the item disappears from the list, the
+   candidate gets an email, and hello@ried.co.in gets a copy. Sign in as
+   that candidate and confirm their dashboard now shows "Approved" with the
+   portal button.
+4. In Assign a Daily Task, pick that intern from the dropdown — confirm
+   suggested tasks show up based on their strongest category — click one,
+   confirm it fills in the title/description, then assign it. Sign in as
+   the intern and confirm the task shows up under My Tasks.
+5. As the intern, Acknowledge then Mark Complete that task. Back in the
+   Admin Dashboard, confirm it shows up under Tasks Awaiting Review — add a
+   comment and try Reopen With Comment, then confirm the intern's portal
+   shows it back with a Mark Complete button and your comment visible.
+6. Have the intern clock in/out at least once (from the v19 round), then
+   try the three attendance export buttons and confirm a CSV downloads with
+   their name and times in it.
+7. Have the intern submit a Leave Request from their Request Center.
+   Approve it from the Admin Dashboard with a short note — confirm the
+   intern gets an email with your note, hello@ried.co.in gets a copy, and
+   their Request Center now shows it as "approved."
 
-## Still to come
+## The whole Internship Program, end to end
 
-Phase 4 — the Mentor/admin side: task assignment (with suggestions based on
-assessment results), reviewing/commenting/reopening tasks, attendance
-anomaly review and exportable reports, and leave approval — plus the
-Admin Dashboard's "Client Corner" / "Internship Corner" visual split you
-asked for partway through Phase 1. Once Phase 4 ships, the manual Console
-steps above go away entirely — a real Approve button and a real "assign a
-task" form will do what Steps A and B are standing in for now.
+With this round, all four phases from your original request are built:
+sign-up and onboarding (Phase 1), the skills check (Phase 2), the full
+intern portal — attendance, tasks, requests (Phase 3), and now the Mentor
+side to manage all of it (Phase 4). Everything is live once this round
+deploys — the only outstanding item across all four rounds is running
+through each phase's test checklist end-to-end, which the checklist above
+finally makes possible without any manual Console edits standing in for
+missing features.
