@@ -187,6 +187,20 @@ function daysBetween(a, b) {
   return Math.abs(a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24);
 }
 
+// Shared admin check for onCall functions that should only ever be usable by
+// RIED staff (mirrors the exact same "/users/{uid}.role === admin" check
+// firestore.rules already uses for admin-only reads). Throws if the caller
+// isn't signed in or isn't an admin — callers should let this propagate.
+async function requireAdmin(uid) {
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Please sign in.");
+  }
+  const userSnap = await db.collection("users").doc(uid).get();
+  if (!userSnap.exists || userSnap.data().role !== "admin") {
+    throw new HttpsError("permission-denied", "Admin access required.");
+  }
+}
+
 exports.createRazorpayOrder = onCall(
   { secrets: [RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET] },
   async (request) => {
@@ -680,7 +694,12 @@ exports.createMarketplaceOrder = onCall(
         title: listing.title || "",
         price,
         qty,
-        lineTotal
+        lineTotal,
+        // Every sale starts "owed" — only markSellerPayout (below) ever
+        // flips this to "paid", once RIED has actually sent the seller
+        // their share (payouts are collected centrally and paid out
+        // manually, per the Marketplace payout model decided at Tier 9).
+        payoutStatus: "pending"
       });
     }
 
@@ -699,10 +718,18 @@ exports.createMarketplaceOrder = onCall(
       notes: { uid, kind: "marketplace" }
     });
 
+    // Deduped list of every seller who has an item in this order — denormalized
+    // onto the order doc so a seller can query "orders I sold into" directly
+    // via where('sellerIds','array-contains',uid), without needing a
+    // composite index or scanning every order's items array client-side.
+    // Paired with the matching firestore.rules read clause on /orders.
+    const sellerIds = [...new Set(lineItems.map((li) => li.sellerId).filter(Boolean))];
+
     await db.collection("orders").doc(order.id).set({
       type: "marketplace",
       uid,
       items: lineItems,
+      sellerIds,
       amount: total,
       status: "created",
       shippingInfo,
@@ -852,6 +879,55 @@ exports.verifyMarketplacePayment = onCall(
     return { verified: true };
   }
 );
+
+/**
+ * markSellerPayout
+ *
+ * The ONLY way a Marketplace order line item's payoutStatus ever becomes
+ * "paid" — called from the Admin Dashboard's Marketplace Payouts section
+ * once RIED has actually sent a seller their share (payments are collected
+ * centrally and paid out manually, per the Tier 9 payout-model decision).
+ * Admin-only (requireAdmin above); matches the same admin check already
+ * used in firestore.rules, and firestore.rules itself still blocks every
+ * client write to /orders unconditionally — this Cloud Function, via the
+ * Admin SDK, is the only path that can ever change payoutStatus at all.
+ */
+exports.markSellerPayout = onCall(async (request) => {
+  await requireAdmin(request.auth && request.auth.uid);
+
+  const { orderId, itemIndex } = request.data || {};
+  if (!orderId || itemIndex === undefined || itemIndex === null) {
+    throw new HttpsError("invalid-argument", "Missing orderId or itemIndex.");
+  }
+
+  const orderRef = db.collection("orders").doc(String(orderId));
+  const orderSnap = await orderRef.get();
+  if (!orderSnap.exists) {
+    throw new HttpsError("not-found", "That order no longer exists.");
+  }
+
+  const order = orderSnap.data();
+  const items = Array.isArray(order.items) ? [...order.items] : [];
+  const idx = Number(itemIndex);
+  if (!items[idx]) {
+    throw new HttpsError("invalid-argument", "That item doesn't exist on this order.");
+  }
+
+  // A concrete Timestamp, not FieldValue.serverTimestamp() — the sentinel
+  // doesn't resolve correctly when nested inside an array element written
+  // as part of a whole-array replace (which this is, since Firestore has no
+  // way to update a single array element in place).
+  items[idx] = {
+    ...items[idx],
+    payoutStatus: "paid",
+    payoutPaidAt: admin.firestore.Timestamp.now(),
+    payoutMarkedBy: request.auth.uid
+  };
+
+  await orderRef.update({ items });
+
+  return { success: true };
+});
 
 /**
  * notifyOnProfileSubmit
