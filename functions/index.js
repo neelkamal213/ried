@@ -1577,6 +1577,7 @@ exports.notifyOnInternOnboarding = onDocumentWritten(
 const ASSESSMENT_CATEGORIES = ["html", "css", "java", "logical", "task"];
 const QUESTIONS_PER_CATEGORY = 4; // 20 questions total per candidate
 const ASSESSMENT_TIME_LIMIT_SECONDS = 15 * 60; // 15 minutes — generous for a fresher on easy questions
+const ASSESSMENT_MAX_ATTEMPTS = 3; // v21 (2026-08-03): a rejected candidate can retake up to this many total attempts
 
 // Easy, fresher-friendly questions only, per RIED's explicit instruction —
 // this is meant to gauge baseline skill level and keep things fun, not to
@@ -1687,6 +1688,17 @@ function clientSafeQuestions(questions) {
  * returns the SAME question set and deadline rather than rerolling — this
  * means refreshing the test page mid-attempt doesn't hand the candidate a
  * fresh, easier random draw, but also doesn't unfairly restart their clock.
+ *
+ * v21 (2026-08-03): also allows a REJECTED candidate to retake the skills
+ * check, up to ASSESSMENT_MAX_ATTEMPTS total attempts (this covers both a
+ * straightforward rejection and a rejection that followed a timed-out/low
+ * attempt — both just land on status "rejected", so one retake path covers
+ * both cases). attemptCount lives on /interns/{uid} and defaults to 0 for
+ * any existing candidate (including ones rejected before this feature
+ * existed), so nothing needs to be hand-edited in Firestore for them —
+ * they simply get all ASSESSMENT_MAX_ATTEMPTS attempts starting now. A
+ * retake always starts a brand-new question set and timer — it never
+ * resumes the old (already-submitted) session doc.
  */
 exports.startAssessment = onCall(async (request) => {
   if (!request.auth) {
@@ -1694,7 +1706,8 @@ exports.startAssessment = onCall(async (request) => {
   }
   const uid = request.auth.uid;
 
-  const internSnap = await db.collection("interns").doc(uid).get();
+  const internRef = db.collection("interns").doc(uid);
+  const internSnap = await internRef.get();
   if (!internSnap.exists) {
     throw new HttpsError("failed-precondition", "No internship application found for this account.");
   }
@@ -1702,45 +1715,71 @@ exports.startAssessment = onCall(async (request) => {
   if (intern.status === "signed_up") {
     throw new HttpsError("failed-precondition", "Please finish onboarding before taking the skills check.");
   }
-  if (intern.status && intern.status !== "onboarded") {
+
+  const attemptsUsed = intern.attemptCount || 0;
+  const isRetake = intern.status === "rejected";
+
+  if (intern.status && intern.status !== "onboarded" && !isRetake) {
     throw new HttpsError("failed-precondition", "You've already completed the skills check.");
+  }
+  if (isRetake && attemptsUsed >= ASSESSMENT_MAX_ATTEMPTS) {
+    throw new HttpsError(
+      "failed-precondition",
+      `You've used all ${ASSESSMENT_MAX_ATTEMPTS} attempts for the skills check. Please reach out to hello@ried.co.in if you'd like to discuss your application further.`
+    );
   }
 
   const sessionRef = db.collection("assessmentSessions").doc(uid);
-  const sessionSnap = await sessionRef.get();
   const now = Date.now();
 
-  if (sessionSnap.exists) {
-    const session = sessionSnap.data();
-    if (session.submitted) {
-      throw new HttpsError("failed-precondition", "You've already completed the skills check.");
+  // Only resume an in-progress session for a normal (non-retake) start — a
+  // retake always begins clean, even though an old, already-submitted
+  // session doc for this uid still exists from the earlier attempt.
+  if (!isRetake) {
+    const sessionSnap = await sessionRef.get();
+    if (sessionSnap.exists) {
+      const session = sessionSnap.data();
+      if (session.submitted) {
+        throw new HttpsError("failed-precondition", "You've already completed the skills check.");
+      }
+      const deadlineMs = session.deadline ? session.deadline.toMillis() : 0;
+      if (deadlineMs > now) {
+        return {
+          questions: clientSafeQuestions(session.questions || []),
+          deadlineMillis: deadlineMs,
+          timeLimitSeconds: ASSESSMENT_TIME_LIMIT_SECONDS,
+          attemptNumber: session.attemptNumber || attemptsUsed || 1,
+          maxAttempts: ASSESSMENT_MAX_ATTEMPTS
+        };
+      }
+      // Expired without ever being submitted — fall through and start fresh.
     }
-    const deadlineMs = session.deadline ? session.deadline.toMillis() : 0;
-    if (deadlineMs > now) {
-      return {
-        questions: clientSafeQuestions(session.questions || []),
-        deadlineMillis: deadlineMs,
-        timeLimitSeconds: ASSESSMENT_TIME_LIMIT_SECONDS
-      };
-    }
-    // Expired without ever being submitted — fall through and start fresh.
   }
 
   const questions = pickAssessmentQuestions();
   const deadline = admin.firestore.Timestamp.fromMillis(now + ASSESSMENT_TIME_LIMIT_SECONDS * 1000);
+  const newAttemptNumber = attemptsUsed + 1;
 
   await sessionRef.set({
     uid,
     questions,
     startedAt: admin.firestore.Timestamp.now(),
     deadline,
-    submitted: false
+    submitted: false,
+    attemptNumber: newAttemptNumber
   });
+
+  // Flip status back to "onboarded" so the rest of the pipeline (submit ->
+  // assessment_completed -> admin review) behaves identically to a first
+  // attempt, and record the new attempt count.
+  await internRef.set({ status: "onboarded", attemptCount: newAttemptNumber }, { merge: true });
 
   return {
     questions: clientSafeQuestions(questions),
     deadlineMillis: deadline.toMillis(),
-    timeLimitSeconds: ASSESSMENT_TIME_LIMIT_SECONDS
+    timeLimitSeconds: ASSESSMENT_TIME_LIMIT_SECONDS,
+    attemptNumber: newAttemptNumber,
+    maxAttempts: ASSESSMENT_MAX_ATTEMPTS
   };
 });
 
@@ -1813,23 +1852,37 @@ exports.submitAssessment = onCall(
     const now = admin.firestore.Timestamp.now();
     const deadlineMs = session.deadline ? session.deadline.toMillis() : now.toMillis();
     const submittedLate = now.toMillis() > deadlineMs + 5000; // 5s grace for network lag, not a penalty either way
+    const attemptNumber = session.attemptNumber || 1;
 
     await sessionRef.set(
       { submitted: true, submittedAt: now, overallScore, categoryScores, submittedLate },
       { merge: true }
     );
 
+    // v21 (2026-08-03): record this attempt into a history array so past
+    // attempts aren't lost when a candidate retakes after a rejection —
+    // used Timestamp.now() (already computed above as `now`), NOT
+    // serverTimestamp(), since it's going in as a value inside an array
+    // element (the same array-timestamp gotcha documented elsewhere in
+    // this file and in admin-dashboard.html).
     await db.collection("interns").doc(uid).set(
       {
         status: "assessment_completed",
         assessmentScore: overallScore,
         assessmentCategoryScores: categoryScores,
-        assessmentCompletedAt: now
+        assessmentCompletedAt: now,
+        assessmentHistory: admin.firestore.FieldValue.arrayUnion({
+          attemptNumber,
+          overallScore,
+          categoryScores,
+          submittedAt: now,
+          submittedLate
+        })
       },
       { merge: true }
     );
 
-    return { overallScore, categoryScores };
+    return { overallScore, categoryScores, attemptNumber, maxAttempts: ASSESSMENT_MAX_ATTEMPTS };
   }
 );
 
@@ -2196,6 +2249,10 @@ exports.notifyOnInternApprovalDecision = onDocumentWritten(
 
     const uid = event.params.uid;
     const isApproved = after.status === "approved";
+    // v21 (2026-08-03): a rejection isn't necessarily final anymore — let
+    // the candidate know if they still have skills-check attempts left.
+    const attemptsUsed = after.attemptCount || 0;
+    const attemptsLeft = Math.max(0, ASSESSMENT_MAX_ATTEMPTS - attemptsUsed);
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -2227,6 +2284,10 @@ exports.notifyOnInternApprovalDecision = onDocumentWritten(
                 `Hi ${after.fullName || "there"},`,
                 "",
                 "Thank you for your interest in the RIED Internship Program. After review, we won't be moving forward with your application at this time.",
+                "",
+                attemptsLeft > 0
+                  ? `If you'd like another shot, you can retake the skills check — you have ${attemptsLeft} attempt${attemptsLeft === 1 ? "" : "s"} left. Just sign back in to your dashboard whenever you're ready.`
+                  : "You've used all your skills check attempts for this application. If you'd like to discuss it further, just reply to this email.",
                 "",
                 "We appreciate the time you put into your application and skills check, and wish you the best going forward.",
                 "",
