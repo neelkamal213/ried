@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Internship Program — Onboarding | RIED</title>
+  <meta name="description" content="Tell us about yourself so we can get your RIED internship application moving.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="onboarding-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+      <nav class="main-nav">
+        <span style="color:var(--muted); font-size:14px; font-weight:600">
+          <i class="fa-solid fa-shield-heart"></i> Your details are private &mdash; only RIED sees them
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:60px">
+    <div class="container quest-wrap">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+      </div>
+
+      <div id="wizard" class="shell" style="display:none">
+
+        <!-- INTRO -->
+        <div id="step-intro" class="onboard-step">
+          <span class="quest-eyebrow"><i class="fa-solid fa-rocket"></i> Internship Onboarding — Step 1 of 3</span>
+          <h2 class="quest-intro-title">Let's get you set up 🚀</h2>
+          <p class="quest-intro-copy">
+            A few quick details, then three documents to upload, and you're straight through to your skills check.
+            Takes about 5 minutes &mdash; grab your Aadhar card and latest marksheet before you start so uploading is quick.
+          </p>
+          <button class="btn-primary" id="startBtn">Let's Go <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+        <!-- WIZARD BODY (shown once started) -->
+        <div id="wizardBody" class="hidden">
+
+          <div class="game-bar">
+            <div class="level-chip">
+              <div class="badge-icon"><i class="fa-solid fa-user-pen" id="stepIcon"></i></div>
+              <div class="txt">
+                <strong id="stepTitle">Basics</strong>
+                <span id="stepEyebrow">About You</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="qprogress-top">
+            <span id="progressText">Step 1 of 4</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="qprogress-track"><div id="bar" class="qprogress-fill"></div></div>
+
+          <div id="stepBody" class="onboard-step-body"></div>
+          <div id="stepError" class="auth-error"></div>
+
+          <div class="actions">
+            <button id="backBtn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button id="nextBtn" class="btn-primary">Continue <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- SUCCESS -->
+        <div id="step-success" class="hidden" style="text-align:center">
+          <div class="badge-icon" style="width:70px;height:70px;font-size:30px;margin:0 auto 22px">
+            <i class="fa-solid fa-champagne-glasses"></i>
+          </div>
+          <h2 class="quest-intro-title">Nice one, that's step one done! 🎉</h2>
+          <p class="quest-intro-copy">
+            Your details are saved and on their way to the RIED team. Next up: a short, fun skills check so we know
+            where you shine &mdash; that unlocks right from your dashboard.
+          </p>
+          <button class="btn-primary" id="goDashboardBtn">Go To My Dashboard <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="intern-register.html">Internship Program</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+<script type="module">
+import {
+  auth, db, storage,
+  onAuthStateChanged,
+  doc, getDoc, setDoc, serverTimestamp,
+  ref, uploadBytes, getDownloadURL
+} from "./js/firebase-init.js";
+
+const SEQUENCE = ['basics', 'academic', 'documents', 'review'];
+
+let currentUser = null;
+let currentIndex = 0;
+
+let profile = {
+  fullName: '', parentName: '', phone: '', address: '',
+  collegeName: '', fieldOfStudy: '', semester: '', interests: ''
+};
+
+// Files chosen this session (not yet uploaded) and, once uploaded, their
+// download URLs — kept separate so re-visiting the documents step doesn't
+// force a re-upload if the file's already up there.
+const docFiles = { photo: null, aadhar: null, marksheet: null };
+const docNames = { photo: '', aadhar: '', marksheet: '' };
+const docURLs = { photo: '', aadhar: '', marksheet: '' };
+
+const DOC_META = {
+  photo: { label: 'Your Photo', icon: 'fa-image', accept: 'image/*' },
+  aadhar: { label: 'Aadhar Card', icon: 'fa-id-card', accept: 'image/*,application/pdf' },
+  marksheet: { label: 'Latest Marksheet', icon: 'fa-file-lines', accept: 'image/*,application/pdf' }
+};
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function setHeader(icon, title, eyebrow) {
+  document.getElementById('stepIcon').className = 'fa-solid ' + icon;
+  document.getElementById('stepTitle').textContent = title;
+  document.getElementById('stepEyebrow').textContent = eyebrow;
+}
+
+function renderStep(key) {
+  document.getElementById('stepError').classList.remove('show');
+
+  if (key === 'basics') {
+    setHeader('fa-user-pen', 'The Basics', 'About You');
+    return `
+      <p class="onboard-lead">First up, who are we onboarding? 🙂</p>
+      <label class="onboard-label">Full Name</label>
+      <input type="text" id="fullName" class="onboard-input" value="${esc(profile.fullName)}" placeholder="Your full name">
+
+      <label class="onboard-label">Father's / Mother's Name</label>
+      <input type="text" id="parentName" class="onboard-input" value="${esc(profile.parentName)}" placeholder="Parent's or guardian's name">
+
+      <label class="onboard-label">Phone Number</label>
+      <input type="tel" id="phone" class="onboard-input" value="${esc(profile.phone)}" placeholder="Your mobile number">
+
+      <label class="onboard-label">Full Address</label>
+      <textarea id="address" class="onboard-input" rows="3" placeholder="Your full postal address">${esc(profile.address)}</textarea>
+    `;
+  }
+
+  if (key === 'academic') {
+    setHeader('fa-graduation-cap', 'Academics & Interests', 'Where You Study');
+    return `
+      <label class="onboard-label">College Name</label>
+      <input type="text" id="collegeName" class="onboard-input" value="${esc(profile.collegeName)}" placeholder="Your college / university">
+
+      <label class="onboard-label">Field of Study</label>
+      <input type="text" id="fieldOfStudy" class="onboard-input" value="${esc(profile.fieldOfStudy)}" placeholder="e.g. Computer Science, B.Tech">
+
+      <label class="onboard-label">Semester</label>
+      <input type="text" id="semester" class="onboard-input" value="${esc(profile.semester)}" placeholder="e.g. 6th Semester">
+
+      <label class="onboard-label">Your Interests <span class="onboard-optional">(optional, but it helps us match you to cool tasks)</span></label>
+      <textarea id="interests" class="onboard-input" rows="3" placeholder="Coding, design, marketing, research, content, anything you're into">${esc(profile.interests)}</textarea>
+    `;
+  }
+
+  if (key === 'documents') {
+    setHeader('fa-file-upload', 'Upload Your Documents', 'Almost There');
+    return `
+      <p class="onboard-lead">Three quick uploads — kept private, only RIED's team can see them.</p>
+      <div class="doc-upload-grid" id="docUploadGrid">
+        ${Object.keys(DOC_META).map(key => docBoxHTML(key)).join('')}
+      </div>
+    `;
+  }
+
+  if (key === 'review') {
+    setHeader('fa-clipboard-check', 'Review & Submit', 'Last Step');
+    return `
+      <p class="onboard-lead">Here's everything you've told us. Looks good? Submit and your skills check unlocks next.</p>
+      <div class="profile-summary-card">
+        <p><strong>Full Name:</strong> ${esc(profile.fullName)}</p>
+        <p><strong>Father's / Mother's Name:</strong> ${esc(profile.parentName)}</p>
+        <p><strong>Phone:</strong> ${esc(profile.phone)}</p>
+        <p><strong>Address:</strong> ${esc(profile.address)}</p>
+        <p><strong>College:</strong> ${esc(profile.collegeName)}</p>
+        <p><strong>Field of Study:</strong> ${esc(profile.fieldOfStudy)}</p>
+        <p><strong>Semester:</strong> ${esc(profile.semester)}</p>
+        ${profile.interests ? `<p><strong>Interests:</strong> ${esc(profile.interests)}</p>` : ''}
+        <p><strong>Photo:</strong> ${docNames.photo ? esc(docNames.photo) : '(not selected)'}</p>
+        <p><strong>Aadhar Card:</strong> ${docNames.aadhar ? esc(docNames.aadhar) : '(not selected)'}</p>
+        <p><strong>Latest Marksheet:</strong> ${docNames.marksheet ? esc(docNames.marksheet) : '(not selected)'}</p>
+      </div>
+    `;
+  }
+
+  return '';
+}
+
+function docBoxHTML(key) {
+  const meta = DOC_META[key];
+  const name = docNames[key];
+  return `
+    <div class="doc-upload-box">
+      <div class="doc-upload-icon"><i class="fa-solid ${meta.icon}"></i></div>
+      <div class="doc-upload-info">
+        <strong>${meta.label}</strong>
+        <span class="doc-upload-filename" id="${key}FileName">${name ? esc(name) : 'No file chosen'}</span>
+      </div>
+      <button type="button" class="btn-secondary" data-doc="${key}">
+        ${name ? 'Change File' : 'Choose File'}
+      </button>
+      <input type="file" id="${key}Input" data-doc="${key}" accept="${meta.accept}" class="hidden">
+    </div>
+  `;
+}
+
+function attachStepEvents(key) {
+  if (key === 'documents') {
+    Object.keys(DOC_META).forEach(docKey => {
+      const input = document.getElementById(docKey + 'Input');
+      const btn = document.querySelector(`button[data-doc="${docKey}"]`);
+      btn.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (!file) return;
+        docFiles[docKey] = file;
+        docNames[docKey] = file.name;
+        document.getElementById(docKey + 'FileName').textContent = file.name;
+        btn.textContent = 'Change File';
+      });
+    });
+  }
+}
+
+function collectStep(key) {
+  if (key === 'basics') {
+    profile.fullName = document.getElementById('fullName').value.trim();
+    profile.parentName = document.getElementById('parentName').value.trim();
+    profile.phone = document.getElementById('phone').value.trim();
+    profile.address = document.getElementById('address').value.trim();
+  } else if (key === 'academic') {
+    profile.collegeName = document.getElementById('collegeName').value.trim();
+    profile.fieldOfStudy = document.getElementById('fieldOfStudy').value.trim();
+    profile.semester = document.getElementById('semester').value.trim();
+    profile.interests = document.getElementById('interests').value.trim();
+  }
+}
+
+function validateStep(key) {
+  if (key === 'basics') {
+    if (!profile.fullName) return 'Please enter your full name.';
+    if (!profile.parentName) return "Please enter your father's or mother's name.";
+    if (!profile.phone) return 'Please enter your phone number.';
+    if (!profile.address) return 'Please enter your full address.';
+  } else if (key === 'academic') {
+    if (!profile.collegeName) return 'Please enter your college name.';
+    if (!profile.fieldOfStudy) return 'Please enter your field of study.';
+    if (!profile.semester) return 'Please enter your semester.';
+  } else if (key === 'documents') {
+    if (!docFiles.photo && !docURLs.photo) return 'Please upload your photo.';
+    if (!docFiles.aadhar && !docURLs.aadhar) return 'Please upload your Aadhar card.';
+    if (!docFiles.marksheet && !docURLs.marksheet) return 'Please upload your latest marksheet.';
+  }
+  return null;
+}
+
+function renderCurrent() {
+  if (currentIndex >= SEQUENCE.length) currentIndex = SEQUENCE.length - 1;
+  const key = SEQUENCE[currentIndex];
+
+  document.getElementById('stepBody').innerHTML = renderStep(key);
+  attachStepEvents(key);
+
+  const pct = Math.round((currentIndex / (SEQUENCE.length - 1)) * 100);
+  document.getElementById('bar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `Step ${currentIndex + 1} of ${SEQUENCE.length}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+
+  document.getElementById('backBtn').disabled = currentIndex === 0;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.innerHTML = key === 'review'
+    ? '<i class="fa-solid fa-paper-plane"></i> Submit My Application'
+    : 'Continue <i class="fa-solid fa-arrow-right"></i>';
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('step-intro').classList.add('hidden');
+  document.getElementById('wizardBody').classList.remove('hidden');
+  renderCurrent();
+});
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  const key = SEQUENCE[currentIndex];
+  collectStep(key);
+  currentIndex = Math.max(0, currentIndex - 1);
+  renderCurrent();
+});
+
+document.getElementById('nextBtn').addEventListener('click', async () => {
+  const key = SEQUENCE[currentIndex];
+  collectStep(key);
+
+  const err = validateStep(key);
+  const errBox = document.getElementById('stepError');
+  if (err) {
+    errBox.textContent = err;
+    errBox.classList.add('show');
+    return;
+  }
+  errBox.classList.remove('show');
+
+  if (key === 'review') {
+    await submitOnboarding();
+    return;
+  }
+
+  currentIndex++;
+  renderCurrent();
+});
+
+async function uploadDoc(key) {
+  const file = docFiles[key];
+  if (!file) return;
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+  const storageRef = ref(storage, `intern-documents/${currentUser.uid}/${key}.${ext}`);
+  await uploadBytes(storageRef, file);
+  docURLs[key] = await getDownloadURL(storageRef);
+}
+
+async function submitOnboarding() {
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = true;
+  nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading & submitting...';
+
+  try {
+    await uploadDoc('photo');
+    await uploadDoc('aadhar');
+    await uploadDoc('marksheet');
+
+    const data = {
+      ...profile,
+      email: currentUser.email,
+      photoURL: docURLs.photo,
+      aadharURL: docURLs.aadhar,
+      marksheetURL: docURLs.marksheet,
+      status: 'onboarded',
+      onboardingSubmittedAt: serverTimestamp()
+    };
+
+    await setDoc(doc(db, 'interns', currentUser.uid), data, { merge: true });
+
+    document.getElementById('wizard').querySelectorAll(':scope > div').forEach(d => d.classList.add('hidden'));
+    document.getElementById('step-success').classList.remove('hidden');
+  } catch (err) {
+    console.error('submitOnboarding failed:', err);
+    const errBox = document.getElementById('stepError');
+    const detail = err && err.code ? ` (${err.code})` : '';
+    errBox.textContent = `Something went wrong submitting your application${detail}. Please try again, or email hello@ried.co.in if it keeps happening.`;
+    errBox.classList.add('show');
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit My Application';
+  }
+}
+
+document.getElementById('goDashboardBtn').addEventListener('click', () => {
+  window.location.href = 'intern-dashboard.html';
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user || user.isAnonymous) {
+    window.location.href = 'intern-login.html';
+    return;
+  }
+  currentUser = user;
+
+  try {
+    const snap = await getDoc(doc(db, 'interns', user.uid));
+    if (!snap.exists()) {
+      // No application record at all for this account — send them to start
+      // one properly rather than showing a broken onboarding form.
+      window.location.href = 'intern-register.html';
+      return;
+    }
+    const existing = snap.data();
+    if (existing.status && existing.status !== 'signed_up') {
+      // Already onboarded (or further along) — nothing more to do here.
+      window.location.href = 'intern-dashboard.html';
+      return;
+    }
+    profile.fullName = existing.fullName || currentUser.displayName || '';
+  } catch (e) { /* fine to start fresh if this read fails */ }
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('wizard').style.display = 'block';
+});
+
+window.addEventListener("scroll", function () {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+});
+</script>
+
+</body>
+</html>
