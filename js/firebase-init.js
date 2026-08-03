@@ -24,7 +24,9 @@ import {
   query,
   where,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  arrayUnion,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
   getStorage,
@@ -74,6 +76,8 @@ export {
   where,
   orderBy,
   serverTimestamp,
+  arrayUnion,
+  Timestamp,
   ref,
   uploadBytes,
   getDownloadURL,
