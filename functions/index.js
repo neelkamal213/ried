@@ -17,7 +17,7 @@
  */
 
 const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
-const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+const { onDocumentWritten, onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
@@ -1892,6 +1892,271 @@ exports.notifyOnInternAssessmentComplete = onDocumentWritten(
       });
     } catch (e) {
       logger.error("notifyOnInternAssessmentComplete: failed to send email", e);
+    }
+  }
+);
+
+/**
+ * ===========================================================================
+ * INTERNSHIP PROGRAM — PHASE 3: INTERN PORTAL
+ * (Attendance + Daily Tasks + Request Center) — 2026-08-03
+ * ===========================================================================
+ *
+ * Everything here is gated on /interns/{uid}.status === "approved" — a
+ * status this phase can WATCH for but never SET. Only a Mentor/admin can
+ * approve an application (Phase 4, not built yet), so until that admin
+ * tooling exists, RIED can flip a test account to "approved" by hand in the
+ * Firebase Console (see the v19 README) to test this portal end-to-end.
+ *
+ * Attendance is intentionally Cloud-Function-only (never a direct client
+ * Firestore write) — clockIn/startBreak/endBreak/clockOut are the ONLY path
+ * that can ever touch /attendance, all timestamps are set server-side
+ * (admin.firestore.Timestamp.now()/serverTimestamp(), never trusting a
+ * client-sent time), and each function enforces the state machine (can't
+ * clock in twice, can't clock out while on a break, etc.) so the daily
+ * record itself can't be gamed — mirroring the same "never trust the
+ * client" principle used for pricing/grading elsewhere on this site.
+ *
+ * Daily Tasks and Request Center, by contrast, use direct client Firestore
+ * writes guarded by firestore.rules (like /interns' status field) rather
+ * than Cloud Functions, since there's no money/grading-equivalent value at
+ * stake — just simple, narrow self-transitions (acknowledge a task, mark it
+ * complete, submit a request) that rules can safely enforce on their own.
+ */
+
+// Attendance doc id: "{uid}_{YYYY-MM-DD}", one per intern per calendar day,
+// keyed to India time regardless of where the intern's browser/device clock
+// thinks it is.
+function kolkataDateKey(date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date);
+}
+
+async function requireApprovedIntern(uid) {
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Please sign in.");
+  }
+  const snap = await db.collection("interns").doc(uid).get();
+  if (!snap.exists || snap.data().status !== "approved") {
+    throw new HttpsError("failed-precondition", "Your internship portal isn't unlocked yet — it opens once your application is approved.");
+  }
+  return snap.data();
+}
+
+function attendanceMinutesBetween(start, end) {
+  if (!start || !end) return 0;
+  return Math.max(0, Math.round((end.toMillis() - start.toMillis()) / 60000));
+}
+
+exports.clockIn = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  await requireApprovedIntern(uid);
+
+  const dateKey = kolkataDateKey(new Date());
+  const docRef = db.collection("attendance").doc(`${uid}_${dateKey}`);
+  const snap = await docRef.get();
+
+  if (snap.exists) {
+    const existing = snap.data();
+    if (existing.clockInAt && !existing.clockOutAt) {
+      throw new HttpsError("failed-precondition", "You're already clocked in today.");
+    }
+    if (existing.clockOutAt) {
+      throw new HttpsError("failed-precondition", "You've already completed your shift for today.");
+    }
+  }
+
+  await docRef.set({
+    uid,
+    date: dateKey,
+    clockInAt: admin.firestore.FieldValue.serverTimestamp(),
+    clockOutAt: null,
+    breaks: [],
+    status: "working"
+  });
+
+  return { success: true };
+});
+
+exports.startBreak = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  await requireApprovedIntern(uid);
+
+  const dateKey = kolkataDateKey(new Date());
+  const docRef = db.collection("attendance").doc(`${uid}_${dateKey}`);
+  const snap = await docRef.get();
+  if (!snap.exists || snap.data().status !== "working") {
+    throw new HttpsError("failed-precondition", "You need to be clocked in (and not already on a break) to start a break.");
+  }
+
+  const data = snap.data();
+  const breaks = Array.isArray(data.breaks) ? [...data.breaks] : [];
+  // A concrete Timestamp, not FieldValue.serverTimestamp() — the sentinel
+  // doesn't resolve correctly nested inside an array element written via a
+  // whole-array replace (the same gotcha documented on markSellerPayout
+  // above, hit again here since breaks is an array field).
+  breaks.push({ start: admin.firestore.Timestamp.now(), end: null });
+
+  await docRef.update({ breaks, status: "on_break" });
+  return { success: true };
+});
+
+exports.endBreak = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  await requireApprovedIntern(uid);
+
+  const dateKey = kolkataDateKey(new Date());
+  const docRef = db.collection("attendance").doc(`${uid}_${dateKey}`);
+  const snap = await docRef.get();
+  if (!snap.exists || snap.data().status !== "on_break") {
+    throw new HttpsError("failed-precondition", "You're not currently on a break.");
+  }
+
+  const data = snap.data();
+  const breaks = Array.isArray(data.breaks) ? [...data.breaks] : [];
+  if (!breaks.length || breaks[breaks.length - 1].end) {
+    throw new HttpsError("failed-precondition", "No open break found.");
+  }
+  breaks[breaks.length - 1] = { ...breaks[breaks.length - 1], end: admin.firestore.Timestamp.now() };
+
+  await docRef.update({ breaks, status: "working" });
+  return { success: true };
+});
+
+exports.clockOut = onCall(async (request) => {
+  const uid = request.auth && request.auth.uid;
+  await requireApprovedIntern(uid);
+
+  const dateKey = kolkataDateKey(new Date());
+  const docRef = db.collection("attendance").doc(`${uid}_${dateKey}`);
+  const snap = await docRef.get();
+  if (!snap.exists || snap.data().status !== "working") {
+    const currentStatus = snap.exists ? snap.data().status : null;
+    if (currentStatus === "on_break") {
+      throw new HttpsError("failed-precondition", "Please end your break before clocking out.");
+    }
+    throw new HttpsError("failed-precondition", "You're not currently clocked in.");
+  }
+
+  const data = snap.data();
+  const clockOutAt = admin.firestore.Timestamp.now();
+  const breaks = Array.isArray(data.breaks) ? data.breaks : [];
+
+  let totalBreakMinutes = 0;
+  breaks.forEach((b) => {
+    totalBreakMinutes += attendanceMinutesBetween(b.start, b.end || clockOutAt);
+  });
+
+  const totalSpanMinutes = attendanceMinutesBetween(data.clockInAt, clockOutAt);
+  const totalWorkedMinutes = Math.max(0, totalSpanMinutes - totalBreakMinutes);
+
+  // Loose, informational-only anomaly flags for the future Mentor attendance
+  // view (Phase 4) — never blocks a clock-out, just surfaces "worth a second
+  // look" days (per the original ask: mentors should be able to see who
+  // marked attendance/breaks wrongly).
+  let flagged = false;
+  let flagReason = "";
+  if (totalBreakMinutes > 75) {
+    flagged = true;
+    flagReason = "Break time well over the expected 1 hour.";
+  } else if (totalSpanMinutes < 7 * 60) {
+    flagged = true;
+    flagReason = "Total clocked time well under the expected 9-hour day.";
+  }
+
+  await docRef.update({
+    clockOutAt,
+    status: "completed",
+    totalBreakMinutes,
+    totalSpanMinutes,
+    totalWorkedMinutes,
+    flagged,
+    flagReason
+  });
+
+  return { success: true, totalBreakMinutes, totalSpanMinutes, totalWorkedMinutes, flagged, flagReason };
+});
+
+/**
+ * notifyOnInternRequest
+ *
+ * Fires once, on creation, for every /internRequests/{requestId} document —
+ * the Request Center's five request types (Edit Profile, Appointment
+ * Letter, Leave Request, Experience Letter, Resignation) all funnel through
+ * this same collection (discriminated by `type`), matching the original
+ * ask that every one of these "has to come to hello@ried.co.in". Uses
+ * onDocumentCreated (not onDocumentWritten) since there's nothing to diff —
+ * a request is only ever created by the intern, then later updated
+ * in-place by an admin (Phase 4, approve/reject) without needing a new
+ * email each time.
+ */
+exports.notifyOnInternRequest = onDocumentCreated(
+  { document: "internRequests/{requestId}", secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const reqData = snap.data();
+
+    const TYPE_LABELS = {
+      edit_profile: "Edit Profile Request",
+      appointment_letter: "Appointment Letter Request",
+      leave_request: "Leave Request",
+      experience_letter: "Experience Letter Request",
+      resignation: "Resignation"
+    };
+    const label = TYPE_LABELS[reqData.type] || reqData.type || "Internship Request";
+
+    const lines = [
+      `New ${label} — RIED Internship Program`,
+      "",
+      `From: ${reqData.internName || ""} (${reqData.internEmail || ""})`,
+      `Candidate UID: ${reqData.internUid || event.params.requestId}`,
+      ""
+    ];
+
+    const details = reqData.details || {};
+    if (reqData.type === "edit_profile") {
+      lines.push("--- Requested Changes ---");
+      lines.push(details.requestedChanges || "(none provided)");
+    } else if (reqData.type === "leave_request") {
+      lines.push(`Start Date: ${details.startDate || ""}`);
+      lines.push(`End Date: ${details.endDate || ""}`);
+      lines.push(`Reason: ${details.reason || ""}`);
+    } else if (reqData.type === "resignation") {
+      lines.push(`Last Working Day: ${details.lastWorkingDay || ""}`);
+      lines.push(`Reason: ${details.reason || ""}`);
+    }
+
+    if (reqData.notes) {
+      lines.push("");
+      lines.push("--- Additional Notes ---");
+      lines.push(reqData.notes);
+    }
+
+    lines.push("");
+    lines.push("Review and respond to this in the Internship Corner of the admin dashboard.");
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    try {
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: reqData.internEmail,
+        subject: `${label} — ${reqData.internName || reqData.internEmail || "an intern"}`,
+        text: lines.join("\n"),
+        fromName: "RIED Website — Internship Program"
+      });
+    } catch (e) {
+      logger.error("notifyOnInternRequest: failed to send email", e);
     }
   }
 );
