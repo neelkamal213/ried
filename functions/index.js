@@ -1539,3 +1539,359 @@ exports.notifyOnInternOnboarding = onDocumentWritten(
     }
   }
 );
+
+/**
+ * ===========================================================================
+ * INTERNSHIP PROGRAM — PHASE 2: SKILLS ASSESSMENT (2026-08-03)
+ * ===========================================================================
+ *
+ * Design note (feasibility, discussed with RIED before building): true
+ * live/arbitrary code-execution grading for HTML/CSS/Java isn't feasible on
+ * this stack without real sandboxed execution infrastructure, which would
+ * also be a security risk. So every question here — including the
+ * "task-based evaluation" ones — is scenario/multiple-choice ("what does
+ * this render", "spot the bug", "pick the fix"), auto-graded server-side.
+ * No pass/fail anywhere — just a 0-100 score per category, purely
+ * descriptive, meant to help Mentors decide what tasks to hand out later.
+ *
+ * ANTI-CHEATING / SECURITY, mirroring the site's existing "never trust the
+ * client" pattern (same spirit as Razorpay pricing above):
+ *   - The question bank (with correct answers) lives ONLY in this file —
+ *     never in Firestore, never sent to the client. A client only ever sees
+ *     question text + answer options, never which option is correct.
+ *   - Each candidate gets a random subset per category (not the same fixed
+ *     set for everyone) with each question's own options shuffled too, both
+ *     picked fresh in startAssessment and locked into a private
+ *     /assessmentSessions/{uid} document that only this Cloud Function's
+ *     Admin SDK ever reads or writes (no Firestore rule grants a client
+ *     access to that collection at all — it falls through to the
+ *     catch-all "deny everything" rule at the bottom of firestore.rules).
+ *   - Grading in submitAssessment re-derives the right answer from the
+ *     bank + the session's stored option-shuffle mapping — the client's
+ *     answers are just "which position did you click", never trusted as
+ *     "which answer is correct".
+ *   - The timer is enforced by a server-set deadline stored at session
+ *     start, not just a countdown in the browser — a candidate can't get
+ *     more time by editing client-side JS.
+ */
+const ASSESSMENT_CATEGORIES = ["html", "css", "java", "logical", "task"];
+const QUESTIONS_PER_CATEGORY = 4; // 20 questions total per candidate
+const ASSESSMENT_TIME_LIMIT_SECONDS = 15 * 60; // 15 minutes — generous for a fresher on easy questions
+
+// Easy, fresher-friendly questions only, per RIED's explicit instruction —
+// this is meant to gauge baseline skill level and keep things fun, not to
+// filter anyone out. Every category has more questions than
+// QUESTIONS_PER_CATEGORY needs, so each candidate's actual test differs.
+const ASSESSMENT_QUESTION_BANK = {
+  html: [
+    { id: "html-1", text: "Which tag is used to create a hyperlink in HTML?", options: ["<link>", "<a>", "<href>", "<nav>"], correctIndex: 1 },
+    { id: "html-2", text: "Which tag is used to insert an image?", options: ["<img>", "<src>", "<picture>", "<image>"], correctIndex: 0 },
+    { id: "html-3", text: "What does HTML stand for?", options: ["HyperText Markup Language", "Home Tool Markup Language", "Hyperlinks Text Markup Language", "HighText Machine Language"], correctIndex: 0 },
+    { id: "html-4", text: "Which attribute on <a> specifies where the link goes?", options: ["src", "href", "link", "url"], correctIndex: 1 },
+    { id: "html-5", text: "Which tag creates the largest heading?", options: ["<h6>", "<heading>", "<h1>", "<head>"], correctIndex: 2 },
+    { id: "html-6", text: "Which tag creates an unordered (bulleted) list?", options: ["<ul>", "<ol>", "<li>", "<list>"], correctIndex: 0 },
+    { id: "html-7", text: "What's the correct HTML for a checkbox input?", options: ["<input type=\"checkbox\">", "<checkbox>", "<input type=\"check\">", "<select type=\"checkbox\">"], correctIndex: 0 },
+    { id: "html-8", text: "Which tag defines a row inside a table?", options: ["<td>", "<tr>", "<th>", "<row>"], correctIndex: 1 },
+    { id: "html-9", text: "Which element is meant to hold a document's footer content?", options: ["<bottom>", "<footer>", "<section>", "<below>"], correctIndex: 1 },
+    { id: "html-10", text: "What's the correct syntax for an HTML comment?", options: ["<!-- comment -->", "// comment", "/* comment */", "<comment>"], correctIndex: 0 }
+  ],
+  css: [
+    { id: "css-1", text: "Which CSS property changes text color?", options: ["color", "text-color", "font-color", "foreground-color"], correctIndex: 0 },
+    { id: "css-2", text: "Which property controls the spacing between lines of text?", options: ["line-height", "letter-spacing", "word-spacing", "text-indent"], correctIndex: 0 },
+    { id: "css-3", text: "Which symbol selects a class in CSS?", options: ["#", ".", "*", "&"], correctIndex: 1 },
+    { id: "css-4", text: "Which property changes an element's background color?", options: ["bgcolor", "background-color", "color-background", "bg-color"], correctIndex: 1 },
+    { id: "css-5", text: "How do you make text bold in CSS?", options: ["font-weight: bold;", "text-style: bold;", "font: bold;", "style: bold;"], correctIndex: 0 },
+    { id: "css-6", text: "Which property controls the space between an element's border and its content?", options: ["margin", "padding", "spacing", "gap"], correctIndex: 1 },
+    { id: "css-7", text: "What does \"display: flex\" mainly enable?", options: ["A flexible box layout for arranging child elements", "A rigid grid layout only", "Hiding an element", "Rounding corners"], correctIndex: 0 },
+    { id: "css-8", text: "Which unit is relative to the root element's font size?", options: ["px", "em", "rem", "%"], correctIndex: 2 },
+    { id: "css-9", text: "Which property changes the font used by an element?", options: ["font-style", "font-family", "text-font", "font-type"], correctIndex: 1 },
+    { id: "css-10", text: "What does CSS stand for?", options: ["Cascading Style Sheets", "Colorful Style Sheets", "Creative Style System", "Computer Style Sheets"], correctIndex: 0 }
+  ],
+  java: [
+    { id: "java-1", text: "Which keyword creates a class in Java?", options: ["class", "Class", "struct", "object"], correctIndex: 0 },
+    { id: "java-2", text: "Which method is the entry point of a Java program?", options: ["start()", "main()", "run()", "init()"], correctIndex: 1 },
+    { id: "java-3", text: "Which of these is a primitive data type in Java?", options: ["String", "Integer", "int", "Object"], correctIndex: 2 },
+    { id: "java-4", text: "What's the correct way to declare a variable named age holding 20?", options: ["int age = 20;", "var age = 20;", "age int = 20;", "integer age = 20;"], correctIndex: 0 },
+    { id: "java-5", text: "Which keyword is used for a class to inherit another class?", options: ["implements", "extends", "inherits", "super"], correctIndex: 1 },
+    { id: "java-6", text: "Which loop is guaranteed to run its body at least once?", options: ["for", "while", "do-while", "foreach"], correctIndex: 2 },
+    { id: "java-7", text: "What is the size of an int in Java?", options: ["16 bit", "32 bit", "64 bit", "8 bit"], correctIndex: 1 },
+    { id: "java-8", text: "Which symbol starts a single-line comment in Java?", options: ["//", "/* */", "#", "--"], correctIndex: 0 },
+    { id: "java-9", text: "Which keyword stops a class from being inherited?", options: ["static", "private", "final", "const"], correctIndex: 2 },
+    { id: "java-10", text: "What does System.out.println(\"5\" + 3); print?", options: ["8", "53", "Error", "35"], correctIndex: 1 }
+  ],
+  logical: [
+    { id: "logical-1", text: "All cats are animals. Tom is a cat. So Tom is:", options: ["A plant", "An animal", "A dog", "Unknown"], correctIndex: 1 },
+    { id: "logical-2", text: "Find the odd one out: Apple, Banana, Carrot, Mango", options: ["Apple", "Banana", "Carrot", "Mango"], correctIndex: 2 },
+    { id: "logical-3", text: "What comes next: 2, 4, 6, 8, ?", options: ["9", "10", "12", "11"], correctIndex: 1 },
+    { id: "logical-4", text: "A is taller than B. B is taller than C. Who is shortest?", options: ["A", "B", "C", "Cannot say"], correctIndex: 2 },
+    { id: "logical-5", text: "Complete the pattern: 1, 1, 2, 3, 5, 8, ?", options: ["11", "13", "10", "12"], correctIndex: 1 },
+    { id: "logical-6", text: "If today is Monday, what day is it 3 days later?", options: ["Wednesday", "Thursday", "Friday", "Tuesday"], correctIndex: 1 },
+    { id: "logical-7", text: "Which number is the odd one out: 3, 5, 10, 7", options: ["3", "5", "10", "7"], correctIndex: 2 },
+    { id: "logical-8", text: "A task starts at 10:00 AM and takes 2 hours 30 minutes. When does it finish?", options: ["12:00 PM", "12:30 PM", "1:00 PM", "12:45 PM"], correctIndex: 1 },
+    { id: "logical-9", text: "Priya is left of Raj, and Raj is left of Simran. Who's in the middle?", options: ["Priya", "Raj", "Simran", "Cannot say"], correctIndex: 1 },
+    { id: "logical-10", text: "Which word doesn't belong: Circle, Square, Triangle, Blue", options: ["Circle", "Square", "Triangle", "Blue"], correctIndex: 3 }
+  ],
+  task: [
+    { id: "task-1", text: "What does this render as visible text? <p>Hello <b>World</b></p>", options: ["\"Hello World\", with World in bold", "Just \"Hello\"", "An error", "The literal text \"Hello <b>World</b>\""], correctIndex: 0 },
+    { id: "task-2", text: "A button isn't clickable because its CSS has \"pointer-events: none;\". What's the fix?", options: ["Change pointer-events to auto (or remove it)", "Add more padding", "Change the button's color", "Add a border"], correctIndex: 0 },
+    { id: "task-3", text: "This code should check if x equals 5, but has a bug: if (x = 5) { ... }. What's the fix?", options: ["Change = to ==", "Change if to while", "Remove the parentheses", "Add a semicolon"], correctIndex: 0 },
+    { id: "task-4", text: "\".card { color: red }\" isn't applying because \".sidebar .card { color: blue }\" also matches and wins. What CSS concept is this?", options: ["Specificity", "Inheritance", "Flexbox", "Animation"], correctIndex: 0 },
+    { id: "task-5", text: "You need a list of steps where the ORDER matters (Step 1, Step 2, Step 3). Which HTML tag fits best?", options: ["<ul>", "<ol>", "<div>", "<table>"], correctIndex: 1 },
+    { id: "task-6", text: "An intern's daily task should be \"acknowledged\" then later \"marked complete\". What's the correct order?", options: ["Complete first, then acknowledge", "Acknowledge first, then complete", "Both at the same time only", "Neither step is needed"], correctIndex: 1 },
+    { id: "task-7", text: "A form's submit button reloads the page unexpectedly. What's most likely missing in the JS handler?", options: ["event.preventDefault()", "console.log()", "a CSS class", "an <img> tag"], correctIndex: 0 },
+    { id: "task-8", text: "What's the best practice for handling sensitive uploads like an ID proof document?", options: ["Send them over email only", "Upload to private, access-controlled storage", "Post them publicly for verification", "Save them as plain text files"], correctIndex: 1 },
+    { id: "task-9", text: "A mentor's review comment says \"reopen this — the button color doesn't match the brand.\" What should you do next?", options: ["Ignore the comment", "Mark the task complete anyway", "Fix the button color and resubmit", "Delete the task"], correctIndex: 2 },
+    { id: "task-10", text: "Which is the most professional way to tell your mentor you'll be a little late clocking in?", options: ["\"not my fault, whatever\"", "\"Running a bit late today, will clock in by 9:30 — sorry for the delay!\"", "Just show up late with no message", "\"idk why it matters\""], correctIndex: 1 }
+  ]
+};
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Builds one candidate's private question set: QUESTIONS_PER_CATEGORY random
+// questions per category, each with its OWN options shuffled, then the whole
+// set shuffled together so categories aren't even grouped in a predictable
+// order. Returned objects still carry optionOrder/correctIndex-derivable
+// data — callers in this file only ever send the client-safe subset
+// (id/category/text/options) onward, never this raw object.
+function pickAssessmentQuestions() {
+  const selected = [];
+  ASSESSMENT_CATEGORIES.forEach((cat) => {
+    const pool = ASSESSMENT_QUESTION_BANK[cat];
+    const chosen = shuffleArray(pool).slice(0, QUESTIONS_PER_CATEGORY);
+    chosen.forEach((q) => {
+      const optionOrder = shuffleArray(q.options.map((_, i) => i)); // shuffled original indices
+      const options = optionOrder.map((origIdx) => q.options[origIdx]);
+      selected.push({ id: q.id, category: cat, text: q.text, options, optionOrder });
+    });
+  });
+  return shuffleArray(selected);
+}
+
+function clientSafeQuestions(questions) {
+  return questions.map((q) => ({ id: q.id, category: q.category, text: q.text, options: q.options }));
+}
+
+/**
+ * startAssessment
+ *
+ * Called when a candidate clicks "Start Test" on intern-test.html. Requires
+ * an onboarded (but not yet assessed) /interns/{uid} doc. Idempotent by
+ * design: if a session is already in progress and hasn't expired, it
+ * returns the SAME question set and deadline rather than rerolling — this
+ * means refreshing the test page mid-attempt doesn't hand the candidate a
+ * fresh, easier random draw, but also doesn't unfairly restart their clock.
+ */
+exports.startAssessment = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Please sign in.");
+  }
+  const uid = request.auth.uid;
+
+  const internSnap = await db.collection("interns").doc(uid).get();
+  if (!internSnap.exists) {
+    throw new HttpsError("failed-precondition", "No internship application found for this account.");
+  }
+  const intern = internSnap.data();
+  if (intern.status === "signed_up") {
+    throw new HttpsError("failed-precondition", "Please finish onboarding before taking the skills check.");
+  }
+  if (intern.status && intern.status !== "onboarded") {
+    throw new HttpsError("failed-precondition", "You've already completed the skills check.");
+  }
+
+  const sessionRef = db.collection("assessmentSessions").doc(uid);
+  const sessionSnap = await sessionRef.get();
+  const now = Date.now();
+
+  if (sessionSnap.exists) {
+    const session = sessionSnap.data();
+    if (session.submitted) {
+      throw new HttpsError("failed-precondition", "You've already completed the skills check.");
+    }
+    const deadlineMs = session.deadline ? session.deadline.toMillis() : 0;
+    if (deadlineMs > now) {
+      return {
+        questions: clientSafeQuestions(session.questions || []),
+        deadlineMillis: deadlineMs,
+        timeLimitSeconds: ASSESSMENT_TIME_LIMIT_SECONDS
+      };
+    }
+    // Expired without ever being submitted — fall through and start fresh.
+  }
+
+  const questions = pickAssessmentQuestions();
+  const deadline = admin.firestore.Timestamp.fromMillis(now + ASSESSMENT_TIME_LIMIT_SECONDS * 1000);
+
+  await sessionRef.set({
+    uid,
+    questions,
+    startedAt: admin.firestore.Timestamp.now(),
+    deadline,
+    submitted: false
+  });
+
+  return {
+    questions: clientSafeQuestions(questions),
+    deadlineMillis: deadline.toMillis(),
+    timeLimitSeconds: ASSESSMENT_TIME_LIMIT_SECONDS
+  };
+});
+
+/**
+ * submitAssessment
+ *
+ * Grades entirely server-side against the exact question set + per-question
+ * option-shuffle mapping locked in at startAssessment, then writes a 0-100
+ * overall score plus a per-category breakdown onto /interns/{uid} (no
+ * pass/fail field anywhere, by design) and flips status to
+ * "assessment_completed" so the candidate's dashboard and the future Mentor
+ * approval queue both pick it up.
+ */
+exports.submitAssessment = onCall(
+  { secrets: [GMAIL_APP_PASSWORD] },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Please sign in.");
+    }
+    const uid = request.auth.uid;
+
+    const sessionRef = db.collection("assessmentSessions").doc(uid);
+    const sessionSnap = await sessionRef.get();
+    if (!sessionSnap.exists) {
+      throw new HttpsError("failed-precondition", "No skills check in progress — please start one first.");
+    }
+    const session = sessionSnap.data();
+    if (session.submitted) {
+      throw new HttpsError("failed-precondition", "You've already submitted your skills check.");
+    }
+
+    const answersRaw = (request.data && request.data.answers) || [];
+    const answerMap = {};
+    answersRaw.forEach((a) => {
+      if (a && a.questionId) answerMap[a.questionId] = a.selectedIndex;
+    });
+
+    const categoryTotals = {};
+    const categoryCorrect = {};
+    let totalCorrect = 0;
+    const sessionQuestions = session.questions || [];
+
+    sessionQuestions.forEach((q) => {
+      categoryTotals[q.category] = (categoryTotals[q.category] || 0) + 1;
+      const bank = ASSESSMENT_QUESTION_BANK[q.category] || [];
+      const bankQ = bank.find((x) => x.id === q.id);
+      if (!bankQ) return;
+
+      const shownIndex = answerMap[q.id]; // index into the SHUFFLED options the client displayed
+      let isCorrect = false;
+      if (typeof shownIndex === "number" && Array.isArray(q.optionOrder) && q.optionOrder[shownIndex] !== undefined) {
+        isCorrect = q.optionOrder[shownIndex] === bankQ.correctIndex;
+      }
+      if (isCorrect) {
+        categoryCorrect[q.category] = (categoryCorrect[q.category] || 0) + 1;
+        totalCorrect++;
+      }
+    });
+
+    const categoryScores = {};
+    ASSESSMENT_CATEGORIES.forEach((cat) => {
+      const total = categoryTotals[cat] || 0;
+      const correct = categoryCorrect[cat] || 0;
+      categoryScores[cat] = total ? Math.round((correct / total) * 100) : null;
+    });
+    const overallScore = sessionQuestions.length
+      ? Math.round((totalCorrect / sessionQuestions.length) * 100)
+      : 0;
+
+    const now = admin.firestore.Timestamp.now();
+    const deadlineMs = session.deadline ? session.deadline.toMillis() : now.toMillis();
+    const submittedLate = now.toMillis() > deadlineMs + 5000; // 5s grace for network lag, not a penalty either way
+
+    await sessionRef.set(
+      { submitted: true, submittedAt: now, overallScore, categoryScores, submittedLate },
+      { merge: true }
+    );
+
+    await db.collection("interns").doc(uid).set(
+      {
+        status: "assessment_completed",
+        assessmentScore: overallScore,
+        assessmentCategoryScores: categoryScores,
+        assessmentCompletedAt: now
+      },
+      { merge: true }
+    );
+
+    return { overallScore, categoryScores };
+  }
+);
+
+/**
+ * notifyOnInternAssessmentComplete
+ *
+ * Same trigger shape as notifyOnInternOnboarding above, watching the same
+ * /interns/{uid} document for a different marker field
+ * (assessmentCompletedAt, set only by submitAssessment) so Neel/Pramod get a
+ * heads-up the moment a candidate finishes their skills check, with the
+ * score breakdown to help decide what to assign them once approved.
+ */
+exports.notifyOnInternAssessmentComplete = onDocumentWritten(
+  { document: "interns/{uid}", secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return;
+
+    const after = afterSnap.data();
+    const beforeSnap = event.data.before;
+    const before = beforeSnap.exists ? beforeSnap.data() : null;
+
+    const afterTs = after.assessmentCompletedAt ? after.assessmentCompletedAt.toMillis() : null;
+    const beforeTs = before && before.assessmentCompletedAt ? before.assessmentCompletedAt.toMillis() : null;
+    if (!afterTs || afterTs === beforeTs) return;
+
+    const uid = event.params.uid;
+    const cat = after.assessmentCategoryScores || {};
+    const lines = [
+      `${after.fullName || after.email || uid} just completed their Internship Program skills check.`,
+      "",
+      `Overall Score: ${after.assessmentScore != null ? after.assessmentScore : "?"} / 100 (descriptive only — no pass/fail)`,
+      "",
+      "--- Category Breakdown (out of 100) ---",
+      `HTML: ${cat.html != null ? cat.html : "-"}`,
+      `CSS: ${cat.css != null ? cat.css : "-"}`,
+      `Core Java: ${cat.java != null ? cat.java : "-"}`,
+      `Logical Reasoning: ${cat.logical != null ? cat.logical : "-"}`,
+      `Task-Based Evaluation: ${cat.task != null ? cat.task : "-"}`,
+      "",
+      "This candidate now shows as pending review in the Internship Corner of the admin dashboard.",
+      `Candidate Email: ${after.email || ""}`,
+      `Candidate UID: ${uid}`
+    ];
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    try {
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: after.email,
+        subject: `Skills Check Complete — ${after.fullName || after.email || uid} (Score: ${after.assessmentScore != null ? after.assessmentScore : "?"})`,
+        text: lines.join("\n"),
+        fromName: "RIED Website — Internship Program"
+      });
+    } catch (e) {
+      logger.error("notifyOnInternAssessmentComplete: failed to send email", e);
+    }
+  }
+);
