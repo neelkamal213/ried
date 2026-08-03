@@ -93,10 +93,12 @@ import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./js/firebas
 
 // Phase 2 (2026-08-03): added the 'assessment_completed' state, shown once a
 // candidate finishes the skills check, plus a real CTA into it from
-// 'onboarded'. Later phases (3/4) replace renderStatus() further — the
-// pending-approval state below becomes a real approved-portal state once
-// admin approval is built — keeping this same status-driven structure so
-// it's a clean extension point rather than a rewrite.
+// 'onboarded'. Phase 3 (2026-08-03, same day): added the 'approved' state,
+// once a Mentor approves the application (Phase 4 admin tooling, not built
+// yet — until then RIED can flip a test account's status by hand in the
+// Firebase Console) — this is the CTA into the real intern-portal.html.
+// Keeping this same status-driven structure so it's a clean extension point
+// rather than a rewrite.
 function renderStatus(status, data) {
   const badge = document.getElementById('statusBadge');
   const body = document.getElementById('nextStepsBody');
@@ -141,6 +143,17 @@ function renderStatus(status, data) {
       <p class="dash-card-hint" style="margin-top:10px">
         <i class="fa-solid fa-hourglass-half"></i> Neel and Pramod will review your application soon — check back here for updates.
       </p>
+    `;
+  } else if (status === 'approved') {
+    badge.textContent = 'Approved';
+    desc.textContent = "You're in! Your Intern Portal is ready — attendance, tasks, and requests all live there.";
+    body.innerHTML = `
+      <p class="dash-card-hint">
+        <i class="fa-solid fa-circle-check" style="color:#1c7a34"></i> Your application has been approved by the RIED team.
+      </p>
+      <a href="intern-portal.html" class="btn-primary" style="display:inline-block;margin-top:14px">
+        <i class="fa-solid fa-briefcase"></i> Go To My Intern Portal
+      </a>
     `;
   } else {
     badge.textContent = status || 'In Progress';

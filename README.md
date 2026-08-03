@@ -1,53 +1,106 @@
-# v18 — Internship Program Phase 2: Skills Assessment (2026-08-03)
+# v19 — Internship Program Phase 3: Intern Portal (2026-08-03)
 
 ## What this adds
 
-The "Take Test" step from your original request — a short, timed, randomized,
-auto-graded skills check that candidates take right after onboarding. No
-pass/fail anywhere, just a 0-100 score per area so Neel and Pramod can see
-where each candidate is strongest before assigning tasks later.
+The full intern-side portal from your original request, unlocked once an
+application is approved:
 
-- **20 questions per attempt** (4 each, randomly drawn from a larger pool, so
-  no two candidates get quite the same test): HTML basics, CSS basics, Core
-  Java fundamentals, logical reasoning, and short task-based scenarios
-  ("what does this render", "spot the bug", "pick the right fix" — real code
-  execution isn't feasible on this stack safely, so these are all
-  scenario/multiple-choice, per what we discussed).
-- **15-minute timer**, enforced server-side (a candidate editing browser JS
-  can't extend it) — auto-submits whatever's answered when time runs out.
-- **Answers are graded entirely on the server** — the question bank and
-  correct answers live only in Cloud Functions source, never sent to the
-  browser, and never stored anywhere a client can read them. Each
-  candidate's specific question set and shuffled answer order is locked into
-  a private session document only the Cloud Function itself can touch.
-- **Fun, GenZ-friendly tone** — score reveal with emoji, encouraging copy at
-  every score range, category bars instead of a plain number.
-- New dashboard state: once onboarded, the dashboard shows a "Take Your
-  Skills Check" button; once the test is submitted, it shows the score
-  breakdown and a "your Mentors are reviewing this" message — matching your
-  original flow (onboarding → test → dashboard pending approval).
-- An email to hello@ried.co.in the moment someone finishes, with their score
-  breakdown, same pattern as the existing onboarding-submitted email.
+- **Attendance** — Clock In / Start Break / End Break / Clock Out, with a
+  live status card showing what's happening right now and a running log of
+  today's breaks. All the actual timestamps are set on the server (not the
+  browser), so a candidate can't fake their hours by editing anything on
+  their end. A "Recent Days" table shows the last 10 completed days —
+  clock-in/out times, break time, and total worked — with a small flag if a
+  day's break ran long or the total time looks well short of a 9-hour day
+  (this is just a heads-up marker for now; the full Mentor-side attendance
+  report/anomaly view is Phase 4).
+- **My Tasks** — a list of whatever's been assigned, each with an
+  Acknowledge button, then a Mark Complete button once acknowledged, plus a
+  spot for Mentor comments to show up once Phase 4 adds the ability to leave
+  them.
+- **Request Center** — Edit Profile, Appointment Letter, Leave Request,
+  Experience Letter, and Resignation, all as one simple form that adjusts
+  its fields per type, plus a history of everything submitted and its
+  status. Every submission emails hello@ried.co.in immediately, same as
+  everything else on this site.
+
+## Important — this phase depends on Phase 4, which isn't built yet
+
+The original flow is: intern applies → Mentor approves → intern gets portal
+access. **The "Mentor approves" step is Phase 4**, which hasn't been built.
+So right now, nothing will actually reach the `approved` status on its own
+— which means the portal above has nothing to show yet, and no task exists
+for anyone to acknowledge.
+
+To actually test this round before Phase 4 exists, you'll need to do two
+manual, one-time steps directly in the Firebase Console for a test account.
+Full steps below — this is just for testing now; once Phase 4 ships, this
+will all happen through a real Approve button instead.
+
+### Step A — Manually approve a test intern account (to unlock the portal)
+
+1. Go to the [Firebase Console](https://console.firebase.google.com) →
+   your `ried-website` project → **Firestore Database**.
+2. Click into the **`interns`** collection.
+3. Find the document for your test intern account (the document ID is that
+   account's Firebase Auth UID — if you're not sure which one, cross-check
+   against the **Authentication** tab, or just use whichever test account
+   you signed up with earlier).
+4. Click on the `status` field's value (it'll currently say `onboarded` or
+   `assessment_completed`) to edit it.
+5. Change the value to exactly: `approved` (lowercase, no quotes needed —
+   the Console field type stays "string").
+6. Click the checkmark / hit Enter to save.
+
+That account can now sign in and reach `intern-portal.html` (via the "Go To
+My Intern Portal" button that now shows on their dashboard).
+
+### Step B — Manually create one test task (to test the My Tasks tab)
+
+1. Still in Firestore Database, click **Start collection** (or, if it
+   already exists from testing, just **Add document** inside it) and name
+   the collection **`internTasks`**.
+2. Let Firestore auto-generate the Document ID.
+3. Add these fields (use the **Add field** button for each):
+   - `internUid` (string) — the SAME UID you used in Step A.
+   - `title` (string) — e.g. `Update the FAQ section on the About page`
+   - `description` (string) — e.g. `Review the current FAQ copy and suggest two improvements.`
+   - `status` (string) — `assigned`
+   - `dueDate` (string) — e.g. `2026-08-10`
+   - `assignedAt` (timestamp) — click the clock icon and pick "now" (or any
+     recent date/time)
+4. Save.
+
+That task will now show up under My Tasks for that intern, with an
+Acknowledge button, then a Mark Complete button once acknowledged.
+
+Requests don't need any manual setup — the Request Center's own Submit
+button creates real `internRequests` documents.
 
 ## What's in this folder
 
-- **`functions/index.js`** — full file, with the new question bank,
-  `startAssessment`, `submitAssessment`, and `notifyOnInternAssessmentComplete`
-  appended at the end. Everything from before (Marketplace, Packages,
-  subscriptions, Phase 1 onboarding) is unchanged.
-- **`firestore.rules`** — only the Internship Program comment block was
-  updated (documentation only — the actual rules didn't need to change,
-  since the new assessment-session data is only ever touched by Cloud
-  Functions using the Admin SDK, which bypasses these rules entirely).
-- **`style.css`** — new styles appended at the end for the quiz screen, the
-  countdown timer, and the results score bars. Nothing existing was touched.
-- **`intern-test.html`** — brand new page, the actual test-taking screen.
-- **`intern-dashboard.html`** — updated to add the "Take Your Skills Check"
-  button and the post-test score summary.
-
-`intern-onboarding.html` did **not** need any changes — its existing
-"Go To My Dashboard" button and copy already pointed candidates to the
-dashboard, which now surfaces the test as their next step from there.
+- **`functions/index.js`** — full file, with `clockIn`, `startBreak`,
+  `endBreak`, `clockOut`, and `notifyOnInternRequest` appended at the end.
+  Attendance times are entirely server-set (never trusts a client-sent
+  time) and the four functions enforce the state machine (can't clock in
+  twice, can't clock out mid-break, etc.) so a day's record can't be gamed.
+  Everything from before (Marketplace, Packages, subscriptions, Phase 1/2
+  Internship) is unchanged.
+- **`firestore.rules`** — three new collections added: `/attendance`
+  (Cloud-Function-only writes, exactly like `/orders`), `/internTasks`
+  (Mentor-only create, intern can only self-advance status one safe step at
+  a time), `/internRequests` (intern can only create their own, starting at
+  `pending` — only an admin can change it after that). The `internTasks`
+  create-by-admin and `internRequests` update-by-admin rules are written
+  now, ahead of Phase 4's actual admin UI, the same way `/carts`+`/orders`
+  were pre-built ahead of Marketplace's checkout back at the very start of
+  that feature — saves a second Console-publish round once Phase 4 ships.
+- **`style.css`** — new section appended at the end for the attendance
+  widget, task cards, and request center — nothing existing was touched.
+- **`intern-portal.html`** — brand new page, the actual portal (three tabs:
+  Attendance / My Tasks / Request Center).
+- **`intern-dashboard.html`** — added the `approved` status branch with the
+  "Go To My Intern Portal" button.
 
 ## Deploy checklist — please do these in order
 
@@ -67,41 +120,43 @@ dashboard, which now surfaces the test as their next step from there.
    cd ~/ried
    firebase deploy --only functions
    ```
-   This adds `startAssessment`, `submitAssessment`, and
-   `notifyOnInternAssessmentComplete` as new functions — it should NOT ask
-   about deleting anything this time, since nothing existing was removed.
-3. Redeploy Firestore rules (documentation-only change, but keeps everything
-   in sync):
+   This adds `clockIn`, `startBreak`, `endBreak`, `clockOut`, and
+   `notifyOnInternRequest` as new functions — it should NOT ask about
+   deleting anything.
+3. Redeploy Firestore rules:
    ```
    firebase deploy --only firestore:rules,firestore:indexes
    ```
-   (No Storage rules changes this round, so no need to redeploy those.)
+   (No Storage rules changes this round.)
+4. Do Steps A and B above (manual Console edits) for one test intern
+   account.
 
 ## Test checklist
 
-Using a test intern account that's already completed onboarding (status
-`onboarded`):
-- Sign in, go to the dashboard, confirm you see "Skills Check Pending" with
-  a "Take Your Skills Check" button.
-- Click it, read the intro screen, click "Start My Skills Check" — confirm
-  the timer starts at 15:00 and counts down, and the first question shows a
-  category chip (HTML/CSS/Core Java/Logical Reasoning/Task-Based).
-- Click through a few answers, use Back to confirm your previous picks are
-  still highlighted, then go to the last question and click "Submit My
-  Test".
-- Confirm the results screen shows an overall score and a bar per category,
-  with an encouraging message (not "pass" or "fail" wording anywhere).
-- Confirm hello@ried.co.in receives an email with the candidate's name and
-  full score breakdown.
-- Go to the dashboard again — confirm it now shows "Pending Review" with the
-  same score breakdown, and there's no way to retake the test from here.
-- Optional: try letting the timer run all the way to zero on a fresh
-  attempt, and confirm it auto-submits without any extra click.
+Using the test account you approved in Step A:
+- Sign in, dashboard should show "Approved" with a "Go To My Intern Portal"
+  button — click it.
+- **Attendance tab**: click Clock In, confirm the status card updates to
+  "Working since [time]" and Start Break / Clock Out buttons appear. Click
+  Start Break, confirm it switches to "On a break" with an End Break
+  button. Click End Break, confirm it's back to "Working." Click Clock Out,
+  confirm it shows "Shift complete" with a worked-time total. Refresh the
+  page and confirm the status is remembered (it reads from Firestore, not
+  just in-memory).
+- **My Tasks tab**: after Step B's manual test task, confirm it shows up
+  with an Acknowledge button. Click it, confirm it becomes Mark Complete.
+  Click that, confirm the status badge shows "completed."
+- **Request Center tab**: submit one of each type if you have time (at
+  minimum, try Leave Request since it has the most fields), confirm it
+  shows up in "My Requests" below with a "pending" badge, and confirm
+  hello@ried.co.in gets an email for each one with the right details.
 
 ## Still to come
 
-Phase 3 (intern attendance, daily tasks, request center) and Phase 4 (Mentor
-side — task assignment, review, attendance reports, leave approval, with the
-Admin Dashboard's "Client Corner" kept visually separate from the
-"Internship Corner" per your instruction) are next, once you've had a chance
-to try this round out.
+Phase 4 — the Mentor/admin side: task assignment (with suggestions based on
+assessment results), reviewing/commenting/reopening tasks, attendance
+anomaly review and exportable reports, and leave approval — plus the
+Admin Dashboard's "Client Corner" / "Internship Corner" visual split you
+asked for partway through Phase 1. Once Phase 4 ships, the manual Console
+steps above go away entirely — a real Approve button and a real "assign a
+task" form will do what Steps A and B are standing in for now.

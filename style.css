@@ -2667,3 +2667,192 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
   line-height: 1.55;
   margin: 22px 0;
 }
+
+/* ============================================================
+   INTERNSHIP PROGRAM — INTERN PORTAL (intern-portal.html, Phase 3)
+   Attendance widget, daily task cards, and the request center.
+   Reuses .dash-card/.dash-card-head/.account-role-badge/.onboard-input/
+   .btn-primary/.btn-secondary for consistency with the rest of the site.
+   ============================================================ */
+.attendance-clock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  margin-bottom: 16px;
+}
+.attendance-status-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.attendance-status-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--blue), var(--blue-light));
+}
+.attendance-status-icon.on-break { background: linear-gradient(135deg, var(--orange), #ffb066); }
+.attendance-status-icon.completed { background: linear-gradient(135deg, #1c7a34, #2ea34e); }
+.attendance-status-icon.not-started { background: var(--muted); }
+.attendance-status-text strong { display: block; color: var(--navy); font-size: 1rem; }
+.attendance-status-text span { font-size: .82rem; color: var(--muted); }
+.attendance-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.attendance-breaks-log {
+  font-size: .82rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.attendance-breaks-log li { margin-bottom: 2px; }
+
+.attendance-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .85rem;
+}
+.attendance-history-table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: .76rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.attendance-history-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--navy);
+}
+.attendance-history-table tr:last-child td { border-bottom: none; }
+.attendance-flag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #b23434;
+  font-size: .76rem;
+  font-weight: 700;
+}
+
+/* Task cards */
+.task-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.task-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.task-card-title { font-weight: 700; color: var(--navy); font-size: 1rem; }
+.task-card-due { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.task-card-desc { color: var(--muted); font-size: .9rem; line-height: 1.5; margin-bottom: 12px; }
+.task-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 99px;
+  font-size: .74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.task-status-badge.assigned { background: rgba(214,140,20,.12); color: #b26b0e; }
+.task-status-badge.acknowledged { background: rgba(14,90,138,.12); color: var(--blue); }
+.task-status-badge.completed { background: rgba(28,122,52,.12); color: #1c7a34; }
+.task-status-badge.reopened { background: rgba(214,69,69,.12); color: #b23434; }
+.task-card-comments {
+  background: var(--bg-light);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: .84rem;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.task-card-comments strong { color: var(--navy); }
+
+/* Request Center */
+.request-type-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.request-type-btn {
+  padding: 12px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+  font-size: .84rem;
+  font-weight: 700;
+  color: var(--navy);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.request-type-btn i { display: block; font-size: 18px; margin-bottom: 6px; color: var(--blue); }
+.request-type-btn:hover { border-color: var(--blue-light); background: var(--bg-light); }
+.request-type-btn.selected { border-color: var(--blue); background: rgba(14,90,138,.07); }
+
+.request-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.request-history-row:last-child { border-bottom: none; }
+.request-history-type { font-weight: 700; color: var(--navy); font-size: .9rem; }
+.request-history-date { font-size: .78rem; color: var(--muted); }
+.request-status-badge {
+  padding: 4px 11px;
+  border-radius: 99px;
+  font-size: .74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.request-status-badge.pending { background: rgba(214,140,20,.12); color: #b26b0e; }
+.request-status-badge.approved { background: rgba(28,122,52,.12); color: #1c7a34; }
+.request-status-badge.rejected { background: rgba(214,69,69,.12); color: #b23434; }
+
+.portal-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.portal-tab {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-weight: 700;
+  font-size: .88rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.portal-tab i { margin-right: 6px; }
+.portal-tab:hover { border-color: var(--blue-light); }
+.portal-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }

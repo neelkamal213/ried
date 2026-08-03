@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Intern Portal | RIED Internship Program</title>
+  <meta name="description" content="Attendance, daily tasks, and requests for RIED interns.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="dashboard-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+      <nav class="main-nav">
+        <a href="intern-login.html">Sign In</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:150px">
+    <div class="container">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading your portal...
+      </div>
+
+      <div id="portal" class="hidden">
+
+        <div class="dash-welcome">
+          <div>
+            <span class="quest-eyebrow"><i class="fa-solid fa-briefcase"></i> RIED Internship Program</span>
+            <h1 class="dash-title" id="welcomeName">Welcome</h1>
+            <p class="dash-stage-desc">Mark your attendance, track your tasks, and submit requests — all from here.</p>
+          </div>
+          <button class="btn-secondary" id="signOutBtn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out</button>
+        </div>
+
+        <div class="portal-tabs">
+          <button class="portal-tab active" data-tab="attendance"><i class="fa-solid fa-clock"></i> Attendance</button>
+          <button class="portal-tab" data-tab="tasks"><i class="fa-solid fa-list-check"></i> My Tasks</button>
+          <button class="portal-tab" data-tab="requests"><i class="fa-solid fa-inbox"></i> Request Center</button>
+        </div>
+
+        <!-- ATTENDANCE TAB -->
+        <div id="tab-attendance" class="portal-tab-panel">
+          <div class="dash-card" style="margin-bottom:22px">
+            <div class="dash-card-head">
+              <h3><i class="fa-solid fa-clock"></i> Today's Attendance</h3>
+            </div>
+
+            <div class="attendance-clock-row">
+              <div class="attendance-status-chip">
+                <div class="attendance-status-icon not-started" id="statusIcon"><i class="fa-solid fa-power-off"></i></div>
+                <div class="attendance-status-text">
+                  <strong id="statusHeadline">Not clocked in yet</strong>
+                  <span id="statusSub">A 9-hour day, including a 1-hour break.</span>
+                </div>
+              </div>
+              <div class="attendance-actions">
+                <button class="btn-primary" id="clockInBtn"><i class="fa-solid fa-play"></i> Clock In</button>
+                <button class="btn-secondary hidden" id="startBreakBtn"><i class="fa-solid fa-mug-saucer"></i> Start Break</button>
+                <button class="btn-primary hidden" id="endBreakBtn"><i class="fa-solid fa-play"></i> End Break</button>
+                <button class="btn-secondary hidden" id="clockOutBtn"><i class="fa-solid fa-stop"></i> Clock Out</button>
+              </div>
+            </div>
+
+            <ul class="attendance-breaks-log hidden" id="breaksLog"></ul>
+            <div id="attendanceError" class="auth-error"></div>
+            <div id="attendanceSummary"></div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-head">
+              <h3><i class="fa-solid fa-calendar-days"></i> Recent Days</h3>
+            </div>
+            <div id="historyWrap">
+              <table class="attendance-history-table" id="historyTable">
+                <thead>
+                  <tr><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Break</th><th>Worked</th></tr>
+                </thead>
+                <tbody id="historyBody"></tbody>
+              </table>
+              <p class="dash-card-hint hidden" id="historyEmpty">No completed days yet — they'll show up here once you clock out for the first time.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TASKS TAB -->
+        <div id="tab-tasks" class="portal-tab-panel hidden">
+          <div class="dash-card">
+            <div class="dash-card-head">
+              <h3><i class="fa-solid fa-list-check"></i> My Tasks</h3>
+            </div>
+            <div id="tasksList"></div>
+            <p class="dash-card-hint hidden" id="tasksEmpty">No tasks assigned yet — check back soon, your Mentor will add some here.</p>
+          </div>
+        </div>
+
+        <!-- REQUESTS TAB -->
+        <div id="tab-requests" class="portal-tab-panel hidden">
+          <div class="dash-card" style="margin-bottom:22px">
+            <div class="dash-card-head">
+              <h3><i class="fa-solid fa-inbox"></i> Submit a Request</h3>
+            </div>
+            <div class="request-type-picker" id="requestTypePicker">
+              <button class="request-type-btn selected" data-type="edit_profile"><i class="fa-solid fa-user-pen"></i>Edit Profile</button>
+              <button class="request-type-btn" data-type="appointment_letter"><i class="fa-solid fa-file-signature"></i>Appointment Letter</button>
+              <button class="request-type-btn" data-type="leave_request"><i class="fa-solid fa-plane-departure"></i>Leave Request</button>
+              <button class="request-type-btn" data-type="experience_letter"><i class="fa-solid fa-award"></i>Experience Letter</button>
+              <button class="request-type-btn" data-type="resignation"><i class="fa-solid fa-door-open"></i>Resignation</button>
+            </div>
+
+            <div id="requestFormBody"></div>
+
+            <label class="onboard-label">Additional Notes <span class="onboard-optional">(optional)</span></label>
+            <textarea id="requestNotes" class="onboard-input" rows="3" placeholder="Anything else your Mentors should know"></textarea>
+
+            <div id="requestError" class="auth-error"></div>
+            <button class="btn-primary" id="submitRequestBtn" style="margin-top:14px">
+              <i class="fa-solid fa-paper-plane"></i> Submit Request
+            </button>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-head">
+              <h3><i class="fa-solid fa-clock-rotate-left"></i> My Requests</h3>
+            </div>
+            <div id="requestsHistory"></div>
+            <p class="dash-card-hint hidden" id="requestsEmpty">You haven't submitted any requests yet.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="intern-register.html">Internship Program</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+<script type="module">
+import {
+  auth, app, db, onAuthStateChanged, signOut,
+  doc, getDoc, collection, getDocs, query, where,
+  addDoc, updateDoc, serverTimestamp
+} from "./js/firebase-init.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+const functions = getFunctions(app);
+const clockInFn = httpsCallable(functions, "clockIn");
+const startBreakFn = httpsCallable(functions, "startBreak");
+const endBreakFn = httpsCallable(functions, "endBreak");
+const clockOutFn = httpsCallable(functions, "clockOut");
+
+let currentUser = null;
+let internData = null;
+let todayDoc = null;
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function kolkataDateKey(date) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
+
+function fmtTime(ts) {
+  if (!ts || typeof ts.toDate !== 'function') return '—';
+  return ts.toDate().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+}
+
+function fmtMinutes(mins) {
+  if (mins === undefined || mins === null) return '—';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
+}
+
+/* ---------------- TABS ---------------- */
+document.querySelectorAll('.portal-tab').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.portal-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.portal-tab-panel').forEach(p => p.classList.add('hidden'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+  });
+});
+
+/* ---------------- ATTENDANCE ---------------- */
+async function loadTodayAttendance() {
+  const dateKey = kolkataDateKey(new Date());
+  const snap = await getDoc(doc(db, 'attendance', `${currentUser.uid}_${dateKey}`));
+  todayDoc = snap.exists() ? snap.data() : null;
+  renderAttendance();
+}
+
+function renderAttendance() {
+  const icon = document.getElementById('statusIcon');
+  const headline = document.getElementById('statusHeadline');
+  const sub = document.getElementById('statusSub');
+  const breaksLog = document.getElementById('breaksLog');
+  const summary = document.getElementById('attendanceSummary');
+
+  const clockInBtn = document.getElementById('clockInBtn');
+  const startBreakBtn = document.getElementById('startBreakBtn');
+  const endBreakBtn = document.getElementById('endBreakBtn');
+  const clockOutBtn = document.getElementById('clockOutBtn');
+  [clockInBtn, startBreakBtn, endBreakBtn, clockOutBtn].forEach(b => b.classList.add('hidden'));
+
+  const status = todayDoc ? todayDoc.status : null;
+
+  if (!todayDoc || status === null) {
+    icon.className = 'attendance-status-icon not-started';
+    icon.innerHTML = '<i class="fa-solid fa-power-off"></i>';
+    headline.textContent = 'Not clocked in yet';
+    sub.textContent = "A 9-hour day, including a 1-hour break.";
+    clockInBtn.classList.remove('hidden');
+    breaksLog.classList.add('hidden');
+    summary.innerHTML = '';
+    return;
+  }
+
+  if (status === 'working') {
+    icon.className = 'attendance-status-icon';
+    icon.innerHTML = '<i class="fa-solid fa-briefcase"></i>';
+    headline.textContent = `Working since ${fmtTime(todayDoc.clockInAt)}`;
+    sub.textContent = "Don't forget to log your break.";
+    startBreakBtn.classList.remove('hidden');
+    clockOutBtn.classList.remove('hidden');
+  } else if (status === 'on_break') {
+    icon.className = 'attendance-status-icon on-break';
+    icon.innerHTML = '<i class="fa-solid fa-mug-saucer"></i>';
+    headline.textContent = 'On a break';
+    sub.textContent = "Hit End Break when you're back.";
+    endBreakBtn.classList.remove('hidden');
+  } else if (status === 'completed') {
+    icon.className = 'attendance-status-icon completed';
+    icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+    headline.textContent = `Shift complete — ${fmtMinutes(todayDoc.totalWorkedMinutes)} worked`;
+    sub.textContent = `Clocked out at ${fmtTime(todayDoc.clockOutAt)}. See you tomorrow!`;
+    summary.innerHTML = todayDoc.flagged
+      ? `<p class="dash-card-hint"><span class="attendance-flag-badge"><i class="fa-solid fa-triangle-exclamation"></i> Flagged for review</span> — ${esc(todayDoc.flagReason)}</p>`
+      : '';
+  }
+
+  const breaks = Array.isArray(todayDoc.breaks) ? todayDoc.breaks : [];
+  if (breaks.length) {
+    breaksLog.classList.remove('hidden');
+    breaksLog.innerHTML = breaks.map((b, i) => `<li><i class="fa-solid fa-mug-saucer"></i> Break ${i + 1}: ${fmtTime(b.start)} – ${b.end ? fmtTime(b.end) : 'ongoing'}</li>`).join('');
+  } else {
+    breaksLog.classList.add('hidden');
+  }
+}
+
+async function handleAttendanceAction(fn, label) {
+  const errBox = document.getElementById('attendanceError');
+  errBox.classList.remove('show');
+  try {
+    await fn();
+    await loadTodayAttendance();
+    await loadHistory();
+  } catch (err) {
+    console.error(`${label} failed:`, err);
+    errBox.textContent = err && err.message ? err.message : `Something went wrong — please try again.`;
+    errBox.classList.add('show');
+  }
+}
+
+document.getElementById('clockInBtn').addEventListener('click', () => handleAttendanceAction(clockInFn, 'clockIn'));
+document.getElementById('startBreakBtn').addEventListener('click', () => handleAttendanceAction(startBreakFn, 'startBreak'));
+document.getElementById('endBreakBtn').addEventListener('click', () => handleAttendanceAction(endBreakFn, 'endBreak'));
+document.getElementById('clockOutBtn').addEventListener('click', () => handleAttendanceAction(clockOutFn, 'clockOut'));
+
+async function loadHistory() {
+  const q = query(collection(db, 'attendance'), where('uid', '==', currentUser.uid));
+  const snap = await getDocs(q);
+  const rows = snap.docs
+    .map(d => d.data())
+    .filter(d => d.status === 'completed')
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .slice(0, 10);
+
+  const body = document.getElementById('historyBody');
+  const empty = document.getElementById('historyEmpty');
+  if (!rows.length) {
+    body.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  body.innerHTML = rows.map(r => `
+    <tr>
+      <td>${esc(r.date)}</td>
+      <td>${fmtTime(r.clockInAt)}</td>
+      <td>${fmtTime(r.clockOutAt)}</td>
+      <td>${fmtMinutes(r.totalBreakMinutes)}${r.flagged ? ' <span class="attendance-flag-badge"><i class="fa-solid fa-triangle-exclamation"></i></span>' : ''}</td>
+      <td>${fmtMinutes(r.totalWorkedMinutes)}</td>
+    </tr>
+  `).join('');
+}
+
+/* ---------------- TASKS ---------------- */
+async function loadTasks() {
+  const q = query(collection(db, 'internTasks'), where('internUid', '==', currentUser.uid));
+  const snap = await getDocs(q);
+  const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => {
+      const at = a.assignedAt && a.assignedAt.toMillis ? a.assignedAt.toMillis() : 0;
+      const bt = b.assignedAt && b.assignedAt.toMillis ? b.assignedAt.toMillis() : 0;
+      return bt - at;
+    });
+
+  const list = document.getElementById('tasksList');
+  const empty = document.getElementById('tasksEmpty');
+  if (!tasks.length) {
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.innerHTML = tasks.map(t => {
+    const comments = Array.isArray(t.mentorComments) ? t.mentorComments : [];
+    const commentsHTML = comments.length
+      ? `<div class="task-card-comments"><strong>Mentor notes:</strong><br>${comments.map(c => esc(c.comment)).join('<br>')}</div>`
+      : '';
+    let actionHTML = '';
+    if (t.status === 'assigned') {
+      actionHTML = `<button class="btn-secondary" data-action="acknowledge" data-id="${t.id}"><i class="fa-solid fa-check"></i> Acknowledge</button>`;
+    } else if (t.status === 'acknowledged' || t.status === 'reopened') {
+      actionHTML = `<button class="btn-primary" data-action="complete" data-id="${t.id}"><i class="fa-solid fa-flag-checkered"></i> Mark Complete</button>`;
+    }
+    return `
+      <div class="task-card">
+        <div class="task-card-head">
+          <div>
+            <div class="task-card-title">${esc(t.title)}</div>
+            ${t.dueDate ? `<div class="task-card-due"><i class="fa-solid fa-calendar"></i> Due ${esc(t.dueDate)}</div>` : ''}
+          </div>
+          <span class="task-status-badge ${esc(t.status)}">${esc((t.status || '').replace('_', ' '))}</span>
+        </div>
+        <div class="task-card-desc">${esc(t.description)}</div>
+        ${commentsHTML}
+        ${actionHTML ? `<div style="margin-top:12px">${actionHTML}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const taskId = btn.dataset.id;
+      const action = btn.dataset.action;
+      btn.disabled = true;
+      try {
+        if (action === 'acknowledge') {
+          await updateDoc(doc(db, 'internTasks', taskId), { status: 'acknowledged', acknowledgedAt: serverTimestamp() });
+        } else if (action === 'complete') {
+          await updateDoc(doc(db, 'internTasks', taskId), { status: 'completed', completedAt: serverTimestamp() });
+        }
+        await loadTasks();
+      } catch (err) {
+        console.error('task update failed:', err);
+        btn.disabled = false;
+        alert("Couldn't update that task — please try again.");
+      }
+    });
+  });
+}
+
+/* ---------------- REQUEST CENTER ---------------- */
+let selectedRequestType = 'edit_profile';
+
+const REQUEST_FORMS = {
+  edit_profile: () => `
+    <label class="onboard-label">What would you like updated?</label>
+    <textarea id="rf_requestedChanges" class="onboard-input" rows="3" placeholder="e.g. update my phone number to ..."></textarea>
+  `,
+  appointment_letter: () => `<p class="onboard-hint">We'll prepare your appointment letter and reach out — add any notes below if there's something specific to include.</p>`,
+  leave_request: () => `
+    <label class="onboard-label">Start Date</label>
+    <input type="date" id="rf_startDate" class="onboard-input">
+    <label class="onboard-label">End Date</label>
+    <input type="date" id="rf_endDate" class="onboard-input">
+    <label class="onboard-label">Reason</label>
+    <textarea id="rf_reason" class="onboard-input" rows="2" placeholder="Reason for leave"></textarea>
+  `,
+  experience_letter: () => `<p class="onboard-hint">We'll prepare your experience letter — add any notes below if there's something specific to include.</p>`,
+  resignation: () => `
+    <label class="onboard-label">Last Working Day</label>
+    <input type="date" id="rf_lastWorkingDay" class="onboard-input">
+    <label class="onboard-label">Reason</label>
+    <textarea id="rf_reason" class="onboard-input" rows="2" placeholder="Reason for resigning"></textarea>
+  `
+};
+
+function renderRequestForm() {
+  document.getElementById('requestFormBody').innerHTML = REQUEST_FORMS[selectedRequestType]();
+}
+
+document.querySelectorAll('.request-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.request-type-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedRequestType = btn.dataset.type;
+    renderRequestForm();
+  });
+});
+
+function collectRequestDetails() {
+  if (selectedRequestType === 'edit_profile') {
+    return { requestedChanges: document.getElementById('rf_requestedChanges').value.trim() };
+  }
+  if (selectedRequestType === 'leave_request') {
+    return {
+      startDate: document.getElementById('rf_startDate').value,
+      endDate: document.getElementById('rf_endDate').value,
+      reason: document.getElementById('rf_reason').value.trim()
+    };
+  }
+  if (selectedRequestType === 'resignation') {
+    return {
+      lastWorkingDay: document.getElementById('rf_lastWorkingDay').value,
+      reason: document.getElementById('rf_reason').value.trim()
+    };
+  }
+  return {};
+}
+
+document.getElementById('submitRequestBtn').addEventListener('click', async () => {
+  const errBox = document.getElementById('requestError');
+  errBox.classList.remove('show');
+  const btn = document.getElementById('submitRequestBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+  try {
+    const details = collectRequestDetails();
+    await addDoc(collection(db, 'internRequests'), {
+      internUid: currentUser.uid,
+      internName: internData.fullName || '',
+      internEmail: currentUser.email,
+      type: selectedRequestType,
+      details,
+      notes: document.getElementById('requestNotes').value.trim(),
+      status: 'pending',
+      submittedAt: serverTimestamp()
+    });
+    document.getElementById('requestNotes').value = '';
+    renderRequestForm();
+    await loadRequests();
+  } catch (err) {
+    console.error('submitRequest failed:', err);
+    errBox.textContent = "Something went wrong submitting that — please try again.";
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Request';
+  }
+});
+
+async function loadRequests() {
+  const q = query(collection(db, 'internRequests'), where('internUid', '==', currentUser.uid));
+  const snap = await getDocs(q);
+  const TYPE_LABELS = {
+    edit_profile: 'Edit Profile', appointment_letter: 'Appointment Letter', leave_request: 'Leave Request',
+    experience_letter: 'Experience Letter', resignation: 'Resignation'
+  };
+  const rows = snap.docs.map(d => d.data()).sort((a, b) => {
+    const at = a.submittedAt && a.submittedAt.toMillis ? a.submittedAt.toMillis() : 0;
+    const bt = b.submittedAt && b.submittedAt.toMillis ? b.submittedAt.toMillis() : 0;
+    return bt - at;
+  });
+
+  const wrap = document.getElementById('requestsHistory');
+  const empty = document.getElementById('requestsEmpty');
+  if (!rows.length) {
+    wrap.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  wrap.innerHTML = rows.map(r => `
+    <div class="request-history-row">
+      <div>
+        <div class="request-history-type">${esc(TYPE_LABELS[r.type] || r.type)}</div>
+        <div class="request-history-date">${r.submittedAt && r.submittedAt.toDate ? esc(r.submittedAt.toDate().toLocaleDateString('en-IN')) : ''}</div>
+      </div>
+      <span class="request-status-badge ${esc(r.status)}">${esc(r.status)}</span>
+    </div>
+  `).join('');
+}
+
+/* ---------------- INIT ---------------- */
+onAuthStateChanged(auth, async (user) => {
+  if (!user || user.isAnonymous) {
+    window.location.href = 'intern-login.html';
+    return;
+  }
+  currentUser = user;
+
+  try {
+    const snap = await getDoc(doc(db, 'interns', user.uid));
+    if (!snap.exists()) {
+      window.location.href = 'intern-register.html';
+      return;
+    }
+    internData = snap.data();
+    if (internData.status !== 'approved') {
+      window.location.href = 'intern-dashboard.html';
+      return;
+    }
+
+    document.getElementById('welcomeName').textContent = `Welcome, ${internData.fullName || user.email}`;
+    renderRequestForm();
+    await Promise.all([loadTodayAttendance(), loadHistory(), loadTasks(), loadRequests()]);
+  } catch (e) {
+    console.error('intern-portal load failed:', e);
+  }
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('portal').classList.remove('hidden');
+});
+
+document.getElementById('signOutBtn').addEventListener('click', async () => {
+  await signOut(auth);
+  window.location.href = 'index.html';
+});
+
+window.addEventListener("scroll", function () {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>
