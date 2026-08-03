@@ -2160,3 +2160,168 @@ exports.notifyOnInternRequest = onDocumentCreated(
     }
   }
 );
+
+/**
+ * ===========================================================================
+ * INTERNSHIP PROGRAM — PHASE 4: MENTOR/ADMIN SIDE (2026-08-03)
+ * ===========================================================================
+ *
+ * Unlike every earlier Internship Program phase, Phase 4 needed almost no
+ * new Cloud Functions at all — every admin action it needs (approve/reject
+ * an application, assign a task, comment/reopen a task, approve/reject a
+ * request) is a direct client Firestore write, already fully covered by
+ * firestore.rules built AHEAD of time back in Phase 3 (the "admin can
+ * update /interns to any status," "admin-only create/update on
+ * /internTasks," and "admin-only update on /internRequests" clauses) —
+ * exactly the payoff of that "write the rule now, build the UI later"
+ * convention this project has followed since Tier 9. The only two things
+ * that genuinely needed server code are the two notification emails below,
+ * since a Firestore rule can't send an email.
+ */
+
+exports.notifyOnInternApprovalDecision = onDocumentWritten(
+  { document: "interns/{uid}", secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return;
+    const after = afterSnap.data();
+    const beforeSnap = event.data.before;
+    const before = beforeSnap.exists ? beforeSnap.data() : null;
+
+    const afterTs = after.reviewedAt ? after.reviewedAt.toMillis() : null;
+    const beforeTs = before && before.reviewedAt ? before.reviewedAt.toMillis() : null;
+    const isNewDecision = !!afterTs && afterTs !== beforeTs;
+    if (!isNewDecision) return;
+    if (after.status !== "approved" && after.status !== "rejected") return;
+
+    const uid = event.params.uid;
+    const isApproved = after.status === "approved";
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    if (after.email) {
+      try {
+        await sendMail(transporter, {
+          to: after.email,
+          fromName: "RIED — Internship Program",
+          subject: isApproved
+            ? "You're In! Your RIED Internship Application Was Approved"
+            : "Update on Your RIED Internship Application",
+          text: isApproved
+            ? [
+                `Hi ${after.fullName || "there"},`,
+                "",
+                "Great news — your RIED Internship Program application has been approved!",
+                "",
+                "Sign in at intern-login.html to access your Intern Portal — attendance, tasks, and requests all live there now.",
+                "",
+                "Welcome to the team!",
+                "— Team RIED"
+              ].join("\n")
+            : [
+                `Hi ${after.fullName || "there"},`,
+                "",
+                "Thank you for your interest in the RIED Internship Program. After review, we won't be moving forward with your application at this time.",
+                "",
+                "We appreciate the time you put into your application and skills check, and wish you the best going forward.",
+                "",
+                "— Team RIED"
+              ].join("\n")
+        });
+      } catch (e) {
+        logger.error("notifyOnInternApprovalDecision: failed to send candidate email", e);
+      }
+    }
+
+    try {
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        subject: `Internship Application ${isApproved ? "Approved" : "Rejected"} — ${after.fullName || after.email || uid}`,
+        text: [
+          `${after.fullName || after.email || uid}'s Internship Program application was just ${after.status} in the admin dashboard.`,
+          `Candidate Email: ${after.email || ""}`,
+          `Candidate UID: ${uid}`
+        ].join("\n"),
+        fromName: "RIED Website — Internship Program"
+      });
+    } catch (e) {
+      logger.error("notifyOnInternApprovalDecision: failed to send RIED record email", e);
+    }
+  }
+);
+
+exports.notifyOnInternRequestReviewed = onDocumentWritten(
+  { document: "internRequests/{requestId}", secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return;
+    const after = afterSnap.data();
+    const beforeSnap = event.data.before;
+    const before = beforeSnap.exists ? beforeSnap.data() : null;
+
+    const afterTs = after.reviewedAt ? after.reviewedAt.toMillis() : null;
+    const beforeTs = before && before.reviewedAt ? before.reviewedAt.toMillis() : null;
+    const isNewDecision = !!afterTs && afterTs !== beforeTs;
+    if (!isNewDecision) return;
+    if (after.status !== "approved" && after.status !== "rejected") return;
+
+    const TYPE_LABELS = {
+      edit_profile: "Edit Profile Request",
+      appointment_letter: "Appointment Letter Request",
+      leave_request: "Leave Request",
+      experience_letter: "Experience Letter Request",
+      resignation: "Resignation"
+    };
+    const label = TYPE_LABELS[after.type] || after.type || "Internship Request";
+    const isApproved = after.status === "approved";
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    if (after.internEmail) {
+      try {
+        await sendMail(transporter, {
+          to: after.internEmail,
+          fromName: "RIED — Internship Program",
+          subject: `${label} — ${isApproved ? "Approved" : "Not Approved"}`,
+          text: [
+            `Hi ${after.internName || "there"},`,
+            "",
+            `Your ${label.toLowerCase()} has been ${isApproved ? "approved" : "reviewed and not approved"}.`,
+            after.adminNote ? `\nNote from your Mentor: ${after.adminNote}` : "",
+            "",
+            "You can see the latest status any time in your Intern Portal's Request Center.",
+            "",
+            "— Team RIED"
+          ].join("\n")
+        });
+      } catch (e) {
+        logger.error("notifyOnInternRequestReviewed: failed to send candidate email", e);
+      }
+    }
+
+    try {
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        subject: `${label} ${isApproved ? "Approved" : "Rejected"} — ${after.internName || after.internEmail || ""}`,
+        text: [
+          `${label} from ${after.internName || after.internEmail || ""} was just ${after.status} in the admin dashboard.`,
+          after.adminNote ? `Admin Note: ${after.adminNote}` : "",
+          `Candidate UID: ${after.internUid || ""}`
+        ].filter(Boolean).join("\n"),
+        fromName: "RIED Website — Internship Program"
+      });
+    } catch (e) {
+      logger.error("notifyOnInternRequestReviewed: failed to send RIED record email", e);
+    }
+  }
+);
