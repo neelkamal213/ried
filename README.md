@@ -1,77 +1,95 @@
-# v20 — Internship Program Phase 4: Mentor/Admin Side (2026-08-03)
+# v21 — Admin Bug Fixes, Full Intern Roster, and Skills-Check Reapply (2026-08-03)
+
+## What this fixes
+
+**The Reject button and Attendance export buttons weren't just cosmetically
+broken — they were invisible.** `style.css` defines `.btn-secondary` twice:
+once early on with the orange/blue gradient look you see everywhere else,
+and once later with a translucent look meant for buttons sitting on a dark
+background (the homepage hero, nav, etc). Right after that second
+definition there's a list of page types that get the readable style back —
+but the Admin Dashboard's `<body>` tag wasn't on that list, so every
+`.btn-secondary` button on that page fell through to the invisible version.
+
+This wasn't just Reject and the Attendance export buttons — it was also
+**Sign Out**, **Mark as Paid**, and **Reopen With Comment**. All of them are
+fixed now with one small change: the Admin Dashboard's `<body>` tag now
+carries a class, and that class was added to the same list that already
+covers your other account pages.
 
 ## What this adds
 
-This is the last piece of the original Internship Program request — the
-Mentor (Neel/Pramod) side of everything Phases 1-3 built. The Admin
-Dashboard now has a clear **Client Corner** (your existing founder
-Flywheel approvals + Marketplace payouts, unchanged) and a brand new
-**Internship Corner** below it, per your instruction partway through Phase 1
-to keep these visually separate rather than one mixed list.
+### 1. Full Intern Roster (new section, top of Internship Corner)
+Every intern who's ever applied, at any stage — not just the ones currently
+waiting on an action. Search by name or email, filter by status, and for
+anyone who's taken the skills check more than once, click **History** to
+expand every past attempt with its score breakdown. This reuses the same
+intern data your dashboard was already fetching once per admin session — no
+new reads, no new Firestore rules.
 
-Internship Corner has five sections:
+### 2. Search/filter added to four existing sections
+Pending Internship Applications, Tasks Awaiting Review, Attendance's
+Flagged Days, and Intern Requests all got a search box at the top. None of
+these needed new data — they just filter what was already being loaded.
 
-1. **Pending Internship Applications** — every candidate who's finished
-   their skills check, with their score breakdown, and Approve / Reject
-   buttons. Approving is what actually unlocks their Intern Portal — this
-   replaces the manual Firebase Console edit the v19 README had you doing
-   as a stand-in. Both approving and rejecting email the candidate directly
-   (a real notification either way), plus a copy to hello@ried.co.in.
-2. **Assign a Daily Task** — pick an approved intern, and you'll see 1-2
-   suggested tasks based on their strongest skills-check category (you can
-   use a suggestion as a starting point or ignore it and write your own).
-   Fill in a title, description, and due date, tick "client-related" if it
-   is one, and assign it — it shows up on their Intern Portal immediately.
-3. **Tasks Awaiting Review** — every task an intern has marked complete.
-   Add a comment and either Approve & Close it, or Reopen With Comment to
-   send it back (which puts a "Mark Complete" button back on their end).
-4. **Attendance** — three one-click CSV exports (Today / This Week / This
-   Month) with every intern's clock times, break minutes, and worked
-   minutes, plus a "Flagged Days" list surfacing anything that looked off
-   (break ran long, or the day was well under 9 hours) so you don't have to
-   scroll through everyone's raw attendance to find what's worth a look.
-5. **Intern Requests** — every pending Edit Profile / Appointment Letter /
-   Leave Request / Experience Letter / Resignation request, with an
-   optional note back to the intern, and Approve / Reject. Both actions
-   email the intern directly plus hello@ried.co.in — this is also where
-   Leave Request approvals get their required "goes to both the intern and
-   hello@ried.co.in" email from your original ask.
+### 3. Skills-check reapply (up to 3 attempts)
+The actual gap: a rejected candidate — whether from a straightforward
+rejection or from timing out and getting a low score that got rejected —
+had no way back in. Now:
 
-## A nice side effect of how this was built
+- A rejected candidate's dashboard shows a **Retake Your Skills Check**
+  button, as long as they haven't used all 3 attempts.
+- Retaking always starts a completely fresh, freshly-timed set of
+  questions — never a resume of the old one.
+- Every attempt's score is kept (not overwritten), so you can see the full
+  history for anyone who's retaken — that's what the Roster's History
+  button shows.
+- Once someone's used all 3 attempts and is still rejected, the retake
+  button is replaced with a note to reach out to hello@ried.co.in instead.
+- The rejection email now mentions how many attempts are left (or that
+  there are none), so the candidate isn't left guessing.
 
-Every write this round needed — approving an application, assigning a task,
-reviewing one, deciding on a request — turned out to already be covered by
-the Firestore rules built back in Phase 3 (they were written ahead of time
-specifically so this round wouldn't need a rules republish). **So this
-round needs NO Firestore rules changes at all** — only a Cloud Functions
-deploy, for the two new notification emails. `firestore.rules` is included
-in this folder unchanged, just so the folder is a complete, self-contained
-snapshot — you don't need to redeploy it.
+**Important — this applies automatically to your existing test account.**
+The candidate you rejected during testing has no attempt-count on her
+record yet, and a missing attempt-count is treated as zero used. The moment
+this round deploys, her dashboard will show the Retake button with all 3
+attempts available — nothing needs to be hand-edited in Firestore for her.
+
+### Zero Firestore rules changes
+Every write this feature needs (flipping status back to "onboarded",
+tracking attempt count, recording attempt history) happens inside
+`startAssessment`/`submitAssessment`, which run with Cloud Functions'
+Admin SDK — that bypasses Firestore rules entirely, the same way grading
+already did. `firestore.rules` is included in this folder unchanged, purely
+so the folder is a complete snapshot — you don't need to redeploy it.
 
 ## What's in this folder
 
-- **`functions/index.js`** — two new triggers appended at the end:
-  `notifyOnInternApprovalDecision` (emails the candidate + hello@ried.co.in
-  the moment an application is approved or rejected) and
-  `notifyOnInternRequestReviewed` (emails the intern + hello@ried.co.in the
-  moment a request is approved or rejected, with your optional note
-  included). Everything else in this file is unchanged.
-- **`js/firebase-init.js`** — added `arrayUnion` and `Timestamp` to the
-  shared Firestore imports/exports (needed for Mentor comments on tasks).
-- **`admin-dashboard.html`** — full rewrite of the page body: the Client
-  Corner / Internship Corner split, plus all five new Internship Corner
-  sections described above.
-- **`style.css`** — a small new section appended at the end: the corner
-  header styling (blue accent for Client Corner, orange for Internship
-  Corner) and a couple of small layout helpers for the suggestion chips and
-  export buttons.
-- **`firestore.rules`** — included unchanged (see above), just for
-  completeness.
+- **`functions/index.js`** — `startAssessment` now also accepts a rejected
+  candidate with attempts remaining and starts them a fresh attempt;
+  `submitAssessment` now also records the attempt into a history list; the
+  rejection email in `notifyOnInternApprovalDecision` now mentions attempts
+  remaining. Everything else in this file is unchanged.
+- **`admin-dashboard.html`** — the Intern Roster section, search boxes on
+  four existing sections, and the `admin-page` class on `<body>` (the CSS
+  fix). All existing sections/behavior otherwise unchanged.
+- **`style.css`** — the one-line fix extending the button-style override to
+  the Admin Dashboard, plus a small new section for the roster/search
+  styling.
+- **`intern-test.html`** — the entry guard now lets a rejected candidate
+  with attempts left through, and shows "Attempt X of 3" on the intro
+  screen when retaking.
+- **`intern-dashboard.html`** — a real "Not Selected This Time" state with
+  the Retake button (or the out-of-attempts message), replacing what used
+  to be a generic dead-end message.
+- **`firestore.rules`** — included unchanged, for completeness (see above).
 
 ## Deploy checklist
 
-1. Copy every file in this folder over the matching path in your repo
-   (note the `js/firebase-init.js` path), push to GitHub.
+1. Copy every file in this folder over the matching path in your repo, push
+   to GitHub. (The static files — `admin-dashboard.html`, `style.css`,
+   `intern-test.html`, `intern-dashboard.html` — go live on GitHub Pages as
+   soon as you push; no Cloud Shell needed for those.)
 2. Redeploy Cloud Functions (fresh clone, as always):
    ```
    cd ~
@@ -84,52 +102,39 @@ snapshot — you don't need to redeploy it.
    (if that prints nothing: `npm install nodemailer@6.9.14 --save`), then:
    ```
    cd ~/ried
-   firebase deploy --only functions
+   firebase deploy --only functions:startAssessment,functions:submitAssessment,functions:notifyOnInternApprovalDecision
    ```
-   This adds `notifyOnInternApprovalDecision` and
-   `notifyOnInternRequestReviewed` — it should NOT ask about deleting
-   anything.
-3. That's it — **no Firestore rules redeploy needed this round** (see
-   above). No Storage rules changes either.
+   **Note the scoped `--only` list this time** — only these 3 functions
+   actually changed this round, and scoping the deploy to just them (rather
+   than a bare `--only functions` across all 22) avoids the Cloud Run CPU
+   quota issue we hit during the v20 deploy. This is a general habit worth
+   keeping going forward: as the function count grows, scope deploys to
+   what actually changed rather than redeploying everything every time.
+3. That's it — **no Firestore rules redeploy needed this round**, and no
+   Storage rules changes either.
 
 ## Test checklist
 
-Using the test account you approved manually back in the v19 round (or a
-fresh one that's completed the skills check):
-1. If you want to test the Approve flow itself rather than reusing an
-   already-approved account, sign up a second test account and get it all
-   the way through onboarding + the skills check, so it lands on
-   "assessment_completed."
-2. Sign in to the Admin Dashboard as Pramod or Neel — confirm you see the
-   Client Corner / Internship Corner split, with that candidate showing up
-   under Pending Internship Applications with their score.
-3. Click Approve — confirm the item disappears from the list, the
-   candidate gets an email, and hello@ried.co.in gets a copy. Sign in as
-   that candidate and confirm their dashboard now shows "Approved" with the
-   portal button.
-4. In Assign a Daily Task, pick that intern from the dropdown — confirm
-   suggested tasks show up based on their strongest category — click one,
-   confirm it fills in the title/description, then assign it. Sign in as
-   the intern and confirm the task shows up under My Tasks.
-5. As the intern, Acknowledge then Mark Complete that task. Back in the
-   Admin Dashboard, confirm it shows up under Tasks Awaiting Review — add a
-   comment and try Reopen With Comment, then confirm the intern's portal
-   shows it back with a Mark Complete button and your comment visible.
-6. Have the intern clock in/out at least once (from the v19 round), then
-   try the three attendance export buttons and confirm a CSV downloads with
-   their name and times in it.
-7. Have the intern submit a Leave Request from their Request Center.
-   Approve it from the Admin Dashboard with a short note — confirm the
-   intern gets an email with your note, hello@ried.co.in gets a copy, and
-   their Request Center now shows it as "approved."
-
-## The whole Internship Program, end to end
-
-With this round, all four phases from your original request are built:
-sign-up and onboarding (Phase 1), the skills check (Phase 2), the full
-intern portal — attendance, tasks, requests (Phase 3), and now the Mentor
-side to manage all of it (Phase 4). Everything is live once this round
-deploys — the only outstanding item across all four rounds is running
-through each phase's test checklist end-to-end, which the checklist above
-finally makes possible without any manual Console edits standing in for
-missing features.
+1. **CSS fix**: sign in to the Admin Dashboard — confirm Sign Out, Reject
+   (in Pending Internship Applications and Intern Requests), the 3
+   Attendance export buttons, and Reopen With Comment are all now clearly
+   visible with the same light-navy button style as everywhere else.
+2. **Roster**: confirm the Intern Roster section shows every intern
+   regardless of status. Try the search box and the status filter. Find
+   your already-rejected test account and confirm it appears with status
+   "Rejected."
+3. **Reapply — the main feature**: sign in as that already-rejected test
+   account (or reuse a fresh one you reject for this test) — confirm the
+   dashboard now shows "Not Selected This Time" with a Retake Your Skills
+   Check button. Click it, confirm the intro screen shows "Attempt 2 of 3",
+   complete it, and confirm you land back on "Pending Review" like a normal
+   first attempt.
+4. Back in the Admin Dashboard, reject that account again — confirm the
+   Roster's History button on their row now shows both attempts with their
+   separate scores. Reject a 3rd time (their 3rd attempt) and confirm the
+   dashboard now shows the "used all attempts, reach out to
+   hello@ried.co.in" message instead of a Retake button, and that
+   `intern-test.html` also refuses entry directly if visited by URL.
+5. Search/filter: try the search boxes on Pending Internship Applications,
+   Tasks Awaiting Review, Flagged Days, and Intern Requests — confirm each
+   narrows the list as you type.

@@ -42,6 +42,7 @@
         <!-- INTRO -->
         <div id="introScreen">
           <span class="quest-eyebrow"><i class="fa-solid fa-gamepad"></i> Skills Check</span>
+          <span class="account-role-badge hidden" id="attemptBadge" style="margin-left:8px"></span>
           <h2 class="quest-intro-title">Let's see what you've got! 🚀</h2>
           <p class="quest-intro-copy">
             20 quick, easy questions across a few areas — this isn't a pass/fail test, it's just a fun way for us
@@ -153,6 +154,7 @@ const CATEGORY_META = {
   task: { label: 'Task-Based', icon: 'fa-list-check' }
 };
 const LETTERS = ['A', 'B', 'C', 'D'];
+const ASSESSMENT_MAX_ATTEMPTS = 3; // display-only mirror of the server-side cap in functions/index.js
 
 let questions = [];
 let currentIndex = 0;
@@ -341,10 +343,20 @@ onAuthStateChanged(auth, async (user) => {
       window.location.href = 'intern-onboarding.html';
       return;
     }
-    if (data.status && data.status !== 'onboarded') {
-      // Already taken (or further along) — nothing more to do here.
+    // v21 (2026-08-03): a rejected candidate can retake the skills check
+    // (up to ASSESSMENT_MAX_ATTEMPTS total, enforced server-side in
+    // startAssessment) — only bounce them away if they're rejected AND out
+    // of attempts, or if they're anywhere else in the pipeline already.
+    const attemptsUsed = data.attemptCount || 0;
+    const canRetake = data.status === 'rejected' && attemptsUsed < ASSESSMENT_MAX_ATTEMPTS;
+    if (data.status && data.status !== 'onboarded' && !canRetake) {
+      // Already taken (or further along, or out of retakes) — nothing more to do here.
       window.location.href = 'intern-dashboard.html';
       return;
+    }
+    if (canRetake) {
+      document.getElementById('attemptBadge').textContent = `Attempt ${attemptsUsed + 1} of ${ASSESSMENT_MAX_ATTEMPTS}`;
+      document.getElementById('attemptBadge').classList.remove('hidden');
     }
   } catch (e) {
     console.error('intern-test load failed:', e);

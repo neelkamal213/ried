@@ -155,6 +155,37 @@ function renderStatus(status, data) {
         <i class="fa-solid fa-briefcase"></i> Go To My Intern Portal
       </a>
     `;
+  } else if (status === 'rejected') {
+    // v21 (2026-08-03): a rejection isn't a dead end — up to
+    // ASSESSMENT_MAX_ATTEMPTS total skills-check attempts are allowed
+    // (enforced server-side in startAssessment). attemptCount defaults to
+    // 0 for anyone rejected before this feature existed, so this works
+    // for them automatically too, no manual data fix needed.
+    const ASSESSMENT_MAX_ATTEMPTS = 3;
+    const attemptsUsed = data.attemptCount || 0;
+    const attemptsLeft = Math.max(0, ASSESSMENT_MAX_ATTEMPTS - attemptsUsed);
+    badge.textContent = 'Not Selected This Time';
+    desc.textContent = attemptsLeft > 0
+      ? "This attempt didn't quite make the cut — but you've got another shot."
+      : "You've used all your skills check attempts for this application.";
+    body.innerHTML = attemptsLeft > 0 ? `
+      <p class="dash-card-hint">
+        <i class="fa-solid fa-circle-info"></i> Your last skills check score: ${data.assessmentScore != null ? data.assessmentScore : '?'}/100.
+      </p>
+      <p class="dash-card-hint">
+        <i class="fa-solid fa-rotate-right"></i> You have ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} left (Attempt ${attemptsUsed + 1} of ${ASSESSMENT_MAX_ATTEMPTS}).
+      </p>
+      <a href="intern-test.html" class="btn-primary" style="display:inline-block;margin-top:14px">
+        <i class="fa-solid fa-rotate-right"></i> Retake Your Skills Check
+      </a>
+    ` : `
+      <p class="dash-card-hint">
+        <i class="fa-solid fa-circle-info"></i> You've used all ${ASSESSMENT_MAX_ATTEMPTS} attempts for the skills check.
+      </p>
+      <p class="dash-card-hint">
+        If you'd like to discuss your application further, reach out to <a href="mailto:hello@ried.co.in">hello@ried.co.in</a>.
+      </p>
+    `;
   } else {
     badge.textContent = status || 'In Progress';
     desc.textContent = "Here's where things stand.";

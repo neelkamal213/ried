@@ -15,7 +15,7 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
-<body>
+<body class="admin-page">
 
   <header class="header">
     <div class="container nav">
@@ -81,9 +81,30 @@
         <p>Applications, daily tasks, attendance, and requests for the Internship Program.</p>
       </div>
 
+      <div id="internRosterWrap" class="admin-pending-wrap hidden">
+        <h3 class="admin-pending-title"><i class="fa-solid fa-address-book"></i> Intern Roster</h3>
+        <div class="admin-pending-list-inner">
+          <div class="roster-controls">
+            <input type="text" id="rosterSearchInput" class="onboard-input roster-search-input" placeholder="Search by name or email...">
+            <select id="rosterStatusFilter" class="onboard-input roster-status-select">
+              <option value="all">All Statuses</option>
+              <option value="signed_up">Signed Up</option>
+              <option value="onboarded">Skills Check Pending</option>
+              <option value="assessment_completed">Pending Review</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div id="rosterList"></div>
+        </div>
+      </div>
+
       <div id="internAppsWrap" class="admin-pending-wrap hidden">
         <h3 class="admin-pending-title"><i class="fa-solid fa-clipboard-user"></i> Pending Internship Applications</h3>
-        <div id="internAppsList" class="admin-pending-list-inner"></div>
+        <div class="admin-pending-list-inner">
+          <input type="text" id="internAppsSearchInput" class="onboard-input section-search-input" placeholder="Search by name or email...">
+          <div id="internAppsList"></div>
+        </div>
       </div>
 
       <div id="taskAssignWrap" class="admin-pending-wrap hidden">
@@ -119,7 +140,10 @@
 
       <div id="taskReviewWrap" class="admin-pending-wrap hidden">
         <h3 class="admin-pending-title"><i class="fa-solid fa-magnifying-glass"></i> Tasks Awaiting Review</h3>
-        <div id="taskReviewList" class="admin-pending-list-inner"></div>
+        <div class="admin-pending-list-inner">
+          <input type="text" id="taskReviewSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name or task title...">
+          <div id="taskReviewList"></div>
+        </div>
       </div>
 
       <div id="attendanceWrap" class="admin-pending-wrap hidden">
@@ -131,13 +155,17 @@
             <button class="btn-secondary" id="exportMonthBtn"><i class="fa-solid fa-download"></i> Export This Month</button>
           </div>
           <h4 style="margin:18px 0 10px;color:var(--navy);font-size:.95rem">Flagged Days (worth a second look)</h4>
+          <input type="text" id="attendanceAnomaliesSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name...">
           <div id="attendanceAnomaliesList"></div>
         </div>
       </div>
 
       <div id="internRequestsWrap" class="admin-pending-wrap hidden">
         <h3 class="admin-pending-title"><i class="fa-solid fa-inbox"></i> Intern Requests</h3>
-        <div id="internRequestsList" class="admin-pending-list-inner"></div>
+        <div class="admin-pending-list-inner">
+          <input type="text" id="internRequestsSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name or request type...">
+          <div id="internRequestsList"></div>
+        </div>
       </div>
 
     </div>
@@ -391,6 +419,18 @@ const CATEGORY_META = {
   task: { label: 'Task-Based', icon: 'fa-list-check' }
 };
 
+// v21 (2026-08-03): full roster + search/filter across sections, and
+// visibility into an intern's past skills-check attempts (ties into the
+// up-to-3-attempts reapply feature in functions/index.js).
+const ROSTER_STATUS_LABELS = {
+  signed_up: 'Signed Up',
+  onboarded: 'Skills Check Pending',
+  assessment_completed: 'Pending Review',
+  approved: 'Approved',
+  rejected: 'Rejected'
+};
+const ASSESSMENT_MAX_ATTEMPTS = 3;
+
 // Simple, hand-authored suggestions keyed by an intern's STRONGEST assessment
 // category — not AI-generated, just a lookup table, per the original ask to
 // "suggest tasks for Admins based on assessment results." Mentors can always
@@ -441,13 +481,76 @@ function scoreBarsHTML(categoryScores) {
   }).join('');
 }
 
+function renderInternRoster() {
+  const wrapEl = document.getElementById('internRosterWrap');
+  wrapEl.classList.remove('hidden');
+  const listEl = document.getElementById('rosterList');
+  const searchText = (document.getElementById('rosterSearchInput').value || '').trim().toLowerCase();
+  const statusFilter = document.getElementById('rosterStatusFilter').value;
+
+  const rows = internsCache.filter(i => {
+    if (statusFilter !== 'all' && i.status !== statusFilter) return false;
+    if (!searchText) return true;
+    return (i.fullName || '').toLowerCase().includes(searchText) || (i.email || '').toLowerCase().includes(searchText);
+  }).sort((a, b) => (a.fullName || a.email || '').localeCompare(b.fullName || b.email || ''));
+
+  if (!rows.length) {
+    listEl.innerHTML = '<p class="admin-empty">No interns match that search.</p>';
+    return;
+  }
+
+  listEl.innerHTML = rows.map(i => {
+    const history = Array.isArray(i.assessmentHistory) ? i.assessmentHistory : [];
+    const hasHistory = history.length > 0;
+    const metaBits = [esc(i.email || '')];
+    if (i.attemptCount) metaBits.push(`Attempt ${i.attemptCount} of ${ASSESSMENT_MAX_ATTEMPTS}`);
+    if (i.assessmentScore != null) metaBits.push(`Latest score: ${i.assessmentScore}/100`);
+    const historyHTML = history.slice().reverse().map(h => `
+      <div class="roster-history-entry">
+        <div class="roster-history-head">
+          <strong>Attempt ${esc(h.attemptNumber)}</strong>
+          <span>${h.overallScore}/100 ${h.submittedLate ? '<span class="attendance-flag-badge"><i class="fa-solid fa-hourglass-end"></i> Timed Out</span>' : ''}</span>
+        </div>
+        ${scoreBarsHTML(h.categoryScores)}
+      </div>
+    `).join('');
+
+    return `
+      <div class="admin-pending-item roster-item" data-uid="${esc(i.uid)}">
+        <div class="admin-pending-head">
+          <div>
+            <strong>${esc(i.fullName || i.email || i.uid)}</strong>
+            <span class="account-role-badge roster-status-badge status-${esc(i.status || 'unknown')}" style="margin:0 0 0 10px">${esc(ROSTER_STATUS_LABELS[i.status] || i.status || 'Unknown')}</span>
+          </div>
+          ${hasHistory ? `<button class="btn-secondary roster-history-toggle"><i class="fa-solid fa-clock-rotate-left"></i> History</button>` : ''}
+        </div>
+        <div class="admin-pending-meta">${metaBits.filter(Boolean).join(' &middot; ')}</div>
+        ${hasHistory ? `<div class="roster-history-panel hidden">${historyHTML}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.roster-history-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.roster-item').querySelector('.roster-history-panel').classList.toggle('hidden');
+    });
+  });
+}
+
+document.getElementById('rosterSearchInput').addEventListener('input', renderInternRoster);
+document.getElementById('rosterStatusFilter').addEventListener('change', renderInternRoster);
+
 async function loadInternApplications() {
   const listEl = document.getElementById('internAppsList');
   const wrapEl = document.getElementById('internAppsWrap');
   wrapEl.classList.remove('hidden');
-  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading applications&hellip;</p>';
 
-  const pending = internsCache.filter(i => i.status === 'assessment_completed');
+  const searchText = (document.getElementById('internAppsSearchInput').value || '').trim().toLowerCase();
+  const pending = internsCache.filter(i => {
+    if (i.status !== 'assessment_completed') return false;
+    if (!searchText) return true;
+    return (i.fullName || '').toLowerCase().includes(searchText) || (i.email || '').toLowerCase().includes(searchText);
+  });
   if (!pending.length) {
     listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No applications waiting on review right now.</p>';
     return;
@@ -465,7 +568,7 @@ async function loadInternApplications() {
           <button class="btn-secondary intern-reject-btn"><i class="fa-solid fa-xmark"></i> Reject</button>
         </div>
       </div>
-      <div class="admin-pending-meta">${esc(i.email || '')} &middot; ${esc(i.collegeName || '')} &middot; ${esc(i.fieldOfStudy || '')}</div>
+      <div class="admin-pending-meta">${esc(i.email || '')} &middot; ${esc(i.collegeName || '')} &middot; ${esc(i.fieldOfStudy || '')}${i.attemptCount > 1 ? ` &middot; Attempt ${i.attemptCount} of ${ASSESSMENT_MAX_ATTEMPTS}` : ''}</div>
       ${scoreBarsHTML(i.assessmentCategoryScores)}
       <div class="admin-approve-error auth-error"></div>
     </div>
@@ -490,6 +593,7 @@ async function loadInternApplications() {
         }
         await loadAllInterns();
         populateTaskInternSelect();
+        renderInternRoster();
       } catch (e) {
         errBox.textContent = `That didn't go through: ${e.message || e}`;
         errBox.classList.add('show');
@@ -498,6 +602,8 @@ async function loadInternApplications() {
     });
   });
 }
+
+document.getElementById('internAppsSearchInput').addEventListener('input', loadInternApplications);
 
 function populateTaskInternSelect() {
   const wrapEl = document.getElementById('taskAssignWrap');
@@ -585,6 +691,8 @@ document.getElementById('taskAssignBtn').addEventListener('click', async () => {
   }
 });
 
+let taskReviewCache = []; // completed-but-unreviewed tasks, fetched once and re-rendered on search
+
 async function loadTaskReview() {
   const listEl = document.getElementById('taskReviewList');
   const wrapEl = document.getElementById('taskReviewWrap');
@@ -599,9 +707,22 @@ async function loadTaskReview() {
     return;
   }
 
-  const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => !t.reviewed);
+  taskReviewCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => !t.reviewed);
+  renderTaskReviewList();
+}
+
+function renderTaskReviewList() {
+  const listEl = document.getElementById('taskReviewList');
+  const searchText = (document.getElementById('taskReviewSearchInput').value || '').trim().toLowerCase();
+  const tasks = taskReviewCache.filter(t => {
+    if (!searchText) return true;
+    return (t.internName || '').toLowerCase().includes(searchText) || (t.title || '').toLowerCase().includes(searchText);
+  });
+
   if (!tasks.length) {
-    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No completed tasks waiting on review.</p>';
+    listEl.innerHTML = taskReviewCache.length
+      ? '<p class="admin-empty">No tasks match that search.</p>'
+      : '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No completed tasks waiting on review.</p>';
     return;
   }
 
@@ -654,10 +775,8 @@ async function loadTaskReview() {
           updates.reviewedAt = serverTimestamp();
         }
         await updateDoc(doc(db, 'internTasks', taskId), updates);
-        item.remove();
-        if (!listEl.querySelector('.admin-pending-item')) {
-          listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No completed tasks waiting on review.</p>';
-        }
+        taskReviewCache = taskReviewCache.filter(t => t.id !== taskId);
+        renderTaskReviewList();
       } catch (e) {
         errBox.textContent = `That didn't go through: ${e.message || e}`;
         errBox.classList.add('show');
@@ -667,9 +786,13 @@ async function loadTaskReview() {
   });
 }
 
+document.getElementById('taskReviewSearchInput').addEventListener('input', renderTaskReviewList);
+
 function kolkataDateKeyAdmin(date) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
+
+let attendanceAnomaliesCache = []; // flagged attendance days, fetched once and re-rendered on search
 
 async function loadAttendanceAnomalies() {
   const listEl = document.getElementById('attendanceAnomaliesList');
@@ -684,9 +807,22 @@ async function loadAttendanceAnomalies() {
     return;
   }
 
-  const rows = snap.docs.map(d => d.data()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  attendanceAnomaliesCache = snap.docs.map(d => d.data()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  renderAttendanceAnomaliesList();
+}
+
+function renderAttendanceAnomaliesList() {
+  const listEl = document.getElementById('attendanceAnomaliesList');
+  const searchText = (document.getElementById('attendanceAnomaliesSearchInput').value || '').trim().toLowerCase();
+  const rows = attendanceAnomaliesCache.filter(r => {
+    if (!searchText) return true;
+    return (internsMap[r.uid] || r.uid || '').toLowerCase().includes(searchText);
+  });
+
   if (!rows.length) {
-    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No flagged attendance days right now.</p>';
+    listEl.innerHTML = attendanceAnomaliesCache.length
+      ? '<p class="admin-empty">No flagged days match that search.</p>'
+      : '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No flagged attendance days right now.</p>';
     return;
   }
   listEl.innerHTML = rows.map(r => `
@@ -698,6 +834,8 @@ async function loadAttendanceAnomalies() {
     </div>
   `).join('');
 }
+
+document.getElementById('attendanceAnomaliesSearchInput').addEventListener('input', renderAttendanceAnomaliesList);
 
 function downloadCSV(filename, rows) {
   const csv = rows.map(r => r.map(v => `"${String(v === undefined || v === null ? '' : v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -749,15 +887,16 @@ document.getElementById('exportMonthBtn').addEventListener('click', () => {
   exportAttendanceRange(kolkataDateKeyAdmin(monthStart), kolkataDateKeyAdmin(now), 'this-month');
 });
 
+let internRequestsCache = []; // pending requests, fetched once and re-rendered on search
+const REQUEST_TYPE_LABELS = {
+  edit_profile: 'Edit Profile', appointment_letter: 'Appointment Letter', leave_request: 'Leave Request',
+  experience_letter: 'Experience Letter', resignation: 'Resignation'
+};
+
 async function loadInternRequests() {
   const listEl = document.getElementById('internRequestsList');
   document.getElementById('internRequestsWrap').classList.remove('hidden');
   listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading requests&hellip;</p>';
-
-  const TYPE_LABELS = {
-    edit_profile: 'Edit Profile', appointment_letter: 'Appointment Letter', leave_request: 'Leave Request',
-    experience_letter: 'Experience Letter', resignation: 'Resignation'
-  };
 
   let snap;
   try {
@@ -767,14 +906,29 @@ async function loadInternRequests() {
     return;
   }
 
-  const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => {
+  internRequestsCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => {
     const at = a.submittedAt && a.submittedAt.toMillis ? a.submittedAt.toMillis() : 0;
     const bt = b.submittedAt && b.submittedAt.toMillis ? b.submittedAt.toMillis() : 0;
     return bt - at;
   });
+  renderInternRequestsList();
+}
+
+function renderInternRequestsList() {
+  const listEl = document.getElementById('internRequestsList');
+  const searchText = (document.getElementById('internRequestsSearchInput').value || '').trim().toLowerCase();
+  const rows = internRequestsCache.filter(r => {
+    if (!searchText) return true;
+    const typeLabel = (REQUEST_TYPE_LABELS[r.type] || r.type || '').toLowerCase();
+    return (r.internName || '').toLowerCase().includes(searchText) ||
+      (r.internEmail || '').toLowerCase().includes(searchText) ||
+      typeLabel.includes(searchText);
+  });
 
   if (!rows.length) {
-    listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending requests right now.</p>';
+    listEl.innerHTML = internRequestsCache.length
+      ? '<p class="admin-empty">No requests match that search.</p>'
+      : '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending requests right now.</p>';
     return;
   }
 
@@ -789,7 +943,7 @@ async function loadInternRequests() {
       <div class="admin-pending-item" data-id="${esc(r.id)}">
         <div class="admin-pending-head">
           <div>
-            <strong>${esc(TYPE_LABELS[r.type] || r.type)}</strong>
+            <strong>${esc(REQUEST_TYPE_LABELS[r.type] || r.type)}</strong>
             <span class="account-role-badge" style="margin:0 0 0 10px">${esc(r.internName || r.internEmail)}</span>
           </div>
         </div>
@@ -821,10 +975,8 @@ async function loadInternRequests() {
           adminNote,
           reviewedAt: serverTimestamp()
         });
-        item.remove();
-        if (!listEl.querySelector('.admin-pending-item')) {
-          listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending requests right now.</p>';
-        }
+        internRequestsCache = internRequestsCache.filter(r => r.id !== requestId);
+        renderInternRequestsList();
       } catch (e) {
         errBox.textContent = `That didn't go through: ${e.message || e}`;
         errBox.classList.add('show');
@@ -833,6 +985,8 @@ async function loadInternRequests() {
     });
   });
 }
+
+document.getElementById('internRequestsSearchInput').addEventListener('input', renderInternRequestsList);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user || user.isAnonymous) {
@@ -857,6 +1011,7 @@ onAuthStateChanged(auth, async (user) => {
   loadMarketplacePayouts();
 
   await loadAllInterns();
+  renderInternRoster();
   loadInternApplications();
   populateTaskInternSelect();
   loadTaskReview();

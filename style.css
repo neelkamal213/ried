@@ -1159,12 +1159,14 @@ h1, h2, h3, h4,
 .dashboard-page .btn-secondary,
 .account-card .btn-secondary,
 .marketplace-page .btn-secondary,
-.packages-page .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
+.packages-page .btn-secondary,
+.admin-page .btn-secondary{background:var(--bg-light);color:var(--navy);border:1px solid var(--line)}
 .shell .btn-secondary:hover,
 .dashboard-page .btn-secondary:hover,
 .account-card .btn-secondary:hover,
 .marketplace-page .btn-secondary:hover,
-.packages-page .btn-secondary:hover{background:#eaf1f8;box-shadow:0 6px 16px rgba(14,44,64,.08)}
+.packages-page .btn-secondary:hover,
+.admin-page .btn-secondary:hover{background:#eaf1f8;box-shadow:0 6px 16px rgba(14,44,64,.08)}
 button:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
 a:focus-visible,button:focus-visible,.option:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
 
@@ -2878,3 +2880,47 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
 .suggestion-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
 
 .attendance-export-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ============================================================
+   ADMIN DASHBOARD — Intern Roster + search/filter (v21, 2026-08-03)
+   ============================================================ */
+.section-search-input { margin-bottom: 14px; }
+
+.roster-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.roster-search-input { flex: 1; min-width: 220px; margin-bottom: 0; }
+.roster-status-select {
+  width: auto;
+  min-width: 170px;
+  margin-bottom: 0;
+}
+
+.roster-status-badge.status-signed_up { background: rgba(120,120,130,.14); color: #55555f; }
+.roster-status-badge.status-onboarded { background: rgba(14,90,138,.1); color: var(--blue); }
+.roster-status-badge.status-assessment_completed { background: rgba(245,130,32,.12); color: #b95d0e; }
+.roster-status-badge.status-approved { background: rgba(28,122,52,.12); color: #1c7a34; }
+.roster-status-badge.status-rejected { background: rgba(200,50,50,.12); color: #b53030; }
+
+.roster-history-toggle { padding: 8px 14px !important; font-size: .8rem !important; }
+
+.roster-history-panel {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+.roster-history-entry { margin-bottom: 14px; }
+.roster-history-entry:last-child { margin-bottom: 0; }
+.roster-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: .9rem;
+  color: var(--navy);
+}
+.roster-history-head .attendance-flag-badge { font-size: .72rem; }
