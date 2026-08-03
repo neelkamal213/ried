@@ -1,93 +1,65 @@
-# v16 — Internship Program, Phase 1: Sign-Up + Onboarding (2026-07-31)
+# v17 — Restore Marketplace Payouts + Push Everything Current (2026-08-03)
 
-This is Phase 1 of the 4-phase Internship Program build we agreed on: the
-footer link, sign-up, and the onboarding form with document uploads. The
-skills assessment (Phase 2), the full intern portal — attendance/tasks/
-requests (Phase 3), and the Mentor/admin side (Phase 4) come in later
-rounds.
+## What happened, plainly
 
-## What's new
+While building today's Internship Program Phase 1 (v16), I discovered that
+my own working copy of a few files had lost last week's Marketplace order-
+history/seller-sales/payout work (Tier 20 / v14) — specifically the
+`markSellerPayout` function, the `sellerIds`/`payoutStatus` tracking inside
+`createMarketplaceOrder`, the Firestore rule that lets a seller read their
+own sales, and the related CSS. I built the security fix (v15) and today's
+Internship work (v16) on top of that incomplete base without re-checking
+it first, which is on me.
 
-### Footer link (home page only, as requested)
-`index.html`'s footer now has an "Internship Program" link right under
-Terms & Conditions, not in the main menu. It goes to `intern-register.html`.
+**What's actually safe right now**: your live Cloud Functions were never
+touched — we caught the problem mid-deploy and you cancelled before
+anything applied, so `markSellerPayout` and everything else is exactly as
+it was. **What's likely already affected**: the Firestore rules you
+deployed last week as part of the security fix were built on the same
+incomplete base, so the rule letting a seller read their own Marketplace
+sales has probably been missing since then — meaning "My Sales" on My
+Listings may have been throwing permission errors for sellers since that
+deploy. If you'd already pushed today's v16 files to GitHub before this
+came up, your live site's stylesheet may also be missing the styling for
+the My Sales / My Orders / Payouts pages (they'd still work, just look
+unstyled).
 
-### `intern-register.html` (new) — sign-up
-A dedicated sign-up page for internship candidates, completely separate
-from the founder/client `register.html`. Email + password, same Terms
-consent checkbox pattern as the rest of the site (plus a line about
-consenting to the ID documents collected next). Creates a Firebase Auth
-account and an `/interns/{uid}` record, then goes straight to onboarding.
+To fix this cleanly without needing to figure out exactly which partial
+state you're currently in, this round is a **complete, current snapshot of
+every file that could possibly be affected** — all of it now correctly
+combined (Tier 20's Marketplace payouts + last week's security fix +
+today's Internship Program Phase 1, all together, verified as one unit).
+Pushing everything in this folder gets you to a known-good state
+regardless of what you'd already pushed.
 
-### `intern-login.html` (new) — sign-in
-For candidates coming back after their first session. Routes them to
-onboarding if they haven't finished it yet, or to their dashboard if they
-have. If someone tries this page with an account that isn't actually an
-Internship Program applicant, it says so rather than guessing.
+## What's in this folder
+Everything from v16 (`intern-register.html`, `intern-login.html`,
+`intern-onboarding.html`, `intern-dashboard.html`, `index.html`,
+`storage.rules`) is unchanged and included only so this is a genuinely
+complete snapshot. What actually changed this round:
 
-### `intern-onboarding.html` (new) — the onboarding wizard
-A multi-step, game-like wizard (same proven pattern as the founder
-onboarding wizard — progress bar, one thing at a time, a congratulations
-screen at the end) collecting:
-- Full Name, Father's/Mother's Name, Phone, Full Address
-- College Name, Field of Study, Semester, and an optional Interests field
-  (this one helps later when Mentors are suggesting tasks per intern)
-- Three uploads: Photo, Aadhar Card, Latest Marksheet
+- **`functions/index.js`** — `createMarketplaceOrder` now correctly stores
+  `payoutStatus: "pending"` on each line item and a `sellerIds` array on
+  the order again; `markSellerPayout` (admin-only, marks a sale paid) is
+  back; `notifyOnInternOnboarding` from today is still there too.
+- **`firestore.rules`** — the `/orders` read rule now correctly includes
+  the seller's `sellerIds`-based read access again, alongside the
+  Internship Program rules from today and last week's admin-role fix.
+- **`style.css`** — the My Sales tabs, sales cards, order cards, and admin
+  payout row styling are back, alongside today's document-upload card
+  styling.
+- **`my-orders.html`, `my-listings.html`, `admin-dashboard.html`,
+  `dashboard.html`** — restored to include the buyer order history page,
+  the My Sales tab, the Marketplace Payouts admin section, and the My
+  Orders button, exactly as originally built and successfully deployed
+  last week.
 
-On submit, everything — including the three documents — goes to
-hello@ried.co.in automatically, then the candidate lands on their
-dashboard.
+## Deploy checklist — please do all of these, in order
 
-### `intern-dashboard.html` (new) — Phase 1 stub
-Right now this only ever shows one thing: "Application Submitted," with a
-plain-English rundown of what happens next (skills check, then RIED
-review). It's built so Phase 2/3 slot in new states cleanly rather than
-needing a rewrite — the whole page hangs off one `renderStatus()` function
-keyed by the application's status field.
-
-## What changed under the hood
-- **`functions/index.js`** — new function `notifyOnInternOnboarding`,
-  modeled directly on the existing `notifyOnProfileSubmit` (the founder
-  profile email). It fires once, the moment onboarding is actually
-  submitted (not on every later write), and emails hello@ried.co.in a full
-  summary plus secure links to the three uploaded documents.
-- **`firestore.rules`** — new `/interns/{uid}` collection. A candidate can
-  only read/write their own record, and — this is the important part —
-  they can only ever move their own `status` from `signed_up` to
-  `onboarded`. Anything past that (assessment results, approval, rejection)
-  can only be set by an admin or a future Cloud Function, using the exact
-  same self-escalation protection I just added to `/users` last round.
-  Admins can read every application (needed for the approval dashboard
-  coming in Phase 4).
-- **`storage.rules`** — new `intern-documents/{uid}/...` path, strictly
-  private (owner-only read/write, nothing public) since Aadhar cards and
-  marksheets are sensitive documents — this is a deliberately different,
-  stricter rule than the public Marketplace listing photos. Accepts images
-  or PDFs, capped at 10MB per file.
-- **`style.css`** — one genuinely new bit of UI, the rectangular document
-  upload cards (`.doc-upload-grid`/`.doc-upload-box`) for the three
-  uploads — everything else (the wizard, the buttons, the dashboard card)
-  reuses CSS classes that already exist elsewhere on the site, so there's
-  very little new styling surface to review.
-
-## A quick note on the Aadhar/marksheet uploads
-These are real government-ID-level documents. They're stored privately
-(not public like Marketplace photos), and the notification email links to
-them rather than attaching the raw files — same pattern already used for
-founder profile logos on this site. One thing worth having on your radar,
-not something I can fix in code: it might be worth a quick check with
-whoever handles your legal/compliance side on how long you intend to keep
-this data and who has access to it, given what's being collected.
-
-## Deploy checklist
-1. Copy every file in this folder over the matching path in your repo
-   (`intern-register.html`, `intern-login.html`, `intern-onboarding.html`,
-   `intern-dashboard.html` are all brand new; `index.html`, `style.css`,
-   `firestore.rules`, `storage.rules`, and `functions/index.js` all replace
-   existing files).
-2. Push to GitHub.
-3. **Redeploy Cloud Functions** — required, since `notifyOnInternOnboarding`
-   is a brand-new function:
+1. Copy every file in this folder over the matching path in your repo —
+   yes, even ones you think you already have; this ensures nothing partial
+   is left behind. Push to GitHub.
+2. Redeploy Cloud Functions (fresh clone, as always):
    ```
    cd ~
    rm -rf ~/ried
@@ -96,39 +68,34 @@ this data and who has access to it, given what's being collected.
    npm install
    ls node_modules | grep nodemailer
    ```
-   (if that last line prints nothing, run `npm install nodemailer@6.9.14 --save`
-   like the last few times), then:
+   (if that prints nothing, `npm install nodemailer@6.9.14 --save` like
+   before), then:
    ```
    cd ~/ried
    firebase deploy --only functions
    ```
-4. **Publish the updated Firestore rules and Storage rules** — required,
-   since both changed this round:
+   **This time it should NOT ask about deleting `markSellerPayout`** —
+   if it does, something is still out of sync and you should stop and
+   paste me the output before continuing.
+3. Redeploy both rules files:
    ```
    firebase deploy --only firestore:rules,firestore:indexes
    firebase deploy --only storage
    ```
-   (same `~/ried` folder as step 3, no need to re-clone).
-5. Test as a candidate:
-   - From the home page, scroll to the footer and click "Internship
-     Program" (confirm it's NOT in the main menu).
-   - Sign up with a test email, confirm you land on the onboarding wizard.
-   - Fill in the details, upload three test files (a photo and two PDFs or
-     images work fine for testing), submit.
-   - Confirm the notification email arrives at hello@ried.co.in with the
-     details and three working document links.
-   - Confirm you land on the dashboard showing "Application Submitted."
-   - Sign out, sign back in via `intern-login.html`, confirm it takes you
-     straight back to the dashboard (not onboarding again).
+4. Test everything from Tier 20 that was never actually confirmed working
+   (this got interrupted by the rules regression before you got to it):
+   - As a buyer: buy something from Marketplace, check Dashboard → My
+     Orders shows it.
+   - As a seller: My Listings → My Sales tab shows the sale with buyer
+     details and "Awaiting Payout."
+   - As admin: Admin Dashboard → Marketplace Payouts → Mark as Paid, then
+     confirm the seller's My Sales view now shows "Paid Out."
+5. Then test today's Internship Program Phase 1 (footer link → sign up →
+   onboarding → document uploads → email → dashboard), same as described
+   in the v16 README.
 
-## Still open after this round
-Phase 2 (the skills assessment — randomized, timed, auto-graded, no
-pass/fail, just a skill score) is next. Phase 3 (the full intern portal —
-attendance clock in/out, daily tasks, the request center for profile
-edits/appointment letters/leave/experience letters/resignation) and Phase 4
-(the Mentor/admin side — task assignment with suggestions based on
-assessment results, review/reopen, attendance reports, leave approval)
-follow after that. Per your note mid-build: Phase 4's admin dashboard will
-keep a clear visual split between a "Client Corner" (the existing founder/
-Marketplace/payout sections) and an "Internship Corner" (everything
-intern-related) rather than mixing them into one list.
+## Going forward
+I'm going to be more careful about verifying my working files actually
+reflect what's live before building on top of them, especially across a
+long session — this shouldn't have made it this far. Sorry for the extra
+round of deploy steps this creates for you.

@@ -102,8 +102,14 @@ service cloud.firestore {
     // field, set by createRazorpayOrder) can read it back; an admin can read
     // all orders (needed to track and reconcile manual seller payouts, since
     // RIED collects payments centrally rather than splitting them automatically).
+    // A seller can also read an order if their uid appears in that order's
+    // sellerIds array (Tier 20 — needed for the My Sales view on
+    // my-listings.html) — the 'sellerIds' in resource.data guard means this
+    // never errors out on older orders (Packages orders, or any Marketplace
+    // order from before this field existed) that don't have the field at all.
     match /orders/{orderId} {
       allow read: if request.auth != null && (request.auth.uid == resource.data.uid ||
+        (('sellerIds' in resource.data) && request.auth.uid in resource.data.sellerIds) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create, update, delete: if false;

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>My Orders | RIED Marketplace</title>
-  <meta name="description" content="Your past purchases on the RIED Marketplace.">
+  <meta name="description" content="Your RIED Marketplace purchase history.">
 
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="images/brand/round_logo.png">
@@ -51,14 +51,14 @@
           <div>
             <span class="quest-eyebrow"><i class="fa-solid fa-receipt"></i> RIED Marketplace</span>
             <h1 class="dash-title">My Orders</h1>
-            <p class="dash-stage-desc">Everything you've purchased from other founders on the Marketplace. A confirmation email was also sent for each order at checkout.</p>
+            <p class="dash-stage-desc">Everything you've bought from the RIED Marketplace.</p>
           </div>
           <a href="dashboard.html" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
         </div>
 
         <div class="dash-card">
           <div id="ordersList"></div>
-          <p class="dash-empty hidden" id="ordersEmpty">You haven't purchased anything from the Marketplace yet — <a href="marketplace.html">browse what's available</a>.</p>
+          <p class="dash-empty hidden" id="ordersEmpty">You haven't bought anything from the Marketplace yet — <a href="marketplace.html">go take a look</a>.</p>
         </div>
 
       </div>
@@ -75,6 +75,7 @@
 
       <div class="footer-legal">
         <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="intern-register.html">Internship Program</a>
         <a href="refund-policy.html">Refund Policy</a>
         <a href="privacy-policy.html">Privacy Policy</a>
       </div>
@@ -121,16 +122,13 @@ function formatWhen(ts) {
   return ts.toDate().toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-async function loadMyOrders(uid) {
+async function loadOrders(uid) {
   const listEl = document.getElementById('ordersList');
   const emptyEl = document.getElementById('ordersEmpty');
 
-  // Equality-only filters (no orderBy) so this never needs a Firestore
-  // composite index — sorted by date client-side instead. Fetches every
-  // order this account placed (Packages included) and filters down to
-  // Marketplace purchases here, since that's what this page is scoped to;
-  // broadening it to show Packages purchases too later would just mean
-  // dropping the type filter below.
+  // Equality-only filters (uid + status), no orderBy — sorted client-side
+  // instead, so this never needs a composite index (a query requiring one
+  // has bitten this project a few times before on other pages).
   const q = query(collection(db, 'orders'), where('uid', '==', uid), where('status', '==', 'paid'));
   const snap = await getDocs(q);
 
@@ -154,11 +152,11 @@ async function loadMyOrders(uid) {
     const items = Array.isArray(o.items) ? o.items : [];
     const itemRows = items.map(it => `
       <div class="order-item-row">
-        <div class="order-item-info">
+        <div>
           <div class="order-item-title">${esc(it.title)}</div>
           <div class="order-item-seller">Sold by ${esc(it.sellerName || 'a RIED founder')}</div>
         </div>
-        <div class="order-item-qty">Qty ${esc(it.qty)}</div>
+        <div class="order-item-qty">Qty ${it.qty || 1}</div>
         <div class="order-item-total">₹${Number(it.lineTotal || 0).toLocaleString('en-IN')}</div>
       </div>
     `).join('');
@@ -167,12 +165,12 @@ async function loadMyOrders(uid) {
       <div class="order-card">
         <div class="order-card-head">
           <div>
-            <div class="order-card-date">${esc(formatWhen(o.createdAt)) || 'Recently'}</div>
-            <div class="order-card-id">Order ID: ${esc(o.id)}</div>
+            <div class="order-card-date">${esc(formatWhen(o.createdAt)) || 'Date unavailable'}</div>
+            <div class="order-card-id">Order ${esc(o.id)}</div>
           </div>
           <div class="order-card-total">₹${Number(o.amount || 0).toLocaleString('en-IN')}</div>
         </div>
-        <div class="order-items-list">${itemRows}</div>
+        ${itemRows}
       </div>
     `;
   }).join('');
@@ -184,12 +182,16 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  if (ADMIN_EMAILS.includes((user.email || '').toLowerCase())) {
+  if (ADMIN_EMAILS.includes(user.email.toLowerCase())) {
     window.location.href = 'admin-dashboard.html';
     return;
   }
 
-  await loadMyOrders(user.uid);
+  try {
+    await loadOrders(user.uid);
+  } catch (e) {
+    console.error('loadOrders failed:', e);
+  }
 
   document.getElementById('loadingState').classList.add('hidden');
   document.getElementById('ordersPage').classList.remove('hidden');

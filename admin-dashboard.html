@@ -68,7 +68,6 @@
 
       <div id="payoutsWrap" class="admin-pending-wrap hidden">
         <h3 class="admin-pending-title"><i class="fa-solid fa-sack-dollar"></i> Marketplace Payouts</h3>
-        <p class="dash-card-hint" style="margin-bottom:16px">RIED collects every Marketplace payment centrally — this is where you mark a seller as paid once you've actually transferred their share.</p>
         <div id="payoutsList" class="admin-pending-list-inner"></div>
       </div>
 
@@ -225,61 +224,53 @@ async function loadMarketplacePayouts() {
   wrapEl.classList.remove('hidden');
   listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading sales&hellip;</p>';
 
+  // Single equality filter — no index needed. Every seller's sales, grouped
+  // by seller and sorted so whoever's owed the most shows up first.
   let snap;
   try {
-    // Single equality filter, no orderBy — never needs a composite index;
-    // grouped/sorted client-side below instead.
     snap = await getDocs(query(collection(db, 'orders'), where('type', '==', 'marketplace')));
   } catch (e) {
-    listEl.innerHTML = `<p class="admin-empty">Couldn't load Marketplace orders: ${esc(e.message || e)}</p>`;
+    listEl.innerHTML = `<p class="admin-empty">Couldn't load payouts: ${esc(e.message || e)}</p>`;
     return;
   }
 
-  // Flatten every paid order into (orderId, itemIndex, item, shippingInfo)
-  // rows, then group those rows by seller so it's easy to see what's owed
-  // to whom at a glance.
   const bySeller = {};
-  snap.forEach((docSnap) => {
+  snap.forEach(docSnap => {
     const order = docSnap.data();
     if (order.status !== 'paid') return;
     const items = Array.isArray(order.items) ? order.items : [];
-    items.forEach((it, idx) => {
-      if (!it.sellerId) return;
-      if (!bySeller[it.sellerId]) {
-        bySeller[it.sellerId] = { sellerName: it.sellerName || it.sellerId, rows: [] };
+    items.forEach((item, itemIndex) => {
+      const sellerId = item.sellerId || 'unknown';
+      if (!bySeller[sellerId]) {
+        bySeller[sellerId] = { sellerName: item.sellerName || 'Unknown Seller', sales: [] };
       }
-      bySeller[it.sellerId].rows.push({ orderId: docSnap.id, itemIndex: idx, item: it, order });
+      bySeller[sellerId].sales.push({ orderId: docSnap.id, itemIndex, item, order });
     });
   });
 
-  const sellerIds = Object.keys(bySeller);
-  if (!sellerIds.length) {
+  const sellers = Object.entries(bySeller).map(([sellerId, data]) => {
+    const owed = data.sales.filter(s => s.item.payoutStatus !== 'paid').reduce((sum, s) => sum + Number(s.item.lineTotal || 0), 0);
+    return { sellerId, ...data, owed };
+  }).sort((a, b) => b.owed - a.owed);
+
+  if (!sellers.length) {
     listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No Marketplace sales yet.</p>';
     return;
   }
 
-  // Sellers with the most still owed to them float to the top.
-  sellerIds.sort((a, b) => {
-    const pendingTotal = (rows) => rows.filter(r => r.item.payoutStatus !== 'paid').reduce((s, r) => s + (Number(r.item.lineTotal) || 0), 0);
-    return pendingTotal(bySeller[b].rows) - pendingTotal(bySeller[a].rows);
-  });
-
-  listEl.innerHTML = sellerIds.map((sellerId) => {
-    const { sellerName, rows } = bySeller[sellerId];
-    const pending = rows.filter(r => r.item.payoutStatus !== 'paid');
-    const paid = rows.filter(r => r.item.payoutStatus === 'paid');
-    const pendingTotal = pending.reduce((s, r) => s + (Number(r.item.lineTotal) || 0), 0);
-    const paidTotal = paid.reduce((s, r) => s + (Number(r.item.lineTotal) || 0), 0);
-
-    const pendingRowsHTML = pending.map(({ orderId, itemIndex, item, order }) => {
+  listEl.innerHTML = sellers.map(seller => {
+    const rows = seller.sales.map(({ orderId, itemIndex, item, order }) => {
       const ship = order.shippingInfo || {};
+      const isPaid = item.payoutStatus === 'paid';
       return `
-        <div class="payout-row" data-order-id="${esc(orderId)}" data-item-index="${itemIndex}">
+        <div class="payout-row" data-order="${esc(orderId)}" data-item="${itemIndex}">
           <div class="payout-row-info">
-            <strong>${esc(item.title)}</strong> &mdash; Qty ${esc(item.qty)} &mdash; ₹${Number(item.lineTotal || 0).toLocaleString('en-IN')}
-            <div class="payout-row-buyer">Buyer: ${esc(ship.name || 'Unknown')} &middot; ${esc(ship.phone || '')}</div>
+            <strong>${esc(item.title)}</strong> &mdash; ₹${Number(item.lineTotal || 0).toLocaleString('en-IN')}
+            <div class="payout-row-buyer">Buyer: ${esc(ship.name || 'unknown')} &middot; ${esc(ship.email || '')}</div>
           </div>
-          <button class="btn-primary payout-mark-btn" style="padding:8px 16px;font-size:.82rem"><i class="fa-solid fa-check"></i> Mark as Paid</button>
+          ${isPaid
+            ? `<span class="my-sale-badge paid">Paid Out</span>`
+            : `<button class="btn-secondary payout-mark-btn" style="padding:8px 14px;font-size:.8rem"><i class="fa-solid fa-check"></i> Mark as Paid</button>`}
         </div>
       `;
     }).join('');
@@ -287,14 +278,10 @@ async function loadMarketplacePayouts() {
     return `
       <div class="admin-pending-item">
         <div class="admin-pending-head">
-          <div>
-            <strong>${esc(sellerName)}</strong>
-            <span class="account-role-badge" style="margin:0 0 0 10px">₹${pendingTotal.toLocaleString('en-IN')} owed</span>
-          </div>
-          <span style="color:var(--muted);font-size:.85rem">₹${paidTotal.toLocaleString('en-IN')} paid out to date &middot; ${paid.length} item${paid.length === 1 ? '' : 's'}</span>
+          <div><strong>${esc(seller.sellerName)}</strong></div>
+          <span class="account-role-badge">₹${seller.owed.toLocaleString('en-IN')} owed</span>
         </div>
-        ${pendingRowsHTML || '<p class="dash-card-hint">Everything sold by this seller has already been paid out.</p>'}
-        <div class="payout-error auth-error"></div>
+        ${rows}
       </div>
     `;
   }).join('');
@@ -302,20 +289,17 @@ async function loadMarketplacePayouts() {
   listEl.querySelectorAll('.payout-mark-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const row = btn.closest('.payout-row');
-      const orderId = row.dataset.orderId;
-      const itemIndex = Number(row.dataset.itemIndex);
-      const errBox = row.closest('.admin-pending-item').querySelector('.payout-error');
-      errBox.classList.remove('show');
+      const orderId = row.dataset.order;
+      const itemIndex = Number(row.dataset.item);
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Marking...';
       try {
         await markSellerPayout({ orderId, itemIndex });
         await loadMarketplacePayouts();
       } catch (e) {
-        errBox.textContent = `Couldn't mark this as paid: ${e.message || e}`;
-        errBox.classList.add('show');
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-check"></i> Mark as Paid';
+        alert('Could not mark this as paid: ' + (e.message || e));
       }
     });
   });
