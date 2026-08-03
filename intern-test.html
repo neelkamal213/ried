@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Skills Check | RIED Internship Program</title>
+  <meta name="description" content="A short, fun skills check for RIED Internship Program candidates.">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="images/brand/round_logo.png">
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body class="onboarding-page">
+
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html">
+        <img src="images/brand/logo.png" class="logo">
+      </a>
+      <nav class="main-nav">
+        <span style="color:var(--muted); font-size:14px; font-weight:600">
+          <i class="fa-solid fa-shield-heart"></i> No pass/fail here — just a fun skill check
+        </span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="section" style="padding-top:60px">
+    <div class="container quest-wrap">
+
+      <div id="loadingState" class="account-loading">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+      </div>
+
+      <div id="shell" class="shell" style="display:none">
+
+        <!-- INTRO -->
+        <div id="introScreen">
+          <span class="quest-eyebrow"><i class="fa-solid fa-gamepad"></i> Skills Check</span>
+          <h2 class="quest-intro-title">Let's see what you've got! 🚀</h2>
+          <p class="quest-intro-copy">
+            20 quick, easy questions across a few areas — this isn't a pass/fail test, it's just a fun way for us
+            (and you!) to see where your strengths are, so your Mentors can hand you tasks that fit.
+          </p>
+          <div class="assess-intro-perks">
+            <div><i class="fa-solid fa-code"></i> HTML, CSS &amp; Core Java basics</div>
+            <div><i class="fa-solid fa-brain"></i> Logical reasoning</div>
+            <div><i class="fa-solid fa-list-check"></i> Short task-based scenarios</div>
+            <div><i class="fa-solid fa-clock"></i> 15 minutes on the clock, once you start</div>
+          </div>
+          <p class="onboard-hint">
+            One tip: once you hit Start, try not to refresh or close this tab until you submit — the timer keeps
+            running either way, and your answers-so-far won't be saved if you leave.
+          </p>
+          <button class="btn-primary" id="startBtn"><i class="fa-solid fa-play"></i> Start My Skills Check</button>
+          <div id="introError" class="auth-error"></div>
+        </div>
+
+        <!-- TEST -->
+        <div id="testScreen" class="hidden">
+
+          <div class="game-bar">
+            <div class="level-chip">
+              <div class="badge-icon"><i class="fa-solid fa-gamepad"></i></div>
+              <div class="txt">
+                <strong>Skills Check</strong>
+                <span id="questionCounter">Question 1 of 20</span>
+              </div>
+            </div>
+            <div class="assess-timer-bar" id="timerBar">
+              <i class="fa-solid fa-clock"></i> <span id="timerText">15:00</span>
+            </div>
+          </div>
+
+          <div class="qprogress-top">
+            <span id="progressText">Question 1 of 20</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="qprogress-track"><div id="bar" class="qprogress-fill"></div></div>
+
+          <div class="onboard-step-body" style="min-height:280px">
+            <span class="quiz-cat-chip" id="catChip"><i class="fa-solid fa-code"></i> HTML</span>
+            <div class="quiz-question-text" id="questionText"></div>
+            <div class="quiz-options" id="optionsList"></div>
+          </div>
+
+          <div class="actions">
+            <button id="backBtn" class="btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button id="nextBtn" class="btn-primary">Next <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="resultsScreen" class="hidden">
+          <div class="assess-results-hero">
+            <div class="assess-results-emoji" id="resultsEmoji">🎉</div>
+            <h2 class="quest-intro-title">Skills Check Complete!</h2>
+            <div class="assess-overall-score"><span id="overallScore">0</span><span>/100 overall</span></div>
+            <p class="quest-intro-copy" id="resultsMessage"></p>
+          </div>
+
+          <div id="scoreBars"></div>
+
+          <div class="assess-results-note">
+            <i class="fa-solid fa-circle-info"></i> This score is just a snapshot to help your Mentors — there's no
+            pass or fail. Your application is now with our team for review; check your dashboard for updates.
+          </div>
+
+          <button class="btn-primary" id="goDashboardBtn" style="width:100%">
+            Go To My Dashboard <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <h3>RIED Pvt. Ltd.</h3>
+        <p>Translating Research, Innovation &amp; Ideas into Revenue Generating Outcomes.</p>
+      </div>
+      <div class="footer-legal">
+        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="intern-register.html">Internship Program</a>
+        <a href="refund-policy.html">Refund Policy</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 RIED Pvt. Ltd. All Rights Reserved.</div>
+  </footer>
+
+<script type="module">
+import { auth, app, db, onAuthStateChanged, doc, getDoc } from "./js/firebase-init.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
+const functions = getFunctions(app);
+const startAssessmentFn = httpsCallable(functions, "startAssessment");
+const submitAssessmentFn = httpsCallable(functions, "submitAssessment");
+
+const CATEGORY_META = {
+  html: { label: 'HTML', icon: 'fa-code' },
+  css: { label: 'CSS', icon: 'fa-paintbrush' },
+  java: { label: 'Core Java', icon: 'fa-mug-hot' },
+  logical: { label: 'Logical Reasoning', icon: 'fa-brain' },
+  task: { label: 'Task-Based', icon: 'fa-list-check' }
+};
+const LETTERS = ['A', 'B', 'C', 'D'];
+
+let questions = [];
+let currentIndex = 0;
+let answers = {}; // questionId -> selected option index (shuffled position)
+let deadlineMillis = 0;
+let timerInterval = null;
+let submitting = false;
+
+function esc(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderQuestion() {
+  const q = questions[currentIndex];
+  const meta = CATEGORY_META[q.category] || { label: q.category, icon: 'fa-question' };
+
+  document.getElementById('catChip').innerHTML = `<i class="fa-solid ${meta.icon}"></i> ${esc(meta.label)}`;
+  document.getElementById('questionText').textContent = q.text;
+  document.getElementById('optionsList').innerHTML = q.options.map((opt, i) => `
+    <button type="button" class="quiz-option${answers[q.id] === i ? ' selected' : ''}" data-index="${i}">
+      <span class="quiz-option-letter">${LETTERS[i] || (i + 1)}</span>
+      <span>${esc(opt)}</span>
+    </button>
+  `).join('');
+
+  document.querySelectorAll('#optionsList .quiz-option').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      answers[q.id] = Number(btn.dataset.index);
+      renderQuestion();
+    });
+  });
+
+  const total = questions.length;
+  const pct = Math.round(((currentIndex) / total) * 100);
+  document.getElementById('questionCounter').textContent = `Question ${currentIndex + 1} of ${total}`;
+  document.getElementById('progressText').textContent = `Question ${currentIndex + 1} of ${total}`;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('bar').style.width = pct + '%';
+
+  document.getElementById('backBtn').disabled = currentIndex === 0;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = false;
+  nextBtn.innerHTML = currentIndex === total - 1
+    ? '<i class="fa-solid fa-paper-plane"></i> Submit My Test'
+    : 'Next <i class="fa-solid fa-arrow-right"></i>';
+}
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  currentIndex = Math.max(0, currentIndex - 1);
+  renderQuestion();
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if (currentIndex === questions.length - 1) {
+    submitTest(false);
+    return;
+  }
+  currentIndex++;
+  renderQuestion();
+});
+
+function startTimer() {
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    const remainingMs = deadlineMillis - Date.now();
+    if (remainingMs <= 0) {
+      clearInterval(timerInterval);
+      submitTest(true);
+      return;
+    }
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const remainingMs = Math.max(0, deadlineMillis - Date.now());
+  const totalSec = Math.floor(remainingMs / 1000);
+  const mm = Math.floor(totalSec / 60);
+  const ss = totalSec % 60;
+  document.getElementById('timerText').textContent = `${mm}:${String(ss).padStart(2, '0')}`;
+  document.getElementById('timerBar').classList.toggle('low-time', totalSec <= 60);
+}
+
+async function submitTest(isTimeout) {
+  if (submitting) return;
+  submitting = true;
+  clearInterval(timerInterval);
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.disabled = true;
+  document.getElementById('backBtn').disabled = true;
+  nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+  const answerList = questions.map((q) => ({
+    questionId: q.id,
+    selectedIndex: answers[q.id] !== undefined ? answers[q.id] : null
+  }));
+
+  try {
+    const result = await submitAssessmentFn({ answers: answerList });
+    showResults(result.data.overallScore, result.data.categoryScores, isTimeout);
+  } catch (err) {
+    console.error('submitAssessment failed:', err);
+    alert("Something went wrong submitting your skills check. Please refresh and try again, or email hello@ried.co.in if it keeps happening.");
+    submitting = false;
+    nextBtn.disabled = false;
+    document.getElementById('backBtn').disabled = false;
+    renderQuestion();
+  }
+}
+
+function showResults(overallScore, categoryScores, wasTimeout) {
+  document.getElementById('testScreen').classList.add('hidden');
+  document.getElementById('resultsScreen').classList.remove('hidden');
+
+  document.getElementById('overallScore').textContent = overallScore;
+
+  let emoji = '🌱', message = "Everyone starts somewhere — this is just your starting point, and there's plenty to build on.";
+  if (overallScore >= 80) { emoji = '🔥'; message = "You're on fire! Great baseline across the board."; }
+  else if (overallScore >= 50) { emoji = '💪'; message = "Solid foundation — nice work."; }
+  if (wasTimeout) message += " Time ran out before you finished every question, and that's okay — unanswered ones just count as not-yet-shown skill.";
+  document.getElementById('resultsEmoji').textContent = emoji;
+  document.getElementById('resultsMessage').textContent = message;
+
+  const barsHTML = Object.keys(CATEGORY_META).map((cat) => {
+    const score = categoryScores[cat];
+    const meta = CATEGORY_META[cat];
+    if (score === null || score === undefined) return '';
+    return `
+      <div class="score-bar-row">
+        <div class="score-bar-label"><span><i class="fa-solid ${meta.icon}"></i>${esc(meta.label)}</span><span>${score}/100</span></div>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${score}%"></div></div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('scoreBars').innerHTML = barsHTML;
+}
+
+document.getElementById('startBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('startBtn');
+  const errBox = document.getElementById('introError');
+  errBox.classList.remove('show');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Getting your questions ready...';
+
+  try {
+    const result = await startAssessmentFn();
+    questions = result.data.questions;
+    deadlineMillis = result.data.deadlineMillis;
+    answers = {};
+    currentIndex = 0;
+
+    document.getElementById('introScreen').classList.add('hidden');
+    document.getElementById('testScreen').classList.remove('hidden');
+    renderQuestion();
+    startTimer();
+  } catch (err) {
+    console.error('startAssessment failed:', err);
+    const detail = err && err.message ? err.message : 'Please try again.';
+    errBox.textContent = detail;
+    errBox.classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-play"></i> Start My Skills Check';
+  }
+});
+
+document.getElementById('goDashboardBtn').addEventListener('click', () => {
+  window.location.href = 'intern-dashboard.html';
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user || user.isAnonymous) {
+    window.location.href = 'intern-login.html';
+    return;
+  }
+
+  try {
+    const snap = await getDoc(doc(db, 'interns', user.uid));
+    if (!snap.exists()) {
+      window.location.href = 'intern-register.html';
+      return;
+    }
+    const data = snap.data();
+    if (data.status === 'signed_up') {
+      window.location.href = 'intern-onboarding.html';
+      return;
+    }
+    if (data.status && data.status !== 'onboarded') {
+      // Already taken (or further along) — nothing more to do here.
+      window.location.href = 'intern-dashboard.html';
+      return;
+    }
+  } catch (e) {
+    console.error('intern-test load failed:', e);
+  }
+
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('shell').style.display = 'block';
+});
+
+window.addEventListener("scroll", function () {
+  const header = document.querySelector(".header");
+  header.classList.toggle("scrolled", window.scrollY > 50);
+});
+</script>
+
+<script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+window.chatbase=(...arguments)=>{
+if(!window.chatbase.q){window.chatbase.q=[]}
+window.chatbase.q.push(arguments)};
+window.chatbase=new Proxy(window.chatbase,{get(target,prop){
+if(prop==="q"){return target.q}
+return(...args)=>target(prop,...args)}})}
+const onLoad=function(){
+const script=document.createElement("script");
+script.src="https://www.chatbase.co/embed.min.js";
+script.id="nqAR9OTpp54JFp0Uvmj-w";
+script.domain="www.chatbase.co";
+document.body.appendChild(script)};
+if(document.readyState==="complete"){
+onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+</body>
+</html>

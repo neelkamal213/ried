@@ -2525,3 +2525,145 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
   line-height: 1.5;
 }
 .package-price.package-price-quote { font-size: 26px; }
+
+/* ============================================================
+   INTERNSHIP PROGRAM — SKILLS ASSESSMENT (intern-test.html, Phase 2)
+   Reuses .shell/.quest-wrap/.game-bar/.level-chip/.qprogress-*/.onboard-*
+   from the onboarding wizard for visual consistency; these are the new
+   bits specific to the timed quiz + results screen.
+   ============================================================ */
+.assess-timer-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  font-weight: 700;
+  color: var(--navy);
+  font-size: .92rem;
+}
+.assess-timer-bar i { color: var(--orange); }
+.assess-timer-bar.low-time { background: rgba(214,69,69,.08); border-color: rgba(214,69,69,.3); color: #b23434; }
+.assess-timer-bar.low-time i { color: #d64545; }
+
+.quiz-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: rgba(14,90,138,.1);
+  color: var(--blue);
+  font-size: .74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 14px;
+}
+
+.quiz-question-text {
+  font-size: 1.15rem;
+  color: var(--navy);
+  font-weight: 700;
+  line-height: 1.45;
+  margin-bottom: 22px;
+}
+
+.quiz-options { display: grid; gap: 12px; }
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: .95rem;
+  color: var(--navy);
+  transition: border-color .15s ease, background .15s ease, transform .1s ease;
+}
+.quiz-option:hover { border-color: var(--blue-light); background: var(--bg-light); }
+.quiz-option:active { transform: scale(.99); }
+.quiz-option .quiz-option-letter {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 8px;
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: .78rem;
+  color: var(--muted);
+}
+.quiz-option.selected {
+  border-color: var(--blue);
+  background: rgba(14,90,138,.07);
+}
+.quiz-option.selected .quiz-option-letter {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.assess-intro-perks { display: grid; gap: 12px; margin: 22px 0 28px; }
+.assess-intro-perks div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: .92rem;
+  color: var(--muted);
+}
+.assess-intro-perks i { color: var(--blue); width: 20px; text-align: center; }
+
+/* Results screen */
+.assess-results-hero { text-align: center; margin-bottom: 28px; }
+.assess-results-emoji { font-size: 46px; line-height: 1; margin-bottom: 10px; }
+.assess-overall-score {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--blue);
+  line-height: 1;
+  margin: 6px 0;
+}
+.assess-overall-score span { font-size: 1.1rem; color: var(--muted); font-weight: 700; }
+
+.score-bar-row { margin-bottom: 18px; }
+.score-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.score-bar-label i { color: var(--blue); margin-right: 6px; }
+.score-bar-track {
+  height: 10px;
+  border-radius: 99px;
+  background: var(--bg-light);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.score-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--brand-gradient);
+  transition: width 1s ease;
+}
+
+.assess-results-note {
+  background: var(--bg-light);
+  border-radius: 12px;
+  padding: 14px 18px;
+  font-size: .85rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 22px 0;
+}

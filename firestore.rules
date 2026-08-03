@@ -116,20 +116,27 @@ service cloud.firestore {
     }
 
     // ===========================================================================
-    // INTERNSHIP PROGRAM (Phase 1, 2026-07-31 — sign-up + onboarding only).
-    // The "status" field is deliberately future-proofed for phases not built
-    // yet: 'signed_up' -> 'onboarded' -> (Phase 2) 'assessed' -> (Phase 4)
-    // 'approved' | 'rejected'.
+    // INTERNSHIP PROGRAM (Phase 1, 2026-07-31 — sign-up + onboarding.
+    // Phase 2, 2026-08-03 — skills assessment). The "status" field is
+    // deliberately future-proofed for phases not built yet:
+    // 'signed_up' -> 'onboarded' -> 'assessment_completed' -> (Phase 4)
+    // 'approved' | 'rejected'. Note: the client NEVER writes
+    // 'assessment_completed' directly — only submitAssessment
+    // (functions/index.js) does, via the Admin SDK, which bypasses these
+    // rules entirely. The "update" rule below only needs to cover the one
+    // self-serve transition a candidate's own browser ever performs
+    // ('signed_up' -> 'onboarded' during onboarding); everything past that
+    // is Cloud-Function-only.
     // ===========================================================================
 
     // A candidate can read/write only their own application. Same
     // self-escalation protection as the v15 /users fix above: "create" only
     // allows the safe starting status, and "update" only lets the candidate
     // themselves move from 'signed_up' to 'onboarded' — every later status
-    // (assessed/approved/rejected) can only ever be set by an admin (or, in a
-    // later phase, a Cloud Function via the Admin SDK, which bypasses these
-    // rules entirely). An admin (role == "admin" on their own /users doc) can
-    // read every application, needed for the future approval dashboard.
+    // (assessment_completed/approved/rejected) can only ever be set by an
+    // admin or a Cloud Function via the Admin SDK. An admin (role == "admin"
+    // on their own /users doc) can read every application, needed for the
+    // future approval dashboard.
     match /interns/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
@@ -144,6 +151,17 @@ service cloud.firestore {
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
       );
     }
+
+    // Skills assessment sessions (Phase 2) — the private, per-candidate
+    // question selection + option-shuffle mapping + timer deadline that
+    // startAssessment/submitAssessment (functions/index.js) read and write.
+    // Deliberately NO client access at all, in either direction: this falls
+    // through to the "everything else is closed" catch-all below and relies
+    // on that, exactly like /orders relies on "create, update, delete: if
+    // false" — the Cloud Functions above use the Admin SDK, which bypasses
+    // Firestore rules entirely, so no explicit allow is ever needed here.
+    // (No match block needed for /assessmentSessions/{userId} — leaving it
+    // unmatched is the point.)
 
     // Everything else is closed by default.
     match /{document=**} {

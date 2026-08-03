@@ -91,28 +91,55 @@
 <script type="module">
 import { auth, db, onAuthStateChanged, signOut, doc, getDoc } from "./js/firebase-init.js";
 
-// Phase 1 stub: this page only ever shows a single "you're in the pipeline"
-// status card. Later phases replace renderStatus() with the real states —
-// take-the-assessment, pending-approval, and (once approved) the full
-// attendance/tasks/requests portal — keeping this same status-driven
-// structure so it's a clean extension point rather than a rewrite.
+// Phase 2 (2026-08-03): added the 'assessment_completed' state, shown once a
+// candidate finishes the skills check, plus a real CTA into it from
+// 'onboarded'. Later phases (3/4) replace renderStatus() further — the
+// pending-approval state below becomes a real approved-portal state once
+// admin approval is built — keeping this same status-driven structure so
+// it's a clean extension point rather than a rewrite.
 function renderStatus(status, data) {
   const badge = document.getElementById('statusBadge');
   const body = document.getElementById('nextStepsBody');
   const desc = document.getElementById('statusDesc');
 
   if (status === 'onboarded') {
-    badge.textContent = 'Application Submitted';
-    desc.textContent = "Thanks for applying — here's where things stand.";
+    badge.textContent = 'Skills Check Pending';
+    desc.textContent = "Thanks for applying — one quick step left before our team reviews you.";
     body.innerHTML = `
       <p class="dash-card-hint">
         <i class="fa-solid fa-circle-check" style="color:#1c7a34"></i> Your details and documents are with the RIED team.
       </p>
       <p class="dash-card-hint">
-        <i class="fa-solid fa-hourglass-half"></i> Next: a short, fun skills check (coming very soon) — we'll let you know the moment it's ready.
+        <i class="fa-solid fa-gamepad"></i> Next: a short, fun skills check — about 15 minutes, no pass/fail, just for us to see where you shine.
       </p>
+      <a href="intern-test.html" class="btn-primary" style="display:inline-block;margin-top:14px">
+        <i class="fa-solid fa-play"></i> Take Your Skills Check
+      </a>
+    `;
+  } else if (status === 'assessment_completed') {
+    badge.textContent = 'Pending Review';
+    desc.textContent = "You're all done on your end — your Mentors are reviewing your application now.";
+    const cat = data.assessmentCategoryScores || {};
+    const CATS = [
+      { key: 'html', label: 'HTML', icon: 'fa-code' },
+      { key: 'css', label: 'CSS', icon: 'fa-paintbrush' },
+      { key: 'java', label: 'Core Java', icon: 'fa-mug-hot' },
+      { key: 'logical', label: 'Logical Reasoning', icon: 'fa-brain' },
+      { key: 'task', label: 'Task-Based', icon: 'fa-list-check' }
+    ];
+    const barsHTML = CATS.filter(c => cat[c.key] !== undefined && cat[c.key] !== null).map(c => `
+      <div class="score-bar-row">
+        <div class="score-bar-label"><span><i class="fa-solid ${c.icon}"></i>${c.label}</span><span>${cat[c.key]}/100</span></div>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${cat[c.key]}%"></div></div>
+      </div>
+    `).join('');
+    body.innerHTML = `
       <p class="dash-card-hint">
-        <i class="fa-solid fa-user-check"></i> After that, our team reviews your application. Come back here anytime to check your status.
+        <i class="fa-solid fa-circle-check" style="color:#1c7a34"></i> Skills check complete — overall score: ${data.assessmentScore != null ? data.assessmentScore : '?'}/100 (just a snapshot, no pass/fail).
+      </p>
+      ${barsHTML}
+      <p class="dash-card-hint" style="margin-top:10px">
+        <i class="fa-solid fa-hourglass-half"></i> Neel and Pramod will review your application soon — check back here for updates.
       </p>
     `;
   } else {

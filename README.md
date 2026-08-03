@@ -1,64 +1,58 @@
-# v17 — Restore Marketplace Payouts + Push Everything Current (2026-08-03)
+# v18 — Internship Program Phase 2: Skills Assessment (2026-08-03)
 
-## What happened, plainly
+## What this adds
 
-While building today's Internship Program Phase 1 (v16), I discovered that
-my own working copy of a few files had lost last week's Marketplace order-
-history/seller-sales/payout work (Tier 20 / v14) — specifically the
-`markSellerPayout` function, the `sellerIds`/`payoutStatus` tracking inside
-`createMarketplaceOrder`, the Firestore rule that lets a seller read their
-own sales, and the related CSS. I built the security fix (v15) and today's
-Internship work (v16) on top of that incomplete base without re-checking
-it first, which is on me.
+The "Take Test" step from your original request — a short, timed, randomized,
+auto-graded skills check that candidates take right after onboarding. No
+pass/fail anywhere, just a 0-100 score per area so Neel and Pramod can see
+where each candidate is strongest before assigning tasks later.
 
-**What's actually safe right now**: your live Cloud Functions were never
-touched — we caught the problem mid-deploy and you cancelled before
-anything applied, so `markSellerPayout` and everything else is exactly as
-it was. **What's likely already affected**: the Firestore rules you
-deployed last week as part of the security fix were built on the same
-incomplete base, so the rule letting a seller read their own Marketplace
-sales has probably been missing since then — meaning "My Sales" on My
-Listings may have been throwing permission errors for sellers since that
-deploy. If you'd already pushed today's v16 files to GitHub before this
-came up, your live site's stylesheet may also be missing the styling for
-the My Sales / My Orders / Payouts pages (they'd still work, just look
-unstyled).
-
-To fix this cleanly without needing to figure out exactly which partial
-state you're currently in, this round is a **complete, current snapshot of
-every file that could possibly be affected** — all of it now correctly
-combined (Tier 20's Marketplace payouts + last week's security fix +
-today's Internship Program Phase 1, all together, verified as one unit).
-Pushing everything in this folder gets you to a known-good state
-regardless of what you'd already pushed.
+- **20 questions per attempt** (4 each, randomly drawn from a larger pool, so
+  no two candidates get quite the same test): HTML basics, CSS basics, Core
+  Java fundamentals, logical reasoning, and short task-based scenarios
+  ("what does this render", "spot the bug", "pick the right fix" — real code
+  execution isn't feasible on this stack safely, so these are all
+  scenario/multiple-choice, per what we discussed).
+- **15-minute timer**, enforced server-side (a candidate editing browser JS
+  can't extend it) — auto-submits whatever's answered when time runs out.
+- **Answers are graded entirely on the server** — the question bank and
+  correct answers live only in Cloud Functions source, never sent to the
+  browser, and never stored anywhere a client can read them. Each
+  candidate's specific question set and shuffled answer order is locked into
+  a private session document only the Cloud Function itself can touch.
+- **Fun, GenZ-friendly tone** — score reveal with emoji, encouraging copy at
+  every score range, category bars instead of a plain number.
+- New dashboard state: once onboarded, the dashboard shows a "Take Your
+  Skills Check" button; once the test is submitted, it shows the score
+  breakdown and a "your Mentors are reviewing this" message — matching your
+  original flow (onboarding → test → dashboard pending approval).
+- An email to hello@ried.co.in the moment someone finishes, with their score
+  breakdown, same pattern as the existing onboarding-submitted email.
 
 ## What's in this folder
-Everything from v16 (`intern-register.html`, `intern-login.html`,
-`intern-onboarding.html`, `intern-dashboard.html`, `index.html`,
-`storage.rules`) is unchanged and included only so this is a genuinely
-complete snapshot. What actually changed this round:
 
-- **`functions/index.js`** — `createMarketplaceOrder` now correctly stores
-  `payoutStatus: "pending"` on each line item and a `sellerIds` array on
-  the order again; `markSellerPayout` (admin-only, marks a sale paid) is
-  back; `notifyOnInternOnboarding` from today is still there too.
-- **`firestore.rules`** — the `/orders` read rule now correctly includes
-  the seller's `sellerIds`-based read access again, alongside the
-  Internship Program rules from today and last week's admin-role fix.
-- **`style.css`** — the My Sales tabs, sales cards, order cards, and admin
-  payout row styling are back, alongside today's document-upload card
-  styling.
-- **`my-orders.html`, `my-listings.html`, `admin-dashboard.html`,
-  `dashboard.html`** — restored to include the buyer order history page,
-  the My Sales tab, the Marketplace Payouts admin section, and the My
-  Orders button, exactly as originally built and successfully deployed
-  last week.
+- **`functions/index.js`** — full file, with the new question bank,
+  `startAssessment`, `submitAssessment`, and `notifyOnInternAssessmentComplete`
+  appended at the end. Everything from before (Marketplace, Packages,
+  subscriptions, Phase 1 onboarding) is unchanged.
+- **`firestore.rules`** — only the Internship Program comment block was
+  updated (documentation only — the actual rules didn't need to change,
+  since the new assessment-session data is only ever touched by Cloud
+  Functions using the Admin SDK, which bypasses these rules entirely).
+- **`style.css`** — new styles appended at the end for the quiz screen, the
+  countdown timer, and the results score bars. Nothing existing was touched.
+- **`intern-test.html`** — brand new page, the actual test-taking screen.
+- **`intern-dashboard.html`** — updated to add the "Take Your Skills Check"
+  button and the post-test score summary.
 
-## Deploy checklist — please do all of these, in order
+`intern-onboarding.html` did **not** need any changes — its existing
+"Go To My Dashboard" button and copy already pointed candidates to the
+dashboard, which now surfaces the test as their next step from there.
 
-1. Copy every file in this folder over the matching path in your repo —
-   yes, even ones you think you already have; this ensures nothing partial
-   is left behind. Push to GitHub.
+## Deploy checklist — please do these in order
+
+1. Copy every file in this folder over the matching path in your repo, push
+   to GitHub.
 2. Redeploy Cloud Functions (fresh clone, as always):
    ```
    cd ~
@@ -68,34 +62,46 @@ complete snapshot. What actually changed this round:
    npm install
    ls node_modules | grep nodemailer
    ```
-   (if that prints nothing, `npm install nodemailer@6.9.14 --save` like
-   before), then:
+   (if that prints nothing: `npm install nodemailer@6.9.14 --save`), then:
    ```
    cd ~/ried
    firebase deploy --only functions
    ```
-   **This time it should NOT ask about deleting `markSellerPayout`** —
-   if it does, something is still out of sync and you should stop and
-   paste me the output before continuing.
-3. Redeploy both rules files:
+   This adds `startAssessment`, `submitAssessment`, and
+   `notifyOnInternAssessmentComplete` as new functions — it should NOT ask
+   about deleting anything this time, since nothing existing was removed.
+3. Redeploy Firestore rules (documentation-only change, but keeps everything
+   in sync):
    ```
    firebase deploy --only firestore:rules,firestore:indexes
-   firebase deploy --only storage
    ```
-4. Test everything from Tier 20 that was never actually confirmed working
-   (this got interrupted by the rules regression before you got to it):
-   - As a buyer: buy something from Marketplace, check Dashboard → My
-     Orders shows it.
-   - As a seller: My Listings → My Sales tab shows the sale with buyer
-     details and "Awaiting Payout."
-   - As admin: Admin Dashboard → Marketplace Payouts → Mark as Paid, then
-     confirm the seller's My Sales view now shows "Paid Out."
-5. Then test today's Internship Program Phase 1 (footer link → sign up →
-   onboarding → document uploads → email → dashboard), same as described
-   in the v16 README.
+   (No Storage rules changes this round, so no need to redeploy those.)
 
-## Going forward
-I'm going to be more careful about verifying my working files actually
-reflect what's live before building on top of them, especially across a
-long session — this shouldn't have made it this far. Sorry for the extra
-round of deploy steps this creates for you.
+## Test checklist
+
+Using a test intern account that's already completed onboarding (status
+`onboarded`):
+- Sign in, go to the dashboard, confirm you see "Skills Check Pending" with
+  a "Take Your Skills Check" button.
+- Click it, read the intro screen, click "Start My Skills Check" — confirm
+  the timer starts at 15:00 and counts down, and the first question shows a
+  category chip (HTML/CSS/Core Java/Logical Reasoning/Task-Based).
+- Click through a few answers, use Back to confirm your previous picks are
+  still highlighted, then go to the last question and click "Submit My
+  Test".
+- Confirm the results screen shows an overall score and a bar per category,
+  with an encouraging message (not "pass" or "fail" wording anywhere).
+- Confirm hello@ried.co.in receives an email with the candidate's name and
+  full score breakdown.
+- Go to the dashboard again — confirm it now shows "Pending Review" with the
+  same score breakdown, and there's no way to retake the test from here.
+- Optional: try letting the timer run all the way to zero on a fresh
+  attempt, and confirm it auto-submits without any extra click.
+
+## Still to come
+
+Phase 3 (intern attendance, daily tasks, request center) and Phase 4 (Mentor
+side — task assignment, review, attendance reports, leave approval, with the
+Admin Dashboard's "Client Corner" kept visually separate from the
+"Internship Corner" per your instruction) are next, once you've had a chance
+to try this round out.
