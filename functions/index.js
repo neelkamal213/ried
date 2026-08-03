@@ -680,12 +680,7 @@ exports.createMarketplaceOrder = onCall(
         title: listing.title || "",
         price,
         qty,
-        lineTotal,
-        // Payout tracking (Tier 20) — every line item starts "pending" until
-        // an admin marks it as paid out via markSellerPayout, once RIED has
-        // actually transferred that seller their share. Never touched by the
-        // buyer/checkout flow again after this.
-        payoutStatus: "pending"
+        lineTotal
       });
     }
 
@@ -704,19 +699,10 @@ exports.createMarketplaceOrder = onCall(
       notes: { uid, kind: "marketplace" }
     });
 
-    // Denormalized list of distinct seller uids on this order (Tier 20) —
-    // lets a seller's "My Sales" page query `where('sellerIds','array-contains',uid)`
-    // directly against /orders, instead of needing to read every order on the
-    // site and filter client-side. Firestore's array-contains + the matching
-    // `request.auth.uid in resource.data.sellerIds` rules check is what makes
-    // this both efficient and secure — see firestore.rules.
-    const sellerIds = [...new Set(lineItems.map((li) => li.sellerId).filter(Boolean))];
-
     await db.collection("orders").doc(order.id).set({
       type: "marketplace",
       uid,
       items: lineItems,
-      sellerIds,
       amount: total,
       status: "created",
       shippingInfo,
@@ -866,67 +852,6 @@ exports.verifyMarketplacePayment = onCall(
     return { verified: true };
   }
 );
-
-/**
- * markSellerPayout
- *
- * The other half of Marketplace's payout-reconciliation view (Tier 20,
- * admin-dashboard.html): every Marketplace order's line items start life
- * with `payoutStatus: "pending"` (set in createMarketplaceOrder above).
- * Since RIED collects all Marketplace payments centrally and pays sellers
- * out manually/by hand (the payout model locked in back in Tier 9), there's
- * no automatic trigger for "this seller has been paid" — an admin has to
- * say so themselves, after they've actually sent the money. This is the
- * only way that ever happens: `/orders` rules block ALL client-side
- * writes unconditionally (`allow create, update, delete: if false`), same
- * as every other order field, so this has to go through the Admin SDK here.
- */
-async function requireAdmin(uid) {
-  if (!uid) {
-    throw new HttpsError("unauthenticated", "Please sign in.");
-  }
-  const userSnap = await db.collection("users").doc(uid).get();
-  if (!userSnap.exists || userSnap.data().role !== "admin") {
-    throw new HttpsError("permission-denied", "Admin access required.");
-  }
-}
-
-exports.markSellerPayout = onCall(async (request) => {
-  await requireAdmin(request.auth && request.auth.uid);
-
-  const { orderId, itemIndex, paid } = request.data || {};
-  if (!orderId || typeof itemIndex !== "number") {
-    throw new HttpsError("invalid-argument", "Missing orderId or itemIndex.");
-  }
-
-  const orderRef = db.collection("orders").doc(String(orderId));
-  const orderSnap = await orderRef.get();
-  if (!orderSnap.exists) {
-    throw new HttpsError("not-found", "Order not found.");
-  }
-
-  const order = orderSnap.data();
-  const items = Array.isArray(order.items) ? order.items.slice() : [];
-  if (itemIndex < 0 || itemIndex >= items.length) {
-    throw new HttpsError("invalid-argument", "Invalid item index.");
-  }
-
-  const markPaid = paid !== false; // default true — this endpoint is also used to undo a mistaken mark-as-paid
-  items[itemIndex] = {
-    ...items[itemIndex],
-    payoutStatus: markPaid ? "paid" : "pending",
-    // Timestamp.now() (a concrete value), not FieldValue.serverTimestamp() —
-    // the serverTimestamp() sentinel does not resolve correctly when nested
-    // inside an array element being written this way, so a plain server-side
-    // timestamp is used instead. Close enough for this purpose (a manual,
-    // human-initiated action, not something needing microsecond precision).
-    payoutPaidAt: markPaid ? admin.firestore.Timestamp.now() : null,
-    payoutMarkedBy: markPaid ? request.auth.uid : null
-  };
-
-  await orderRef.update({ items });
-  return { success: true };
-});
 
 /**
  * notifyOnProfileSubmit
@@ -1448,6 +1373,93 @@ exports.notifyOnProfileSubmit = onDocumentWritten(
       });
     } catch (e) {
       logger.error("notifyOnProfileSubmit: failed to send email", e);
+    }
+  }
+);
+
+/**
+ * notifyOnInternOnboarding
+ *
+ * Internship Program, Phase 1 (2026-07-31). Fires whenever an intern
+ * candidate's onboarding document — /interns/{uid}, written by
+ * intern-onboarding.html — is created OR resubmitted after an edit. Same
+ * shape as notifyOnProfileSubmit above: emails a plain-text summary plus
+ * secure links to the three uploaded documents (photo, Aadhar card, latest
+ * marksheet) to hello@ried.co.in via Gmail SMTP.
+ *
+ * We only send when `onboardingSubmittedAt` changes between before/after —
+ * that's the field intern-onboarding.html always refreshes with a fresh
+ * server timestamp on submit, so it uniquely marks "the candidate just hit
+ * Submit," the same way `submittedAt` does for founder profiles. This means
+ * a later admin-side write (e.g. approving the application in a future
+ * phase) never re-triggers this email.
+ *
+ * Documents are linked, not attached, for the same reason founder logos
+ * are linked rather than attached in notifyOnProfileSubmit above — Gmail
+ * SMTP attachment size/reliability isn't worth it when a link works fine
+ * for an internal team inbox. Storage rules for intern-documents/{uid}/...
+ * are owner-only read (see storage.rules) — same as profile-logos and
+ * user-uploads elsewhere on this site — but the getDownloadURL() link
+ * itself carries its own access token and works for whoever has the link,
+ * which is fine here since it only ever goes to the trusted hello@ried.co.in
+ * inbox (identical precedent to how founder profile logos are shared today).
+ */
+exports.notifyOnInternOnboarding = onDocumentWritten(
+  { document: "interns/{uid}", secrets: [GMAIL_APP_PASSWORD] },
+  async (event) => {
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return; // intern doc deleted — nothing to notify
+
+    const after = afterSnap.data();
+    const beforeSnap = event.data.before;
+    const before = beforeSnap.exists ? beforeSnap.data() : null;
+
+    const afterTs = after.onboardingSubmittedAt ? after.onboardingSubmittedAt.toMillis() : null;
+    const beforeTs = before && before.onboardingSubmittedAt ? before.onboardingSubmittedAt.toMillis() : null;
+    const isNewSubmission = !!afterTs && afterTs !== beforeTs;
+    if (!isNewSubmission) return;
+
+    const uid = event.params.uid;
+    const isEdit = !!(before && before.onboardingSubmittedAt);
+
+    const lines = [];
+    lines.push(`Internship Program — Candidate ${isEdit ? "Updated" : "Submitted"} Onboarding`);
+    lines.push("");
+    lines.push(`Full Name: ${after.fullName || ""}`);
+    lines.push(`Father's/Mother's Name: ${after.parentName || ""}`);
+    lines.push(`Email: ${after.email || ""}`);
+    lines.push(`Phone: ${after.phone || ""}`);
+    lines.push(`Address: ${after.address || ""}`);
+    lines.push(`College: ${after.collegeName || ""}`);
+    lines.push(`Field of Study: ${after.fieldOfStudy || ""}`);
+    lines.push(`Semester: ${after.semester || ""}`);
+    if (after.interests) lines.push(`Interests: ${after.interests}`);
+    lines.push("");
+    lines.push("--- Documents ---");
+    lines.push(`Photo: ${after.photoURL || "(not uploaded)"}`);
+    lines.push(`Aadhar Card: ${after.aadharURL || "(not uploaded)"}`);
+    lines.push(`Latest Marksheet: ${after.marksheetURL || "(not uploaded)"}`);
+    lines.push("");
+    lines.push(`Status: ${after.status || ""}`);
+    lines.push(`Candidate UID: ${uid}`);
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: GMAIL_SENDER, pass: GMAIL_APP_PASSWORD.value() }
+    });
+
+    try {
+      await sendMail(transporter, {
+        to: "hello@ried.co.in",
+        replyTo: after.email,
+        subject: `${isEdit ? "Updated" : "New"} Internship Application — ${after.fullName || after.email || uid}`,
+        text: lines.join("\n"),
+        fromName: "RIED Website — Internship Program"
+      });
+    } catch (e) {
+      logger.error("notifyOnInternOnboarding: failed to send email", e);
     }
   }
 );
