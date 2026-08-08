@@ -530,6 +530,14 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
     internData = snap.data();
+    // v22 (2026-08-03): same belt-and-suspenders revoked-access check as
+    // intern-dashboard.html — this page can be reached directly (bookmark,
+    // browser history) without passing back through the dashboard first.
+    if (internData.accessRevoked) {
+      await signOut(auth);
+      window.location.href = 'intern-login.html?revoked=1';
+      return;
+    }
     if (internData.status !== 'approved') {
       window.location.href = 'intern-dashboard.html';
       return;

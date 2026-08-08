@@ -546,6 +546,14 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   currentProfile = snap.data();
+  // v22 (2026-08-03): belt-and-suspenders revoked-access check, same
+  // reasoning as the intern pages — closes the gap while an already-issued
+  // session token is still technically valid at the Firebase Auth level.
+  if (currentProfile.accessRevoked) {
+    await signOut(auth);
+    window.location.href = 'login.html?revoked=1';
+    return;
+  }
   const name = currentProfile.fullName || user.displayName || user.email.split('@')[0];
   document.getElementById('welcomeName').textContent = `Welcome back, ${name}`;
   document.getElementById('profileSummary').innerHTML = renderProfileSummaryHTML(currentProfile);

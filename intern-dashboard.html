@@ -206,6 +206,15 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
     const data = snap.data();
+    // v22 (2026-08-03): a revoked account is signed out immediately rather
+    // than shown a normal dashboard — belt-and-suspenders alongside the
+    // Firebase Auth-level disable (adminRevokeAccess), which can take up to
+    // an hour to take effect on an already-issued session token.
+    if (data.accessRevoked) {
+      await signOut(auth);
+      window.location.href = 'intern-login.html?revoked=1';
+      return;
+    }
     if (data.status === 'signed_up') {
       window.location.href = 'intern-onboarding.html';
       return;

@@ -63,113 +63,239 @@
 
       <div class="admin-corner-header client-corner">
         <h2><i class="fa-solid fa-building-user"></i> Client Corner</h2>
-        <p>Founder Flywheel advancement requests and Marketplace seller payouts.</p>
+        <p>Founder Flywheel advancement requests, Marketplace seller payouts, and the full client roster.</p>
       </div>
 
-      <div id="pendingApprovalsWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-hourglass-half"></i> Pending Stage Advancement Requests</h3>
-        <div id="pendingApprovalsList" class="admin-pending-list-inner"></div>
+      <div id="pendingApprovalsWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="pendingApprovals">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-hourglass-half"></i> Pending Stage Advancement Requests <span class="admin-count-badge zero" id="pendingApprovalsCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div id="pendingApprovalsList" class="admin-pending-list-inner"></div>
+        </div>
       </div>
 
-      <div id="payoutsWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-sack-dollar"></i> Marketplace Payouts</h3>
-        <div id="payoutsList" class="admin-pending-list-inner"></div>
+      <div id="payoutsWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="payouts">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-sack-dollar"></i> Marketplace Payouts <span class="admin-count-badge zero" id="payoutsCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div id="payoutsList" class="admin-pending-list-inner"></div>
+        </div>
+      </div>
+
+      <div id="clientRosterWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="clientRoster">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-address-book"></i> Client Roster <span class="admin-count-badge zero" id="clientRosterCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <input type="text" id="clientRosterSearchInput" class="onboard-input roster-search-input" placeholder="Search by name, brand, or email...">
+            <div id="clientRosterList"></div>
+          </div>
+        </div>
       </div>
 
       <div class="admin-corner-header intern-corner">
         <h2><i class="fa-solid fa-user-graduate"></i> Internship Corner</h2>
-        <p>Applications, daily tasks, attendance, and requests for the Internship Program.</p>
+        <p>Applications, teams, daily tasks, attendance, and requests for the Internship Program.</p>
       </div>
 
-      <div id="internRosterWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-address-book"></i> Intern Roster</h3>
-        <div class="admin-pending-list-inner">
-          <div class="roster-controls">
-            <input type="text" id="rosterSearchInput" class="onboard-input roster-search-input" placeholder="Search by name or email...">
-            <select id="rosterStatusFilter" class="onboard-input roster-status-select">
-              <option value="all">All Statuses</option>
-              <option value="signed_up">Signed Up</option>
-              <option value="onboarded">Skills Check Pending</option>
-              <option value="assessment_completed">Pending Review</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+      <div id="internRosterWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="internRoster">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-address-book"></i> Intern Roster <span class="admin-count-badge zero" id="internRosterCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <div class="roster-controls">
+              <input type="text" id="rosterSearchInput" class="onboard-input roster-search-input" placeholder="Search by name or email...">
+              <select id="rosterStatusFilter" class="onboard-input roster-status-select">
+                <option value="all">All Statuses</option>
+                <option value="signed_up">Signed Up</option>
+                <option value="onboarded">Skills Check Pending</option>
+                <option value="assessment_completed">Pending Review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div id="rosterList"></div>
           </div>
-          <div id="rosterList"></div>
         </div>
       </div>
 
-      <div id="internAppsWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-clipboard-user"></i> Pending Internship Applications</h3>
-        <div class="admin-pending-list-inner">
-          <input type="text" id="internAppsSearchInput" class="onboard-input section-search-input" placeholder="Search by name or email...">
-          <div id="internAppsList"></div>
-        </div>
-      </div>
-
-      <div id="taskAssignWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-list-check"></i> Assign a Daily Task</h3>
-        <div class="admin-pending-list-inner">
-          <label class="onboard-label">Intern</label>
-          <select id="taskInternSelect" class="onboard-input"></select>
-
-          <div id="taskSuggestions" class="hidden">
-            <label class="onboard-label">Suggested Tasks <span class="onboard-optional">(based on their skills check)</span></label>
-            <div class="suggestion-chip-row" id="suggestionChipRow"></div>
+      <div id="internAppsWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="internApps">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-clipboard-user"></i> Pending Internship Applications <span class="admin-count-badge zero" id="internAppsCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <input type="text" id="internAppsSearchInput" class="onboard-input section-search-input" placeholder="Search by name or email...">
+            <div id="internAppsList"></div>
           </div>
+        </div>
+      </div>
 
-          <label class="onboard-label">Title</label>
-          <input type="text" id="taskTitle" class="onboard-input" placeholder="e.g. Update the FAQ section on the About page">
-
-          <label class="onboard-label">Description</label>
-          <textarea id="taskDescription" class="onboard-input" rows="3" placeholder="What exactly should they do?"></textarea>
-
-          <label class="onboard-label">Timeline / Due Date</label>
-          <input type="date" id="taskDueDate" class="onboard-input">
-
-          <div class="onboard-checkbox-row">
-            <input type="checkbox" id="taskClientRelated">
-            <label for="taskClientRelated">This is a client-related task</label>
+      <div id="teamsWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="teams">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-people-group"></i> Intern Teams <span class="admin-count-badge zero" id="teamsCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <label class="onboard-label">Team Name</label>
+            <input type="text" id="newTeamName" class="onboard-input" placeholder="e.g. Frontend Squad">
+            <label class="onboard-label">Members</label>
+            <div class="team-select-checklist" id="newTeamMemberChecklist"></div>
+            <div id="createTeamError" class="auth-error"></div>
+            <button class="btn-primary" id="createTeamBtn" style="margin-top:14px"><i class="fa-solid fa-plus"></i> Create Team</button>
+            <h4 style="margin:22px 0 10px;color:var(--navy);font-size:.95rem">Existing Teams</h4>
+            <div id="teamsList"></div>
           </div>
-
-          <div id="taskAssignError" class="auth-error"></div>
-          <div id="taskAssignSuccess" class="auth-error" style="background:rgba(28,122,52,.08);border-color:rgba(28,122,52,.25);color:#1c7a34"></div>
-          <button class="btn-primary" id="taskAssignBtn" style="margin-top:14px"><i class="fa-solid fa-paper-plane"></i> Assign Task</button>
         </div>
       </div>
 
-      <div id="taskReviewWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-magnifying-glass"></i> Tasks Awaiting Review</h3>
-        <div class="admin-pending-list-inner">
-          <input type="text" id="taskReviewSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name or task title...">
-          <div id="taskReviewList"></div>
-        </div>
-      </div>
+      <div id="taskAssignWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="taskAssign">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-list-check"></i> Assign a Daily Task</h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <div class="assign-mode-tabs">
+              <button type="button" class="assign-mode-tab active" data-mode="single">Single Intern</button>
+              <button type="button" class="assign-mode-tab" data-mode="multi">Multiple Interns</button>
+              <button type="button" class="assign-mode-tab" data-mode="team">A Team</button>
+            </div>
 
-      <div id="attendanceWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-clock"></i> Attendance</h3>
-        <div class="admin-pending-list-inner">
-          <div class="attendance-export-row">
-            <button class="btn-secondary" id="exportTodayBtn"><i class="fa-solid fa-download"></i> Export Today</button>
-            <button class="btn-secondary" id="exportWeekBtn"><i class="fa-solid fa-download"></i> Export This Week</button>
-            <button class="btn-secondary" id="exportMonthBtn"><i class="fa-solid fa-download"></i> Export This Month</button>
+            <div id="assignModeSingle">
+              <label class="onboard-label">Intern</label>
+              <select id="taskInternSelect" class="onboard-input"></select>
+
+              <div id="taskSuggestions" class="hidden">
+                <label class="onboard-label">Suggested Tasks <span class="onboard-optional">(based on their skills check)</span></label>
+                <div class="suggestion-chip-row" id="suggestionChipRow"></div>
+              </div>
+            </div>
+
+            <div id="assignModeMulti" class="hidden">
+              <div class="assignee-select-header">
+                <label><input type="checkbox" id="assigneeSelectAll"> Select All Approved Interns</label>
+              </div>
+              <div class="assignee-select-list" id="assigneeSelectList"></div>
+            </div>
+
+            <div id="assignModeTeam" class="hidden">
+              <label class="onboard-label">Team</label>
+              <select id="taskTeamSelect" class="onboard-input"></select>
+              <div id="taskTeamPreview" class="team-member-chip-row"></div>
+            </div>
+
+            <label class="onboard-label">Title</label>
+            <input type="text" id="taskTitle" class="onboard-input" placeholder="e.g. Update the FAQ section on the About page">
+
+            <label class="onboard-label">Description</label>
+            <textarea id="taskDescription" class="onboard-input" rows="3" placeholder="What exactly should they do?"></textarea>
+
+            <label class="onboard-label">Timeline / Due Date</label>
+            <input type="date" id="taskDueDate" class="onboard-input">
+
+            <div class="onboard-checkbox-row">
+              <input type="checkbox" id="taskClientRelated">
+              <label for="taskClientRelated">This is a client-related task</label>
+            </div>
+
+            <div id="taskAssignError" class="auth-error"></div>
+            <div id="taskAssignSuccess" class="auth-error" style="background:rgba(28,122,52,.08);border-color:rgba(28,122,52,.25);color:#1c7a34"></div>
+            <button class="btn-primary" id="taskAssignBtn" style="margin-top:14px"><i class="fa-solid fa-paper-plane"></i> Assign Task</button>
           </div>
-          <h4 style="margin:18px 0 10px;color:var(--navy);font-size:.95rem">Flagged Days (worth a second look)</h4>
-          <input type="text" id="attendanceAnomaliesSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name...">
-          <div id="attendanceAnomaliesList"></div>
         </div>
       </div>
 
-      <div id="internRequestsWrap" class="admin-pending-wrap hidden">
-        <h3 class="admin-pending-title"><i class="fa-solid fa-inbox"></i> Intern Requests</h3>
-        <div class="admin-pending-list-inner">
-          <input type="text" id="internRequestsSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name or request type...">
-          <div id="internRequestsList"></div>
+      <div id="taskReviewWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="taskReview">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-magnifying-glass"></i> Tasks Awaiting Review <span class="admin-count-badge zero" id="taskReviewCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <input type="text" id="taskReviewSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name or task title...">
+            <div id="taskReviewList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="attendanceWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="attendance">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-clock"></i> Attendance <span class="admin-count-badge zero" id="attendanceCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <div class="attendance-export-row">
+              <button class="btn-secondary" id="exportTodayBtn"><i class="fa-solid fa-download"></i> Export Today</button>
+              <button class="btn-secondary" id="exportWeekBtn"><i class="fa-solid fa-download"></i> Export This Week</button>
+              <button class="btn-secondary" id="exportMonthBtn"><i class="fa-solid fa-download"></i> Export This Month</button>
+            </div>
+            <h4 style="margin:18px 0 10px;color:var(--navy);font-size:.95rem">Flagged Days (worth a second look)</h4>
+            <input type="text" id="attendanceAnomaliesSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name...">
+            <div id="attendanceAnomaliesList"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="internRequestsWrap" class="admin-pending-wrap admin-collapsible hidden" data-section="internRequests">
+        <button type="button" class="admin-collapsible-header">
+          <h3 class="admin-pending-title"><i class="fa-solid fa-inbox"></i> Intern Requests <span class="admin-count-badge zero" id="internRequestsCount">0</span></h3>
+          <i class="fa-solid fa-chevron-down admin-collapsible-chevron"></i>
+        </button>
+        <div class="admin-collapsible-body">
+          <div class="admin-pending-list-inner">
+            <input type="text" id="internRequestsSearchInput" class="onboard-input section-search-input" placeholder="Search by intern name or request type...">
+            <div id="internRequestsList"></div>
+          </div>
         </div>
       </div>
 
     </div>
   </section>
+
+  <!-- Revoke Access modal — used for both interns and clients -->
+  <div id="revokeModal" class="admin-modal-overlay hidden">
+    <div class="admin-modal">
+      <h3><i class="fa-solid fa-user-lock"></i> Revoke Access</h3>
+      <p id="revokeModalTarget"></p>
+      <label class="onboard-label">Reason <span class="onboard-optional">(required, kept on file)</span></label>
+      <textarea id="revokeReasonInput" class="onboard-input" rows="3" placeholder="Why is access being revoked?"></textarea>
+      <div id="revokeModalError" class="auth-error"></div>
+      <div class="admin-modal-actions">
+        <button class="btn-secondary" id="revokeModalCancel" type="button">Cancel</button>
+        <button class="btn-danger" id="revokeModalConfirm" type="button"><i class="fa-solid fa-user-lock"></i> Revoke Access</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Account modal — used for both interns and clients -->
+  <div id="deleteModal" class="admin-modal-overlay hidden">
+    <div class="admin-modal">
+      <h3 class="danger"><i class="fa-solid fa-triangle-exclamation"></i> Delete Account</h3>
+      <p id="deleteModalTarget"></p>
+      <p><strong>This permanently deletes their login, profile, and uploaded files. This cannot be undone.</strong> (Their attendance/task/order history is kept for your records.)</p>
+      <label class="onboard-label">Reason <span class="onboard-optional">(required, kept on file)</span></label>
+      <textarea id="deleteReasonInput" class="onboard-input" rows="2" placeholder="Why is this account being deleted?"></textarea>
+      <label class="onboard-label">Type <strong id="deleteConfirmWord"></strong> to confirm</label>
+      <input type="text" id="deleteConfirmInput" class="onboard-input" placeholder="Type the name shown above">
+      <div id="deleteModalError" class="auth-error"></div>
+      <div class="admin-modal-actions">
+        <button class="btn-secondary" id="deleteModalCancel" type="button">Cancel</button>
+        <button class="btn-danger" id="deleteModalConfirm" type="button"><i class="fa-solid fa-trash"></i> Permanently Delete</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="footer">
     <div class="container footer-content">
@@ -212,14 +338,17 @@ window.addEventListener("scroll", function() {
 <script type="module">
 import {
   auth, db, app, ADMIN_EMAILS, onAuthStateChanged, signOut,
-  doc, setDoc, updateDoc, addDoc, collection, getDocs, query, where,
-  serverTimestamp, arrayUnion, Timestamp
+  doc, setDoc, updateDoc, addDoc, deleteDoc, collection, getDocs, query, where,
+  serverTimestamp, arrayUnion, arrayRemove, Timestamp
 } from "./js/firebase-init.js";
 import { STAGE_LABELS, getNextStage } from "./js/flywheel-stages.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
 const functions = getFunctions(app);
 const markSellerPayout = httpsCallable(functions, "markSellerPayout");
+const adminDeleteAccount = httpsCallable(functions, "adminDeleteAccount");
+const adminRevokeAccess = httpsCallable(functions, "adminRevokeAccess");
+const adminRestoreAccess = httpsCallable(functions, "adminRestoreAccess");
 
 function esc(v) {
   if (v === undefined || v === null) return '';
@@ -229,6 +358,38 @@ function esc(v) {
 function formatWhen(ts) {
   if (!ts || typeof ts.toDate !== 'function') return '';
   return ts.toDate().toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+/* ===========================================================================
+ * v22 (2026-08-03) — collapsible sections + count badges. Each
+ * .admin-collapsible section remembers its own open/closed state in
+ * localStorage (keyed by its data-section), so this only matters for a
+ * brand-new browser profile — DEFAULT_EXPANDED_SECTIONS below decides the
+ * first-ever-visit state. Wired once at load; each render function calls
+ * setSectionCount() itself with its own current item count.
+ * =========================================================================== */
+const DEFAULT_EXPANDED_SECTIONS = new Set(['pendingApprovals', 'internApps', 'taskReview', 'attendance', 'internRequests']);
+
+function initCollapsibleSections() {
+  document.querySelectorAll('.admin-collapsible').forEach((wrapEl) => {
+    const key = wrapEl.dataset.section;
+    const header = wrapEl.querySelector('.admin-collapsible-header');
+    const stored = localStorage.getItem(`admin_collapsed_${key}`);
+    const collapsed = stored !== null ? stored === 'true' : !DEFAULT_EXPANDED_SECTIONS.has(key);
+    wrapEl.classList.toggle('collapsed', collapsed);
+    header.addEventListener('click', () => {
+      const nowCollapsed = wrapEl.classList.toggle('collapsed');
+      localStorage.setItem(`admin_collapsed_${key}`, nowCollapsed);
+    });
+  });
+}
+initCollapsibleSections();
+
+function setSectionCount(countElId, n) {
+  const el = document.getElementById(countElId);
+  if (!el) return;
+  el.textContent = n;
+  el.classList.toggle('zero', n === 0);
 }
 
 async function loadPendingApprovals() {
@@ -246,6 +407,7 @@ async function loadPendingApprovals() {
   }
 
   if (snap.empty) {
+    setSectionCount('pendingApprovalsCount', 0);
     listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending advancement requests right now.</p>';
     return;
   }
@@ -261,9 +423,11 @@ async function loadPendingApprovals() {
   });
 
   if (!items.length) {
+    setSectionCount('pendingApprovalsCount', 0);
     listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending advancement requests right now.</p>';
     return;
   }
+  setSectionCount('pendingApprovalsCount', items.length);
 
   listEl.innerHTML = items.map(({ uid, p, stageKey, answers }) => {
     const name = esc(p.fullName || p.brandName || 'Unnamed Founder');
@@ -303,6 +467,7 @@ async function loadPendingApprovals() {
           pendingAdvancement: false
         }, { merge: true });
         item.remove();
+        setSectionCount('pendingApprovalsCount', listEl.querySelectorAll('.admin-pending-item').length);
         if (!listEl.querySelector('.admin-pending-item')) {
           listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No pending advancement requests right now.</p>';
         }
@@ -352,9 +517,11 @@ async function loadMarketplacePayouts() {
   }).sort((a, b) => b.owed - a.owed);
 
   if (!sellers.length) {
+    setSectionCount('payoutsCount', 0);
     listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-circle-check"></i> No Marketplace sales yet.</p>';
     return;
   }
+  setSectionCount('payoutsCount', sellers.filter(s => s.owed > 0).length);
 
   listEl.innerHTML = sellers.map(seller => {
     const rows = seller.sales.map(({ orderId, itemIndex, item, order }) => {
@@ -494,6 +661,8 @@ function renderInternRoster() {
     return (i.fullName || '').toLowerCase().includes(searchText) || (i.email || '').toLowerCase().includes(searchText);
   }).sort((a, b) => (a.fullName || a.email || '').localeCompare(b.fullName || b.email || ''));
 
+  setSectionCount('internRosterCount', rows.length);
+
   if (!rows.length) {
     listEl.innerHTML = '<p class="admin-empty">No interns match that search.</p>';
     return;
@@ -521,11 +690,13 @@ function renderInternRoster() {
           <div>
             <strong>${esc(i.fullName || i.email || i.uid)}</strong>
             <span class="account-role-badge roster-status-badge status-${esc(i.status || 'unknown')}" style="margin:0 0 0 10px">${esc(ROSTER_STATUS_LABELS[i.status] || i.status || 'Unknown')}</span>
+            ${i.accessRevoked ? '<span class="roster-revoked-badge"><i class="fa-solid fa-user-lock"></i> Access Revoked</span>' : ''}
           </div>
           ${hasHistory ? `<button class="btn-secondary roster-history-toggle"><i class="fa-solid fa-clock-rotate-left"></i> History</button>` : ''}
         </div>
         <div class="admin-pending-meta">${metaBits.filter(Boolean).join(' &middot; ')}</div>
         ${hasHistory ? `<div class="roster-history-panel hidden">${historyHTML}</div>` : ''}
+        <div style="margin-top:10px">${accountControlsHTML(i.uid, 'intern', !!i.accessRevoked)}</div>
       </div>
     `;
   }).join('');
@@ -535,10 +706,235 @@ function renderInternRoster() {
       btn.closest('.roster-item').querySelector('.roster-history-panel').classList.toggle('hidden');
     });
   });
+  wireAccountControlButtons(listEl);
 }
 
 document.getElementById('rosterSearchInput').addEventListener('input', renderInternRoster);
 document.getElementById('rosterStatusFilter').addEventListener('change', renderInternRoster);
+
+/* ===========================================================================
+ * v22 — Client Roster. Mirrors the Intern Roster pattern: fetch every
+ * /profiles doc once, render with search + account controls. Clients don't
+ * have a discrete status enum the way interns do (no application pipeline),
+ * so there's no status filter here — just search plus the revoked/active
+ * badge.
+ * =========================================================================== */
+let clientRosterCache = [];
+
+async function loadAllClients() {
+  const snap = await getDocs(collection(db, 'profiles'));
+  clientRosterCache = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+}
+
+function renderClientRoster() {
+  const wrapEl = document.getElementById('clientRosterWrap');
+  wrapEl.classList.remove('hidden');
+  const listEl = document.getElementById('clientRosterList');
+  const searchText = (document.getElementById('clientRosterSearchInput').value || '').trim().toLowerCase();
+
+  const rows = clientRosterCache.filter(c => {
+    if (!searchText) return true;
+    return (c.fullName || '').toLowerCase().includes(searchText) ||
+      (c.brandName || '').toLowerCase().includes(searchText) ||
+      (c.email || '').toLowerCase().includes(searchText);
+  }).sort((a, b) => (a.fullName || a.brandName || a.email || '').localeCompare(b.fullName || b.brandName || b.email || ''));
+
+  setSectionCount('clientRosterCount', rows.length);
+
+  if (!rows.length) {
+    listEl.innerHTML = '<p class="admin-empty">No clients match that search.</p>';
+    return;
+  }
+
+  listEl.innerHTML = rows.map(c => `
+    <div class="admin-pending-item roster-item" data-uid="${esc(c.uid)}">
+      <div class="admin-pending-head">
+        <div>
+          <strong>${esc(c.fullName || c.brandName || c.email || c.uid)}</strong>
+          <span class="account-role-badge" style="margin:0 0 0 10px">${esc(STAGE_LABELS[c.flywheelStage] || c.flywheelStage || 'Founder')}</span>
+          ${c.accessRevoked ? '<span class="roster-revoked-badge"><i class="fa-solid fa-user-lock"></i> Access Revoked</span>' : ''}
+        </div>
+      </div>
+      <div class="admin-pending-meta">${esc(c.email || '')}${c.brandName && c.fullName ? ` &middot; ${esc(c.brandName)}` : ''}</div>
+      <div style="margin-top:10px">${accountControlsHTML(c.uid, 'client', !!c.accessRevoked)}</div>
+    </div>
+  `).join('');
+
+  wireAccountControlButtons(listEl);
+}
+
+document.getElementById('clientRosterSearchInput').addEventListener('input', renderClientRoster);
+
+/* ===========================================================================
+ * v22 — Delete / Revoke Access / Restore Access. Shared by both rosters.
+ * Delete and Revoke both need to touch the Firebase Auth account itself
+ * (remove it entirely, or disable + revoke its refresh tokens) — that's only
+ * possible with the Admin SDK, so both run through Cloud Functions
+ * (adminDeleteAccount / adminRevokeAccess / adminRestoreAccess) rather than
+ * a direct client Firestore write. See functions/index.js for what each one
+ * actually does server-side.
+ * =========================================================================== */
+let pendingAccountAction = null; // { uid, accountType, name }
+
+function accountControlsHTML(uid, accountType, revoked) {
+  if (revoked) {
+    return `
+      <div class="roster-actions">
+        <button class="btn-secondary restore-access-btn" data-uid="${esc(uid)}" data-type="${accountType}"><i class="fa-solid fa-user-check"></i> Restore Access</button>
+        <button class="btn-danger delete-account-btn" data-uid="${esc(uid)}" data-type="${accountType}"><i class="fa-solid fa-trash"></i> Delete</button>
+      </div>
+    `;
+  }
+  return `
+    <div class="roster-actions">
+      <button class="btn-secondary revoke-access-btn" data-uid="${esc(uid)}" data-type="${accountType}"><i class="fa-solid fa-user-lock"></i> Revoke Access</button>
+      <button class="btn-danger delete-account-btn" data-uid="${esc(uid)}" data-type="${accountType}"><i class="fa-solid fa-trash"></i> Delete</button>
+    </div>
+  `;
+}
+
+function findAccountRecord(uid, accountType) {
+  return accountType === 'intern'
+    ? internsCache.find(i => i.uid === uid)
+    : clientRosterCache.find(c => c.uid === uid);
+}
+
+function accountDisplayName(record, uid) {
+  return record ? (record.fullName || record.brandName || record.email || uid) : uid;
+}
+
+function wireAccountControlButtons(container) {
+  container.querySelectorAll('.revoke-access-btn').forEach(btn => {
+    btn.addEventListener('click', () => openRevokeModal(btn.dataset.uid, btn.dataset.type));
+  });
+  container.querySelectorAll('.delete-account-btn').forEach(btn => {
+    btn.addEventListener('click', () => openDeleteModal(btn.dataset.uid, btn.dataset.type));
+  });
+  container.querySelectorAll('.restore-access-btn').forEach(btn => {
+    btn.addEventListener('click', () => runRestoreAccess(btn.dataset.uid, btn.dataset.type, btn));
+  });
+}
+
+async function refreshRosterAfterAccountAction(accountType) {
+  if (accountType === 'intern') {
+    await loadAllInterns();
+    renderInternRoster();
+    populateTaskInternSelect();
+    if (typeof populateAssigneeChecklist === 'function') populateAssigneeChecklist();
+  } else {
+    await loadAllClients();
+    renderClientRoster();
+  }
+}
+
+function openRevokeModal(uid, accountType) {
+  const record = findAccountRecord(uid, accountType);
+  const name = accountDisplayName(record, uid);
+  pendingAccountAction = { uid, accountType, name };
+  document.getElementById('revokeModalTarget').textContent =
+    `Revoking access for ${name} (${accountType === 'intern' ? 'Intern' : 'Client'}). They'll be signed out and unable to log back in until you restore access.`;
+  document.getElementById('revokeReasonInput').value = '';
+  document.getElementById('revokeModalError').classList.remove('show');
+  document.getElementById('revokeModal').classList.remove('hidden');
+}
+
+document.getElementById('revokeModalCancel').addEventListener('click', () => {
+  document.getElementById('revokeModal').classList.add('hidden');
+  pendingAccountAction = null;
+});
+
+document.getElementById('revokeModalConfirm').addEventListener('click', async () => {
+  const errBox = document.getElementById('revokeModalError');
+  errBox.classList.remove('show');
+  const reason = document.getElementById('revokeReasonInput').value.trim();
+  if (!reason) {
+    errBox.textContent = 'Please enter a reason.';
+    errBox.classList.add('show');
+    return;
+  }
+  if (!pendingAccountAction) return;
+  const { uid, accountType } = pendingAccountAction;
+  const btn = document.getElementById('revokeModalConfirm');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Revoking...';
+  try {
+    await adminRevokeAccess({ uid, accountType, reason });
+    document.getElementById('revokeModal').classList.add('hidden');
+    pendingAccountAction = null;
+    await refreshRosterAfterAccountAction(accountType);
+  } catch (e) {
+    errBox.textContent = `Couldn't revoke access: ${e.message || e}`;
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-user-lock"></i> Revoke Access';
+  }
+});
+
+function openDeleteModal(uid, accountType) {
+  const record = findAccountRecord(uid, accountType);
+  const name = accountDisplayName(record, uid);
+  pendingAccountAction = { uid, accountType, name };
+  document.getElementById('deleteModalTarget').textContent =
+    `Deleting ${name} (${accountType === 'intern' ? 'Intern' : 'Client'}).`;
+  document.getElementById('deleteConfirmWord').textContent = name;
+  document.getElementById('deleteReasonInput').value = '';
+  document.getElementById('deleteConfirmInput').value = '';
+  document.getElementById('deleteModalError').classList.remove('show');
+  document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+document.getElementById('deleteModalCancel').addEventListener('click', () => {
+  document.getElementById('deleteModal').classList.add('hidden');
+  pendingAccountAction = null;
+});
+
+document.getElementById('deleteModalConfirm').addEventListener('click', async () => {
+  const errBox = document.getElementById('deleteModalError');
+  errBox.classList.remove('show');
+  if (!pendingAccountAction) return;
+  const { uid, accountType, name } = pendingAccountAction;
+  const reason = document.getElementById('deleteReasonInput').value.trim();
+  const typed = document.getElementById('deleteConfirmInput').value.trim();
+  if (!reason) {
+    errBox.textContent = 'Please enter a reason.';
+    errBox.classList.add('show');
+    return;
+  }
+  if (typed !== name) {
+    errBox.textContent = `Please type "${name}" exactly to confirm.`;
+    errBox.classList.add('show');
+    return;
+  }
+  const btn = document.getElementById('deleteModalConfirm');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting...';
+  try {
+    await adminDeleteAccount({ uid, accountType, reason });
+    document.getElementById('deleteModal').classList.add('hidden');
+    pendingAccountAction = null;
+    await refreshRosterAfterAccountAction(accountType);
+  } catch (e) {
+    errBox.textContent = `Couldn't delete this account: ${e.message || e}`;
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-trash"></i> Permanently Delete';
+  }
+});
+
+async function runRestoreAccess(uid, accountType, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Restoring...';
+  try {
+    await adminRestoreAccess({ uid, accountType });
+    await refreshRosterAfterAccountAction(accountType);
+  } catch (e) {
+    alert('Could not restore access: ' + (e.message || e));
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Restore Access';
+  }
+}
 
 async function loadInternApplications() {
   const listEl = document.getElementById('internAppsList');
@@ -605,6 +1001,157 @@ async function loadInternApplications() {
 
 document.getElementById('internAppsSearchInput').addEventListener('input', loadInternApplications);
 
+/* ===========================================================================
+ * v22 — Intern Teams. Plain Firestore collection (/internTeams, admin-only
+ * per firestore.rules — plain client writes, no Cloud Function needed).
+ * teamsCache feeds the "Assign to a Team" mode in the task-assignment
+ * section below, so anything that changes membership here re-runs loadTeams()
+ * to keep that in sync.
+ * =========================================================================== */
+async function loadTeams() {
+  const wrapEl = document.getElementById('teamsWrap');
+  wrapEl.classList.remove('hidden');
+  const listEl = document.getElementById('teamsList');
+  listEl.innerHTML = '<p class="admin-empty"><i class="fa-solid fa-spinner fa-spin"></i> Loading teams&hellip;</p>';
+  let snap;
+  try {
+    snap = await getDocs(collection(db, 'internTeams'));
+  } catch (e) {
+    listEl.innerHTML = `<p class="admin-empty">Couldn't load teams: ${esc(e.message || e)}</p>`;
+    return;
+  }
+  teamsCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  renderNewTeamMemberChecklist();
+  renderTeamsList();
+  populateTaskTeamSelect();
+}
+
+function renderNewTeamMemberChecklist() {
+  const listEl = document.getElementById('newTeamMemberChecklist');
+  const approved = internsCache.filter(i => i.status === 'approved');
+  if (!approved.length) {
+    listEl.innerHTML = '<p class="admin-empty">No approved interns yet.</p>';
+    return;
+  }
+  listEl.innerHTML = approved.map(i => `
+    <label class="team-select-row">
+      <input type="checkbox" class="new-team-member-checkbox" value="${esc(i.uid)}">
+      <span>${esc(i.fullName || i.email)}</span>
+    </label>
+  `).join('');
+}
+
+document.getElementById('createTeamBtn').addEventListener('click', async () => {
+  const errBox = document.getElementById('createTeamError');
+  errBox.classList.remove('show');
+  const name = document.getElementById('newTeamName').value.trim();
+  const memberUids = Array.from(document.querySelectorAll('.new-team-member-checkbox:checked')).map(cb => cb.value);
+  if (!name) {
+    errBox.textContent = 'Please give the team a name.';
+    errBox.classList.add('show');
+    return;
+  }
+  const btn = document.getElementById('createTeamBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+  try {
+    await addDoc(collection(db, 'internTeams'), { name, memberUids, createdAt: serverTimestamp() });
+    document.getElementById('newTeamName').value = '';
+    document.querySelectorAll('.new-team-member-checkbox').forEach(cb => { cb.checked = false; });
+    await loadTeams();
+  } catch (e) {
+    errBox.textContent = `Couldn't create that team: ${e.message || e}`;
+    errBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-plus"></i> Create Team';
+  }
+});
+
+function renderTeamsList() {
+  const listEl = document.getElementById('teamsList');
+  setSectionCount('teamsCount', teamsCache.length);
+  if (!teamsCache.length) {
+    listEl.innerHTML = '<p class="admin-empty">No teams yet — create one above.</p>';
+    return;
+  }
+  listEl.innerHTML = teamsCache.map(t => {
+    const members = t.memberUids || [];
+    const chips = members.map(uid => `
+      <span class="team-member-chip">${esc(internsMap[uid] || uid)} <button type="button" class="team-remove-member-btn" data-team="${esc(t.id)}" data-uid="${esc(uid)}" title="Remove from team">&times;</button></span>
+    `).join('');
+    const approvedNotInTeam = internsCache.filter(i => i.status === 'approved' && !members.includes(i.uid));
+    const addSelect = approvedNotInTeam.length
+      ? `<select class="onboard-input team-add-member-select" data-team="${esc(t.id)}" style="margin-top:8px;max-width:280px">
+          <option value="">+ Add a member...</option>
+          ${approvedNotInTeam.map(i => `<option value="${esc(i.uid)}">${esc(i.fullName || i.email)}</option>`).join('')}
+        </select>`
+      : '';
+    return `
+      <div class="admin-pending-item team-card" data-team="${esc(t.id)}">
+        <div class="admin-pending-head">
+          <div><strong>${esc(t.name)}</strong> <span class="account-role-badge" style="margin:0 0 0 10px">${members.length} member${members.length === 1 ? '' : 's'}</span></div>
+          <button class="btn-danger team-delete-btn" data-team="${esc(t.id)}"><i class="fa-solid fa-trash"></i> Delete Team</button>
+        </div>
+        <div class="team-member-chip-row">${chips || '<span class="admin-empty" style="margin:0">No members yet.</span>'}</div>
+        ${addSelect}
+      </div>
+    `;
+  }).join('');
+
+  listEl.querySelectorAll('.team-remove-member-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        await updateDoc(doc(db, 'internTeams', btn.dataset.team), { memberUids: arrayRemove(btn.dataset.uid) });
+        await loadTeams();
+      } catch (e) {
+        alert('Could not remove member: ' + (e.message || e));
+      }
+    });
+  });
+
+  listEl.querySelectorAll('.team-add-member-select').forEach(select => {
+    select.addEventListener('change', async () => {
+      const uid = select.value;
+      if (!uid) return;
+      select.disabled = true;
+      try {
+        await updateDoc(doc(db, 'internTeams', select.dataset.team), { memberUids: arrayUnion(uid) });
+        await loadTeams();
+      } catch (e) {
+        alert('Could not add member: ' + (e.message || e));
+      }
+    });
+  });
+
+  listEl.querySelectorAll('.team-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm(`Delete the team "${btn.closest('.team-card').querySelector('strong').textContent}"? Already-assigned tasks aren't affected — this only removes the team itself.`)) return;
+      btn.disabled = true;
+      try {
+        await deleteDoc(doc(db, 'internTeams', btn.dataset.team));
+        await loadTeams();
+      } catch (e) {
+        alert('Could not delete team: ' + (e.message || e));
+      }
+    });
+  });
+}
+
+/* ===========================================================================
+ * v22 — multi-recipient task assignment. Three modes sharing one form
+ * (title/description/due date/client-related): Single Intern (the original
+ * flow), Multiple Interns (freehand checkbox multi-select + Select All), and
+ * A Team (picks a saved /internTeams doc, assigns to its current members).
+ * Whichever mode is active, assigning fans out to one /internTasks doc PER
+ * recipient — the schema stays single-assignee (intern-portal.html already
+ * queries by a single internUid per task), so a "team" or "multiple" task is
+ * just several ordinary task docs sharing a teamId/teamName tag.
+ * =========================================================================== */
+let assignMode = 'single';
+let teamsCache = [];
+
 function populateTaskInternSelect() {
   const wrapEl = document.getElementById('taskAssignWrap');
   wrapEl.classList.remove('hidden');
@@ -612,10 +1159,12 @@ function populateTaskInternSelect() {
   const approved = internsCache.filter(i => i.status === 'approved');
   if (!approved.length) {
     select.innerHTML = '<option value="">No approved interns yet</option>';
-    return;
+  } else {
+    select.innerHTML = approved.map(i => `<option value="${esc(i.uid)}">${esc(i.fullName || i.email)}</option>`).join('');
   }
-  select.innerHTML = approved.map(i => `<option value="${esc(i.uid)}">${esc(i.fullName || i.email)}</option>`).join('');
   renderTaskSuggestions();
+  populateAssigneeChecklist();
+  populateTaskTeamSelect();
 }
 
 function renderTaskSuggestions() {
@@ -643,20 +1192,90 @@ function renderTaskSuggestions() {
 
 document.getElementById('taskInternSelect').addEventListener('change', renderTaskSuggestions);
 
+function populateAssigneeChecklist() {
+  const listEl = document.getElementById('assigneeSelectList');
+  const approved = internsCache.filter(i => i.status === 'approved');
+  if (!approved.length) {
+    listEl.innerHTML = '<p class="admin-empty">No approved interns yet.</p>';
+    return;
+  }
+  listEl.innerHTML = approved.map(i => `
+    <label class="assignee-select-row">
+      <input type="checkbox" class="assignee-checkbox" value="${esc(i.uid)}">
+      <span>${esc(i.fullName || i.email)}</span>
+    </label>
+  `).join('');
+  document.getElementById('assigneeSelectAll').checked = false;
+}
+
+document.getElementById('assigneeSelectAll').addEventListener('change', (e) => {
+  document.querySelectorAll('.assignee-checkbox').forEach(cb => { cb.checked = e.target.checked; });
+});
+
+function populateTaskTeamSelect() {
+  const select = document.getElementById('taskTeamSelect');
+  if (!teamsCache.length) {
+    select.innerHTML = '<option value="">No teams yet — create one in Intern Teams</option>';
+    document.getElementById('taskTeamPreview').innerHTML = '';
+    return;
+  }
+  select.innerHTML = teamsCache.map(t => `<option value="${esc(t.id)}">${esc(t.name)} (${(t.memberUids || []).length})</option>`).join('');
+  renderTaskTeamPreview();
+}
+
+function renderTaskTeamPreview() {
+  const teamId = document.getElementById('taskTeamSelect').value;
+  const team = teamsCache.find(t => t.id === teamId);
+  const box = document.getElementById('taskTeamPreview');
+  if (!team) { box.innerHTML = ''; return; }
+  const members = (team.memberUids || []).map(uid => internsMap[uid] || uid);
+  box.innerHTML = members.length
+    ? members.map(name => `<span class="team-member-chip">${esc(name)}</span>`).join('')
+    : '<p class="admin-empty" style="margin:0">This team has no members yet.</p>';
+}
+
+document.getElementById('taskTeamSelect').addEventListener('change', renderTaskTeamPreview);
+
+document.querySelectorAll('.assign-mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    assignMode = tab.dataset.mode;
+    document.querySelectorAll('.assign-mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+    document.getElementById('assignModeSingle').classList.toggle('hidden', assignMode !== 'single');
+    document.getElementById('assignModeMulti').classList.toggle('hidden', assignMode !== 'multi');
+    document.getElementById('assignModeTeam').classList.toggle('hidden', assignMode !== 'team');
+  });
+});
+
 document.getElementById('taskAssignBtn').addEventListener('click', async () => {
   const errBox = document.getElementById('taskAssignError');
   const okBox = document.getElementById('taskAssignSuccess');
   errBox.classList.remove('show');
   okBox.classList.remove('show');
 
-  const internUid = document.getElementById('taskInternSelect').value;
   const title = document.getElementById('taskTitle').value.trim();
   const description = document.getElementById('taskDescription').value.trim();
   const dueDate = document.getElementById('taskDueDate').value;
   const clientRelated = document.getElementById('taskClientRelated').checked;
 
-  if (!internUid || !title || !description) {
-    errBox.textContent = 'Please pick an intern and fill in a title and description.';
+  let recipientUids = [];
+  let teamTag = null;
+
+  if (assignMode === 'single') {
+    const uid = document.getElementById('taskInternSelect').value;
+    if (uid) recipientUids = [uid];
+  } else if (assignMode === 'multi') {
+    recipientUids = Array.from(document.querySelectorAll('.assignee-checkbox:checked')).map(cb => cb.value);
+  } else if (assignMode === 'team') {
+    const teamId = document.getElementById('taskTeamSelect').value;
+    const team = teamsCache.find(t => t.id === teamId);
+    if (team) {
+      recipientUids = team.memberUids || [];
+      teamTag = { teamId: team.id, teamName: team.name };
+    }
+  }
+
+  if (!recipientUids.length || !title || !description) {
+    errBox.textContent = 'Please pick at least one intern and fill in a title and description.';
     errBox.classList.add('show');
     return;
   }
@@ -666,21 +1285,27 @@ document.getElementById('taskAssignBtn').addEventListener('click', async () => {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Assigning...';
 
   try {
-    const intern = internsCache.find(i => i.uid === internUid);
-    await addDoc(collection(db, 'internTasks'), {
-      internUid,
-      internName: intern ? (intern.fullName || intern.email) : '',
-      title, description, dueDate, clientRelated,
-      status: 'assigned',
-      assignedAt: serverTimestamp(),
-      mentorComments: []
-    });
-    okBox.textContent = 'Task assigned!';
+    await Promise.all(recipientUids.map((internUid) => {
+      const intern = internsCache.find(i => i.uid === internUid);
+      const taskDoc = {
+        internUid,
+        internName: intern ? (intern.fullName || intern.email) : '',
+        title, description, dueDate, clientRelated,
+        status: 'assigned',
+        assignedAt: serverTimestamp(),
+        mentorComments: []
+      };
+      if (teamTag) { taskDoc.teamId = teamTag.teamId; taskDoc.teamName = teamTag.teamName; }
+      return addDoc(collection(db, 'internTasks'), taskDoc);
+    }));
+    okBox.textContent = recipientUids.length === 1 ? 'Task assigned!' : `Task assigned to ${recipientUids.length} interns!`;
     okBox.classList.add('show');
     document.getElementById('taskTitle').value = '';
     document.getElementById('taskDescription').value = '';
     document.getElementById('taskDueDate').value = '';
     document.getElementById('taskClientRelated').checked = false;
+    document.querySelectorAll('.assignee-checkbox').forEach(cb => { cb.checked = false; });
+    document.getElementById('assigneeSelectAll').checked = false;
     loadTaskReview();
   } catch (e) {
     errBox.textContent = `Couldn't assign that task: ${e.message || e}`;
@@ -718,6 +1343,7 @@ function renderTaskReviewList() {
     if (!searchText) return true;
     return (t.internName || '').toLowerCase().includes(searchText) || (t.title || '').toLowerCase().includes(searchText);
   });
+  setSectionCount('taskReviewCount', tasks.length);
 
   if (!tasks.length) {
     listEl.innerHTML = taskReviewCache.length
@@ -818,6 +1444,7 @@ function renderAttendanceAnomaliesList() {
     if (!searchText) return true;
     return (internsMap[r.uid] || r.uid || '').toLowerCase().includes(searchText);
   });
+  setSectionCount('attendanceCount', rows.length);
 
   if (!rows.length) {
     listEl.innerHTML = attendanceAnomaliesCache.length
@@ -924,6 +1551,7 @@ function renderInternRequestsList() {
       (r.internEmail || '').toLowerCase().includes(searchText) ||
       typeLabel.includes(searchText);
   });
+  setSectionCount('internRequestsCount', rows.length);
 
   if (!rows.length) {
     listEl.innerHTML = internRequestsCache.length
@@ -1010,10 +1638,14 @@ onAuthStateChanged(auth, async (user) => {
   loadPendingApprovals();
   loadMarketplacePayouts();
 
+  await loadAllClients();
+  renderClientRoster();
+
   await loadAllInterns();
   renderInternRoster();
   loadInternApplications();
   populateTaskInternSelect();
+  await loadTeams();
   loadTaskReview();
   loadAttendanceAnomalies();
   loadInternRequests();

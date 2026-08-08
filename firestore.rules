@@ -53,9 +53,18 @@ service cloud.firestore {
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && (request.auth.uid == userId ||
+      // v22 (2026-08-03): the owner branch now also pins accessRevoked to
+      // whatever it already was — Revoke/Restore Access only ever run
+      // through adminRevokeAccess/adminRestoreAccess (Cloud Functions using
+      // the Admin SDK, which bypasses these rules entirely), so a client
+      // update should never be able to flip that field back on its own,
+      // even as a side effect of some other legitimate-looking update.
+      allow update: if request.auth != null && (
+        (request.auth.uid == userId &&
+          request.resource.data.get('accessRevoked', false) == resource.data.get('accessRevoked', false)) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
+      );
     }
 
     // Founder Flywheel dashboard file uploads (metadata only — the actual file
@@ -143,14 +152,37 @@ service cloud.firestore {
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin"));
       allow create: if request.auth != null && request.auth.uid == userId &&
         request.resource.data.status == 'signed_up';
+      // v22 (2026-08-03): the owner branch now also pins accessRevoked to
+      // whatever it already was, same reasoning as the /profiles rule above
+      // — Revoke/Restore Access only ever run through the admin Cloud
+      // Functions (Admin SDK, bypasses these rules), so an owner update
+      // should never be able to flip that field on its own.
       allow update: if request.auth != null && (
         (request.auth.uid == userId &&
           (request.resource.data.status == resource.data.status ||
-            (resource.data.status == 'signed_up' && request.resource.data.status == 'onboarded'))) ||
+            (resource.data.status == 'signed_up' && request.resource.data.status == 'onboarded')) &&
+          request.resource.data.get('accessRevoked', false) == resource.data.get('accessRevoked', false)) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin")
       );
     }
+
+    // Intern Teams (v22, 2026-08-03) — admin creates/names a team and
+    // manages its member list; assigning a task "to a team" (Admin
+    // Dashboard) reads this doc's memberUids and fans out to one ordinary
+    // /internTasks doc per current member. Admin-only in both directions —
+    // no intern-facing UI reads this collection this round.
+    match /internTeams/{teamId} {
+      allow read, write: if request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // Admin audit log (v22, 2026-08-03) — Delete / Revoke / Restore Access
+    // are all written here by their Cloud Functions using the Admin SDK,
+    // which bypasses these rules entirely. Deliberately no client access in
+    // either direction yet (falls through to the catch-all deny below) —
+    // add a read rule here if/when an Activity Log view gets built.
 
     // Skills assessment sessions (Phase 2) — the private, per-candidate
     // question selection + option-shuffle mapping + timer deadline that

@@ -1,96 +1,119 @@
-# v21 — Admin Bug Fixes, Full Intern Roster, and Skills-Check Reapply (2026-08-03)
+# v22 — Admin Dashboard Upgrade (2026-08-03)
 
-## What this fixes
+This is the biggest single round yet, covering everything from "let's
+upgrade the Admin dashboard" — collapsible sections, full account controls
+(Delete / Revoke Access / Restore Access) for any Intern or Client, Intern
+Teams, and multi-recipient task assignment. Deploy this one carefully and
+test it before moving on, since it's the first round touching Firebase Auth
+directly.
 
-**The Reject button and Attendance export buttons weren't just cosmetically
-broken — they were invisible.** `style.css` defines `.btn-secondary` twice:
-once early on with the orange/blue gradient look you see everywhere else,
-and once later with a translucent look meant for buttons sitting on a dark
-background (the homepage hero, nav, etc). Right after that second
-definition there's a list of page types that get the readable style back —
-but the Admin Dashboard's `<body>` tag wasn't on that list, so every
-`.btn-secondary` button on that page fell through to the invisible version.
+## 1. Collapsible sections
 
-This wasn't just Reject and the Attendance export buttons — it was also
-**Sign Out**, **Mark as Paid**, and **Reopen With Comment**. All of them are
-fixed now with one small change: the Admin Dashboard's `<body>` tag now
-carries a class, and that class was added to the same list that already
-covers your other account pages.
+Every section (Client Corner and Internship Corner alike) is now a click-to-
+expand panel with a count badge showing how many items are in it, instead of
+one long scroll. Each section remembers its own open/closed state in the
+browser (so it stays how you left it next time), except the very first time
+you open the new dashboard — then Pending Stage Advancement Requests,
+Pending Internship Applications, Tasks Awaiting Review, Attendance, and
+Intern Requests start open (the "needs your attention" sections), and
+everything else starts collapsed.
 
-## What this adds
+## 2. Delete & Revoke Access — the big one
 
-### 1. Full Intern Roster (new section, top of Internship Corner)
-Every intern who's ever applied, at any stage — not just the ones currently
-waiting on an action. Search by name or email, filter by status, and for
-anyone who's taken the skills check more than once, click **History** to
-expand every past attempt with its score breakdown. This reuses the same
-intern data your dashboard was already fetching once per admin session — no
-new reads, no new Firestore rules.
+Every Intern Roster and new Client Roster row now has account-control
+buttons. Here's exactly what each does, matching what we agreed on:
 
-### 2. Search/filter added to four existing sections
-Pending Internship Applications, Tasks Awaiting Review, Attendance's
-Flagged Days, and Intern Requests all got a search box at the top. None of
-these needed new data — they just filter what was already being loaded.
+**Revoke Access** — asks for a reason (required, kept on file), then
+immediately disables their Firebase login and force-signs-out any session
+they currently have open. They cannot sign back in at all until you restore
+access. This is fully reversible — a **Restore Access** button appears in
+its place once revoked.
 
-### 3. Skills-check reapply (up to 3 attempts)
-The actual gap: a rejected candidate — whether from a straightforward
-rejection or from timing out and getting a low score that got rejected —
-had no way back in. Now:
+**Delete** — asks for a reason, then makes you type their name exactly to
+confirm (a safety net since this is irreversible). It then permanently
+removes their Firebase login (that email can never sign in again without
+being re-invited), their profile document, and every file they uploaded.
+**It deliberately does NOT touch their attendance, task, request, or order
+history** — those stay in place as records, since you might need them later
+(e.g. for accounting on a client's past orders). This matches exactly what
+we agreed on.
 
-- A rejected candidate's dashboard shows a **Retake Your Skills Check**
-  button, as long as they haven't used all 3 attempts.
-- Retaking always starts a completely fresh, freshly-timed set of
-  questions — never a resume of the old one.
-- Every attempt's score is kept (not overwritten), so you can see the full
-  history for anyone who's retaken — that's what the Roster's History
-  button shows.
-- Once someone's used all 3 attempts and is still rejected, the retake
-  button is replaced with a note to reach out to hello@ried.co.in instead.
-- The rejection email now mentions how many attempts are left (or that
-  there are none), so the candidate isn't left guessing.
+Every Delete, Revoke, and Restore is permanently logged (who did it, when,
+why) to a new `adminAuditLog` collection in Firestore — there's no page to
+browse it yet, but the record exists from day one in case you ever want one
+built later.
 
-**Important — this applies automatically to your existing test account.**
-The candidate you rejected during testing has no attempt-count on her
-record yet, and a missing attempt-count is treated as zero used. The moment
-this round deploys, her dashboard will show the Retake button with all 3
-attempts available — nothing needs to be hand-edited in Firestore for her.
+**One more layer of protection**: even during the short window before a
+revoked account's existing login session actually expires, the moment they
+load their dashboard or portal page it checks for a revoked flag and signs
+them out immediately with a clear message, rather than waiting for Firebase
+itself to catch up.
 
-### Zero Firestore rules changes
-Every write this feature needs (flipping status back to "onboarded",
-tracking attempt count, recording attempt history) happens inside
-`startAssessment`/`submitAssessment`, which run with Cloud Functions'
-Admin SDK — that bypasses Firestore rules entirely, the same way grading
-already did. `firestore.rules` is included in this folder unchanged, purely
-so the folder is a complete snapshot — you don't need to redeploy it.
+Two safety guards built in: you can never delete or revoke your own admin
+account, and you can never delete or revoke Pramod's or Neel's account
+through this panel.
+
+**Client Roster** is a new section (top of Client Corner) — the same kind
+of searchable list as the Intern Roster, but for every founder/client
+account, since Delete/Revoke needed a way to find any client, not just
+interns.
+
+## 3. Intern Teams
+
+New "Intern Teams" section — name a team, pick its members from a
+checklist, and manage membership afterward (add/remove members, or delete
+the team entirely — deleting a team never touches tasks already assigned
+through it, only the team itself).
+
+## 4. Assign a Daily Task — now multi-recipient
+
+The Assign a Daily Task form now has three modes at the top: **Single
+Intern** (the original flow, unchanged), **Multiple Interns** (a checklist
+with a Select All checkbox), and **A Team** (pick one of your saved teams —
+it shows you the current member list, and assigning creates the task for
+every one of them). Whichever mode you use, the title/description/due
+date/client-related fields are shared — you fill them in once regardless of
+how many people you're assigning to.
+
+## 5. Blogs/Vlogs — not built yet
+
+Noted for later, as discussed — nothing in this round touches it.
 
 ## What's in this folder
 
-- **`functions/index.js`** — `startAssessment` now also accepts a rejected
-  candidate with attempts remaining and starts them a fresh attempt;
-  `submitAssessment` now also records the attempt into a history list; the
-  rejection email in `notifyOnInternApprovalDecision` now mentions attempts
-  remaining. Everything else in this file is unchanged.
-- **`admin-dashboard.html`** — the Intern Roster section, search boxes on
-  four existing sections, and the `admin-page` class on `<body>` (the CSS
-  fix). All existing sections/behavior otherwise unchanged.
-- **`style.css`** — the one-line fix extending the button-style override to
-  the Admin Dashboard, plus a small new section for the roster/search
-  styling.
-- **`intern-test.html`** — the entry guard now lets a rejected candidate
-  with attempts left through, and shows "Attempt X of 3" on the intro
-  screen when retaking.
-- **`intern-dashboard.html`** — a real "Not Selected This Time" state with
-  the Retake button (or the out-of-attempts message), replacing what used
-  to be a generic dead-end message.
-- **`firestore.rules`** — included unchanged, for completeness (see above).
+- **`functions/index.js`** — three new Cloud Functions:
+  `adminDeleteAccount`, `adminRevokeAccess`, `adminRestoreAccess`. Everything
+  else in this file is unchanged.
+- **`js/firebase-init.js`** — added `arrayRemove` and `deleteDoc` to the
+  shared exports (needed for team membership management).
+- **`admin-dashboard.html`** — the collapsible-section wrapper around every
+  existing section, the new Client Roster and Intern Teams sections, account
+  control buttons + two confirmation modals, and the reworked multi-mode
+  task assignment form.
+- **`style.css`** — new sections for collapsible panels, the account-control
+  modals, a new always-red `.btn-danger` style for destructive actions, and
+  the Teams/multi-select styling.
+- **`login.html`, `intern-login.html`** — both now show a clear "your access
+  has been revoked" message when redirected here with `?revoked=1`.
+- **`intern-dashboard.html`, `intern-portal.html`, `dashboard.html`** — each
+  now checks for a revoked account right after loading the user's profile
+  and signs them out immediately if so.
+- **`firestore.rules`** — a new admin-only `/internTeams` rule, and a small
+  security tightening on `/interns` and `/profiles`: the account owner can
+  no longer flip their own `accessRevoked` field, even as a side effect of
+  some other update (only the new Cloud Functions can change it).
 
 ## Deploy checklist
 
-1. Copy every file in this folder over the matching path in your repo, push
-   to GitHub. (The static files — `admin-dashboard.html`, `style.css`,
-   `intern-test.html`, `intern-dashboard.html` — go live on GitHub Pages as
-   soon as you push; no Cloud Shell needed for those.)
-2. Redeploy Cloud Functions (fresh clone, as always):
+1. Copy every file in this folder over the matching path in your repo (note
+   the `js/firebase-init.js` and `functions/index.js` paths), push to
+   GitHub.
+2. Publish the updated Firestore rules — **Firebase Console → Firestore
+   Database → Rules** → paste in the contents of this folder's
+   `firestore.rules` → **Publish**. (Small change, but a real one — the
+   `/internTeams` block and the accessRevoked tightening are new rule
+   content, not just comments this time.)
+3. Redeploy Cloud Functions (fresh clone, as always):
    ```
    cd ~
    rm -rf ~/ried
@@ -102,39 +125,51 @@ so the folder is a complete snapshot — you don't need to redeploy it.
    (if that prints nothing: `npm install nodemailer@6.9.14 --save`), then:
    ```
    cd ~/ried
-   firebase deploy --only functions:startAssessment,functions:submitAssessment,functions:notifyOnInternApprovalDecision
+   firebase deploy --only functions:adminDeleteAccount,functions:adminRevokeAccess,functions:adminRestoreAccess
    ```
-   **Note the scoped `--only` list this time** — only these 3 functions
-   actually changed this round, and scoping the deploy to just them (rather
-   than a bare `--only functions` across all 22) avoids the Cloud Run CPU
-   quota issue we hit during the v20 deploy. This is a general habit worth
-   keeping going forward: as the function count grows, scope deploys to
-   what actually changed rather than redeploying everything every time.
-3. That's it — **no Firestore rules redeploy needed this round**, and no
-   Storage rules changes either.
+   Only these 3 functions are new this round, so — same habit as last
+   time — the deploy is scoped to just them rather than a bare
+   `--only functions` across all 25.
+4. **One thing to double-check after deploying**: `adminDeleteAccount` is
+   the first Cloud Function in this project that deletes files from Cloud
+   Storage directly (rather than a user's own browser doing it). If a test
+   Delete fails with a permission-style error mentioning Storage, it likely
+   means the Cloud Functions service account needs the **Storage Object
+   Admin** role — check **Google Cloud Console → IAM & Admin → IAM**, find
+   the account ending in `@ried-website.iam.gserviceaccount.com` (or
+   similar, tied to Cloud Functions), and confirm it has that role. This is
+   a one-time check — if it already works on the first test, there's
+   nothing else to do.
 
 ## Test checklist
 
-1. **CSS fix**: sign in to the Admin Dashboard — confirm Sign Out, Reject
-   (in Pending Internship Applications and Intern Requests), the 3
-   Attendance export buttons, and Reopen With Comment are all now clearly
-   visible with the same light-navy button style as everywhere else.
-2. **Roster**: confirm the Intern Roster section shows every intern
-   regardless of status. Try the search box and the status filter. Find
-   your already-rejected test account and confirm it appears with status
-   "Rejected."
-3. **Reapply — the main feature**: sign in as that already-rejected test
-   account (or reuse a fresh one you reject for this test) — confirm the
-   dashboard now shows "Not Selected This Time" with a Retake Your Skills
-   Check button. Click it, confirm the intro screen shows "Attempt 2 of 3",
-   complete it, and confirm you land back on "Pending Review" like a normal
-   first attempt.
-4. Back in the Admin Dashboard, reject that account again — confirm the
-   Roster's History button on their row now shows both attempts with their
-   separate scores. Reject a 3rd time (their 3rd attempt) and confirm the
-   dashboard now shows the "used all attempts, reach out to
-   hello@ried.co.in" message instead of a Retake button, and that
-   `intern-test.html` also refuses entry directly if visited by URL.
-5. Search/filter: try the search boxes on Pending Internship Applications,
-   Tasks Awaiting Review, Flagged Days, and Intern Requests — confirm each
-   narrows the list as you type.
+Use throwaway test accounts for the destructive tests (4 and 5) — Delete
+truly cannot be undone.
+
+1. **Collapsible sections**: confirm every section can be expanded/
+   collapsed, counts look right, and your open/closed choices are
+   remembered after a page refresh.
+2. **Client Roster**: confirm it lists every founder account, and search
+   narrows it down.
+3. **Revoke Access**: pick a test intern or client, click Revoke Access,
+   enter a reason, confirm. Try signing in as that account — confirm it's
+   rejected. Confirm the roster now shows "Access Revoked" with a Restore
+   Access button. Click Restore Access, then confirm that account can sign
+   in again normally.
+4. **Delete (use a real throwaway test account for this one)**: click
+   Delete, confirm it requires both a reason AND typing the name exactly
+   before the button does anything. Confirm it goes through, the account
+   disappears from the roster, and trying to sign in with that email now
+   fails entirely (not just "account not found" — it should behave like
+   that email never existed). Spot-check in the Firebase Console that their
+   Storage folder is actually empty.
+5. **Self/admin protection**: confirm you cannot Delete or Revoke your own
+   logged-in admin account, and cannot do either to the other admin's
+   account.
+6. **Teams**: create a team with 2-3 interns, confirm it appears in
+   Assign a Daily Task's "A Team" mode with the right member list. Assign a
+   task to the team, confirm every member gets it individually in their
+   portal. Remove a member from the team and confirm a task assigned
+   earlier to them is untouched.
+7. **Multiple Interns mode**: try Select All, then assign a task, and
+   confirm every approved intern gets it.

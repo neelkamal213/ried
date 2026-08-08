@@ -301,7 +301,8 @@ h1, h2, h3, h4,
 /* BUTTONS */
 
 .btn-primary,
-.btn-secondary {
+.btn-secondary,
+.btn-danger {
   padding: 15px 30px;
   border-radius: 40px;
   text-decoration: none;
@@ -353,9 +354,28 @@ h1, h2, h3, h4,
 }
 
 .btn-primary:disabled,
-.btn-secondary:disabled {
+.btn-secondary:disabled,
+.btn-danger:disabled {
   transform: none;
   filter: grayscale(.15);
+}
+
+/* Deliberately its own always-red style, NOT folded into .btn-secondary's
+   page-scoped overrides below — a destructive action button should stand
+   out the same way on every page, never blend into a neutral tone. */
+.btn-danger {
+  background: linear-gradient(135deg, #d64545, #a02020);
+  color: white;
+  box-shadow: 0 12px 30px rgba(180,40,40,.28);
+}
+.btn-danger:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(180,40,40,.36);
+}
+.btn-danger:active {
+  transform: translateY(-1px) scale(.98);
+  box-shadow: 0 8px 18px rgba(180,40,40,.32);
+  transition-duration: .08s;
 }
 
 /* SECTION TITLES */
@@ -2924,3 +2944,190 @@ textarea.onboard-input { resize: vertical; line-height: 1.5; }
   color: var(--navy);
 }
 .roster-history-head .attendance-flag-badge { font-size: .72rem; }
+
+/* ============================================================
+   ADMIN DASHBOARD v22 — collapsible sections, account-control modals,
+   Teams, multi-select task assignment (2026-08-03)
+   ============================================================ */
+
+.admin-collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
+}
+.admin-collapsible-header .admin-pending-title { margin: 0; }
+.admin-collapsible-chevron {
+  color: var(--muted);
+  transition: transform .2s ease;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+.admin-collapsible.collapsed .admin-collapsible-chevron { transform: rotate(-90deg); }
+.admin-collapsible-body { margin-top: 16px; }
+.admin-collapsible.collapsed .admin-collapsible-body { display: none; }
+
+.admin-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: rgba(14,90,138,.12);
+  color: var(--blue);
+  font-size: .75rem;
+  font-weight: 700;
+  margin-left: 10px;
+}
+.admin-count-badge.zero { background: rgba(120,120,130,.1); color: var(--muted); }
+
+/* Modal (used by Delete / Revoke / Restore confirmations) */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,26,40,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.admin-modal-overlay.hidden { display: none; }
+.admin-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 30px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 30px 80px rgba(14,44,64,.28);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.admin-modal h3 { margin: 0 0 10px; color: var(--navy); font-size: 1.2rem; }
+.admin-modal h3.danger { color: #a02020; }
+.admin-modal p { color: var(--muted); font-size: .92rem; margin: 0 0 14px; line-height: 1.5; }
+.admin-modal .onboard-label { margin-top: 12px; }
+.admin-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.admin-modal-actions .btn-primary,
+.admin-modal-actions .btn-secondary,
+.admin-modal-actions .btn-danger {
+  padding: 12px 22px;
+  font-size: 14px;
+}
+
+/* Roster row account-control buttons */
+.roster-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.roster-actions .btn-secondary,
+.roster-actions .btn-danger {
+  padding: 8px 14px !important;
+  font-size: .8rem !important;
+}
+.roster-revoked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(180,40,40,.1);
+  color: #a02020;
+  font-size: .72rem;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+/* Teams */
+.team-card { margin-bottom: 14px; }
+.team-member-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.team-member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  background: rgba(14,90,138,.08);
+  color: var(--navy);
+  font-size: .78rem;
+}
+.team-member-chip button {
+  border: none;
+  background: none;
+  color: #a02020;
+  cursor: pointer;
+  padding: 0;
+  font-size: .85rem;
+  line-height: 1;
+}
+.team-select-checklist {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.team-select-row,
+.assignee-select-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.team-select-row:last-child,
+.assignee-select-row:last-child { border-bottom: none; }
+.team-select-row input,
+.assignee-select-row input { width: auto; margin: 0; }
+
+/* Multi-recipient task assignment */
+.assign-mode-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.assign-mode-tab {
+  padding: 9px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.assign-mode-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.assignee-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.assignee-select-header label { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--navy); font-size: .9rem; }
+.assignee-select-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.team-tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(245,130,32,.12);
+  color: #b95d0e;
+  font-size: .72rem;
+  font-weight: 700;
+  margin-left: 8px;
+}

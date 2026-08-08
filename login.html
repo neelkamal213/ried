@@ -127,6 +127,13 @@ if (new URLSearchParams(window.location.search).get('timeout') === '1') {
   errorBox.textContent = "You were signed out after 30 minutes of inactivity. Please sign in again.";
   errorBox.classList.add('show');
 }
+// v22 (2026-08-03): dashboard.html signs a revoked account straight back
+// out the moment it detects accessRevoked on their profile — this is where
+// that redirect lands, so they get a clear reason instead of a silent bounce.
+if (new URLSearchParams(window.location.search).get('revoked') === '1') {
+  errorBox.textContent = "Access to this account has been revoked. If you believe this is a mistake, please contact hello@ried.co.in.";
+  errorBox.classList.add('show');
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
