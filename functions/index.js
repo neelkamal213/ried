@@ -2386,3 +2386,195 @@ exports.notifyOnInternRequestReviewed = onDocumentWritten(
     }
   }
 );
+
+/**
+ * adminDeleteAccount / adminRevokeAccess / adminRestoreAccess
+ *
+ * v22 (2026-08-03) — the account-management trio behind the Admin
+ * Dashboard's Delete / Revoke Access / Restore Access buttons (Intern
+ * Roster and Client Roster). All three are admin-only, and all three touch
+ * the person's Firebase Auth account itself (removing it entirely, or
+ * disabling it) — that's only possible with the Admin SDK, which is why
+ * these are Cloud Functions rather than direct client Firestore writes,
+ * same reasoning as grading/attendance elsewhere in this file.
+ *
+ * Scope, confirmed with RIED (2026-08-03):
+ *   - Delete removes the Firebase Auth login itself (that email can never
+ *     sign back in without being re-invited), the /interns or /profiles
+ *     doc, and every Storage file under that uid's folders. It deliberately
+ *     does NOT cascade-delete connected records (attendance, tasks,
+ *     requests, orders, carts, listings) — those stay as historical
+ *     records, e.g. for accounting.
+ *   - Revoke Access disables the Firebase Auth account AND revokes its
+ *     refresh tokens (so it takes effect immediately, rather than waiting
+ *     out an already-issued token's ~1 hour lifetime) — reversible via
+ *     Restore Access. A reason is required and kept on the doc.
+ *   - Every action writes to /adminAuditLog, so there's a permanent record
+ *     even after a Delete removes the profile itself. No UI reads this
+ *     collection yet — it's there for whenever an Activity Log view is
+ *     wanted.
+ */
+
+async function requireAdminCaller(request) {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Please sign in.");
+  }
+  const callerSnap = await db.collection("users").doc(request.auth.uid).get();
+  if (!callerSnap.exists || callerSnap.data().role !== "admin") {
+    throw new HttpsError("permission-denied", "Admin access required.");
+  }
+  return request.auth.uid;
+}
+
+async function isTargetAdmin(uid) {
+  const snap = await db.collection("users").doc(uid).get();
+  return snap.exists && snap.data().role === "admin";
+}
+
+async function deleteStorageFolders(prefixes) {
+  const bucket = admin.storage().bucket();
+  for (const prefix of prefixes) {
+    try {
+      await bucket.deleteFiles({ prefix });
+    } catch (e) {
+      logger.error(`adminDeleteAccount: failed to delete Storage prefix ${prefix}`, e);
+    }
+  }
+}
+
+async function writeAdminAuditLog(entry) {
+  try {
+    await db.collection("adminAuditLog").add({ ...entry, performedAt: admin.firestore.Timestamp.now() });
+  } catch (e) {
+    logger.error("writeAdminAuditLog failed", e);
+  }
+}
+
+exports.adminDeleteAccount = onCall(async (request) => {
+  const callerUid = await requireAdminCaller(request);
+  const { uid, accountType, reason } = request.data || {};
+  if (!uid || !["intern", "client"].includes(accountType) || !reason) {
+    throw new HttpsError("invalid-argument", "uid, accountType ('intern' or 'client'), and reason are all required.");
+  }
+  if (uid === callerUid) {
+    throw new HttpsError("failed-precondition", "You can't delete your own account from here.");
+  }
+  if (await isTargetAdmin(uid)) {
+    throw new HttpsError("failed-precondition", "Admin accounts can't be deleted from this panel.");
+  }
+
+  const collectionName = accountType === "intern" ? "interns" : "profiles";
+  const targetRef = db.collection(collectionName).doc(uid);
+  const targetSnap = await targetRef.get();
+  const target = targetSnap.exists ? targetSnap.data() : {};
+
+  const storagePrefixes = accountType === "intern"
+    ? [`intern-documents/${uid}/`]
+    : [`profile-logos/${uid}/`, `user-uploads/${uid}/`];
+  await deleteStorageFolders(storagePrefixes);
+
+  if (accountType === "client") {
+    // /uploads/{uid}/files/{fileId} — metadata subcollection for founder
+    // dashboard uploads; recursiveDelete handles the subcollection cleanly
+    // (a plain .delete() on the parent doc would NOT remove its children).
+    try {
+      await db.recursiveDelete(db.collection("uploads").doc(uid));
+    } catch (e) {
+      logger.error("adminDeleteAccount: failed to clean up /uploads subcollection", e);
+    }
+  }
+
+  await targetRef.delete().catch((e) => logger.error("adminDeleteAccount: failed to delete profile doc", e));
+  await db.collection("users").doc(uid).delete().catch(() => {});
+
+  try {
+    await admin.auth().deleteUser(uid);
+  } catch (e) {
+    // An already-deleted Auth user (e.g. a retried call) shouldn't block
+    // anything — the Firestore/Storage cleanup above already ran either way.
+    logger.error("adminDeleteAccount: failed to delete Auth user", e);
+  }
+
+  await writeAdminAuditLog({
+    type: "delete",
+    targetUid: uid,
+    targetType: accountType,
+    targetEmail: target.email || "",
+    targetName: target.fullName || target.brandName || "",
+    reason,
+    performedBy: (request.auth.token && request.auth.token.email) || callerUid
+  });
+
+  return { success: true };
+});
+
+exports.adminRevokeAccess = onCall(async (request) => {
+  const callerUid = await requireAdminCaller(request);
+  const { uid, accountType, reason } = request.data || {};
+  if (!uid || !["intern", "client"].includes(accountType) || !reason) {
+    throw new HttpsError("invalid-argument", "uid, accountType ('intern' or 'client'), and reason are all required.");
+  }
+  if (uid === callerUid) {
+    throw new HttpsError("failed-precondition", "You can't revoke your own access from here.");
+  }
+  if (await isTargetAdmin(uid)) {
+    throw new HttpsError("failed-precondition", "Admin accounts can't be revoked from this panel.");
+  }
+
+  const collectionName = accountType === "intern" ? "interns" : "profiles";
+  const now = admin.firestore.Timestamp.now();
+
+  await admin.auth().updateUser(uid, { disabled: true });
+  await admin.auth().revokeRefreshTokens(uid); // forces an immediate sign-out, not just a block on future sign-ins
+
+  await db.collection(collectionName).doc(uid).set(
+    {
+      accessRevoked: true,
+      accessRevokedReason: reason,
+      accessRevokedAt: now,
+      accessRevokedBy: (request.auth.token && request.auth.token.email) || callerUid
+    },
+    { merge: true }
+  );
+
+  await writeAdminAuditLog({
+    type: "revoke",
+    targetUid: uid,
+    targetType: accountType,
+    reason,
+    performedBy: (request.auth.token && request.auth.token.email) || callerUid
+  });
+
+  return { success: true };
+});
+
+exports.adminRestoreAccess = onCall(async (request) => {
+  const callerUid = await requireAdminCaller(request);
+  const { uid, accountType } = request.data || {};
+  if (!uid || !["intern", "client"].includes(accountType)) {
+    throw new HttpsError("invalid-argument", "uid and accountType ('intern' or 'client') are required.");
+  }
+
+  const collectionName = accountType === "intern" ? "interns" : "profiles";
+  const now = admin.firestore.Timestamp.now();
+
+  await admin.auth().updateUser(uid, { disabled: false });
+
+  await db.collection(collectionName).doc(uid).set(
+    {
+      accessRevoked: false,
+      accessRestoredAt: now,
+      accessRestoredBy: (request.auth.token && request.auth.token.email) || callerUid
+    },
+    { merge: true }
+  );
+
+  await writeAdminAuditLog({
+    type: "restore",
+    targetUid: uid,
+    targetType: accountType,
+    performedBy: (request.auth.token && request.auth.token.email) || callerUid
+  });
+
+  return { success: true };
+});
