@@ -2005,7 +2005,40 @@ function attendanceMinutesBetween(start, end) {
   return Math.max(0, Math.round((end.toMillis() - start.toMillis()) / 60000));
 }
 
-exports.clockIn = onCall(async (request) => {
+// v23 (2026-10-21): interns were seeing a bare, meaningless "internal" error
+// whenever one of the 4 attendance functions threw anything other than an
+// HttpsError (a raw exception from a transient Firestore hiccup, an
+// unexpected data shape, etc.) — the callable protocol flattens ANY
+// non-HttpsError throw down to a generic {code:'internal', message:'INTERNAL'}
+// with zero detail, by design, for security (so internal stack traces never
+// leak to the client). This wrapper is the fix: it still lets a deliberate
+// HttpsError (e.g. "You're not currently on a break.") pass straight through
+// unchanged, but for anything else it (a) logs the REAL error — uid, which
+// function, message, stack — to Cloud Logging via logger.error so it's
+// actually visible in Firebase Console -> Functions -> Logs next time this
+// happens, and (b) gives the intern a clear, actionable message instead of
+// "internal". Applied to all 4 attendance functions below.
+function wrapAttendanceCall(fnName, handler) {
+  return onCall(async (request) => {
+    try {
+      return await handler(request);
+    } catch (err) {
+      if (err instanceof HttpsError) throw err;
+      logger.error(`${fnName} threw an unexpected error`, {
+        fn: fnName,
+        uid: request.auth && request.auth.uid,
+        message: err && err.message,
+        stack: err && err.stack
+      });
+      throw new HttpsError(
+        "internal",
+        "Something went wrong saving your attendance just now. Please try again — if it keeps happening, let hello@ried.co.in know so we can check it."
+      );
+    }
+  });
+}
+
+exports.clockIn = wrapAttendanceCall("clockIn", async (request) => {
   const uid = request.auth && request.auth.uid;
   await requireApprovedIntern(uid);
 
@@ -2035,7 +2068,7 @@ exports.clockIn = onCall(async (request) => {
   return { success: true };
 });
 
-exports.startBreak = onCall(async (request) => {
+exports.startBreak = wrapAttendanceCall("startBreak", async (request) => {
   const uid = request.auth && request.auth.uid;
   await requireApprovedIntern(uid);
 
@@ -2058,7 +2091,7 @@ exports.startBreak = onCall(async (request) => {
   return { success: true };
 });
 
-exports.endBreak = onCall(async (request) => {
+exports.endBreak = wrapAttendanceCall("endBreak", async (request) => {
   const uid = request.auth && request.auth.uid;
   await requireApprovedIntern(uid);
 
@@ -2080,7 +2113,7 @@ exports.endBreak = onCall(async (request) => {
   return { success: true };
 });
 
-exports.clockOut = onCall(async (request) => {
+exports.clockOut = wrapAttendanceCall("clockOut", async (request) => {
   const uid = request.auth && request.auth.uid;
   await requireApprovedIntern(uid);
 
